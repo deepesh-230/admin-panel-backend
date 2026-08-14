@@ -4,29 +4,29 @@ export declare class EnquiriesService {
     constructor(prisma: PrismaService);
     findAll(searchQuery?: string): Promise<{
         id: string;
-        sNo: number;
-        category: string;
-        subCategory: string;
-        product: string;
-        name: string | null;
-        email: string;
-        date: string;
-        createdBy: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
+        email: string;
+        category: string;
+        sNo: number;
+        subCategory: string;
+        product: string;
+        date: string;
+        createdBy: string;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        sNo: number;
-        category: string;
-        subCategory: string;
-        product: string;
-        name: string | null;
-        email: string;
-        date: string;
-        createdBy: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
+        email: string;
+        category: string;
+        sNo: number;
+        subCategory: string;
+        product: string;
+        date: string;
+        createdBy: string;
     }>;
     create(data: {
         category: string;
@@ -38,16 +38,16 @@ export declare class EnquiriesService {
         createdBy: string;
     }): Promise<{
         id: string;
-        sNo: number;
-        category: string;
-        subCategory: string;
-        product: string;
-        name: string | null;
-        email: string;
-        date: string;
-        createdBy: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
+        email: string;
+        category: string;
+        sNo: number;
+        subCategory: string;
+        product: string;
+        date: string;
+        createdBy: string;
     }>;
     update(id: string, data: {
         category?: string;
@@ -59,28 +59,28 @@ export declare class EnquiriesService {
         createdBy?: string;
     }): Promise<{
         id: string;
-        sNo: number;
-        category: string;
-        subCategory: string;
-        product: string;
-        name: string | null;
-        email: string;
-        date: string;
-        createdBy: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
+        email: string;
+        category: string;
+        sNo: number;
+        subCategory: string;
+        product: string;
+        date: string;
+        createdBy: string;
     }>;
     remove(id: string): Promise<{
         id: string;
-        sNo: number;
-        category: string;
-        subCategory: string;
-        product: string;
-        name: string | null;
-        email: string;
-        date: string;
-        createdBy: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
+        email: string;
+        category: string;
+        sNo: number;
+        subCategory: string;
+        product: string;
+        date: string;
+        createdBy: string;
     }>;
 }

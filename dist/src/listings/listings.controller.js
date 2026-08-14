@@ -14,6 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ListingsController = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
+const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const listings_service_1 = require("./listings.service");
 let ListingsController = class ListingsController {
     listingsService;
@@ -42,6 +45,7 @@ let ListingsController = class ListingsController {
 exports.ListingsController = ListingsController;
 __decorate([
     (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('listings.read'),
     __param(0, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -49,6 +53,7 @@ __decorate([
 ], ListingsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('listings.read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -56,6 +61,7 @@ __decorate([
 ], ListingsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
+    (0, permissions_decorator_1.Permissions)('listings.write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -63,6 +69,7 @@ __decorate([
 ], ListingsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('listings.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -71,6 +78,7 @@ __decorate([
 ], ListingsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
+    (0, permissions_decorator_1.Permissions)('listings.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)('status')),
     __metadata("design:type", Function),
@@ -79,6 +87,7 @@ __decorate([
 ], ListingsController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.Delete)(':id'),
+    (0, permissions_decorator_1.Permissions)('listings.write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -86,6 +95,7 @@ __decorate([
 ], ListingsController.prototype, "remove", null);
 exports.ListingsController = ListingsController = __decorate([
     (0, common_1.Controller)('listings'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     __metadata("design:paramtypes", [listings_service_1.ListingsService])
 ], ListingsController);
 //# sourceMappingURL=listings.controller.js.map

@@ -1,13 +1,196 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")  // from .env file
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  ADMIN
+  STATE_ADMIN
+  END_USER
+  SERVICE_PROVIDER_ADMIN
+}
+
+enum ProviderApprovalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        RoleName         @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model State {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  code             String?           @unique
+  isActive         Boolean           @default(true)
+  users            User[]            @relation("UserPrimaryState")
+  userStates       UserState[]
+  serviceProviders ServiceProvider[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model User {
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String
+  name                 String?
+  phone                String?
+  isActive             Boolean              @default(true)
+  roleId               String
+  role                 Role                 @relation(fields: [roleId], references: [id])
+  /// Primary/home state (especially for STATE_ADMIN)
+  stateId              String?
+  state                State?               @relation("UserPrimaryState", fields: [stateId], references: [id])
+  userStates           UserState[]
+  refreshTokens        RefreshToken[]
+  sessions             Session[]
+  passwordResetTokens      PasswordResetToken[]
+  serviceProviderAdmins    ServiceProviderAdmin[]
+  createdServiceProviders  ServiceProvider[]      @relation("ProviderCreatedBy")
+  approvedServiceProviders ServiceProvider[]      @relation("ProviderApprovedBy")
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+}
+
+/// Many-to-many assignment of users to one or more states
+model UserState {
+  id        String   @id @default(uuid())
+  userId    String
+  stateId   String
+  isPrimary Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, stateId])
+  @@index([stateId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session   Session?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+/// Login session metadata (linked to a refresh token)
+model Session {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String       @unique
+  refreshToken   RefreshToken @relation(fields: [refreshTokenId], references: [id], onDelete: Cascade)
+  userAgent      String?
+  ipAddress      String?
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model ServiceProvider {
+  id               String                 @id @default(uuid())
+  name             String
+  categoryId       String
+  category         Category               @relation(fields: [categoryId], references: [id])
+  subcategoryId    String?
+  subcategory      Subcategory?           @relation(fields: [subcategoryId], references: [id])
+  description      String?
+  phone            String?
+  landline         String?
+  email            String?
+  website          String?
+  address          String?
+  city             String?
+  stateId          String
+  state            State                  @relation(fields: [stateId], references: [id])
+  latitude         Float?
+  longitude        Float?
+  googlePlaceId    String?
+  about            String?
+  services         String?
+  coverPhotoUrl    String?
+  gallery          String[]               @default([])
+  isActive         Boolean                @default(true)
+  approvalStatus   ProviderApprovalStatus @default(PENDING_APPROVAL)
+  rejectedReason   String?
+  createdById      String?
+  createdBy        User?                  @relation("ProviderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedById     String?
+  approvedBy       User?                  @relation("ProviderApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt       DateTime?
+  admins           ServiceProviderAdmin[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([stateId])
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([approvalStatus])
+  @@index([isActive])
+  @@index([name])
+}
+
+model ServiceProviderAdmin {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceProviderId String
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  isPrimary         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([serviceProviderId, userId])
+  @@index([userId])
 }
 
 model Enquiry {
@@ -37,4 +220,48 @@ model Listing {
   status      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  slug             String?           @unique
+  description      String?
+  isActive         Boolean           @default(true)
+  sortOrder        Int               @default(0)
+  subcategories    Subcategory[]
+  serviceProviders ServiceProvider[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Subcategory {
+  id               String            @id @default(uuid())
+  categoryId       String
+  category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name             String
+  slug             String?
+  description      String?
+  isActive         Boolean           @default(true)
+  sortOrder        Int               @default(0)
+  keywords         Keyword[]
+  serviceProviders ServiceProvider[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+}
+
+model Keyword {
+  id            String      @id @default(uuid())
+  term          String
+  subcategoryId String
+  subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([subcategoryId, term])
+  @@index([term])
 }

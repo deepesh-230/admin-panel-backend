@@ -11,6 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardController = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
+const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const dashboard_service_1 = require("./dashboard.service");
 let DashboardController = class DashboardController {
     dashboardService;
@@ -30,6 +33,8 @@ __decorate([
 ], DashboardController.prototype, "getStats", null);
 exports.DashboardController = DashboardController = __decorate([
     (0, common_1.Controller)('dashboard'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    (0, permissions_decorator_1.Permissions)('dashboard.read'),
     __metadata("design:paramtypes", [dashboard_service_1.DashboardService])
 ], DashboardController);
 //# sourceMappingURL=dashboard.controller.js.map

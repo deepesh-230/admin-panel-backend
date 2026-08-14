@@ -1,0 +1,95 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StatesController = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
+const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const state_dto_1 = require("./dto/state.dto");
+const states_service_1 = require("./states.service");
+let StatesController = class StatesController {
+    statesService;
+    constructor(statesService) {
+        this.statesService = statesService;
+    }
+    findAll(search, isActive) {
+        const activeFilter = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+        return this.statesService.findAll(search, activeFilter);
+    }
+    findOne(id) {
+        return this.statesService.findOne(id);
+    }
+    create(dto) {
+        return this.statesService.create(dto);
+    }
+    update(id, dto) {
+        return this.statesService.update(id, dto);
+    }
+    remove(id) {
+        return this.statesService.remove(id);
+    }
+};
+exports.StatesController = StatesController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('states.read'),
+    __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('isActive')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], StatesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('states.read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StatesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('states.write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [state_dto_1.CreateStateDto]),
+    __metadata("design:returntype", void 0)
+], StatesController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('states.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, state_dto_1.UpdateStateDto]),
+    __metadata("design:returntype", void 0)
+], StatesController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('states.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StatesController.prototype, "remove", null);
+exports.StatesController = StatesController = __decorate([
+    (0, common_1.Controller)('states'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [states_service_1.StatesService])
+], StatesController);
+//# sourceMappingURL=states.controller.js.map
