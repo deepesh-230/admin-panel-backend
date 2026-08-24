@@ -11,8 +11,8 @@ export class EnquiriesController {
 
   @Get()
   @Permissions('enquiries.read')
-  findAll(@Query('search') search?: string) {
-    return this.enquiriesService.findAll(search);
+  findAll(@Query('search') search?: string, @Query('kind') kind?: string) {
+    return this.enquiriesService.findAll(search, kind);
   }
 
   @Get(':id')
@@ -33,6 +33,7 @@ export class EnquiriesController {
       email: string;
       date: string;
       createdBy: string;
+      kind?: string;
     },
   ) {
     return this.enquiriesService.create(body);

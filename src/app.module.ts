@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CmsModule } from './cms/cms.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
@@ -32,6 +33,7 @@ import { UsersModule } from './users/users.module';
     StatesModule,
     StateAdminsModule,
     CategoriesModule,
+    CmsModule,
     SubcategoriesModule,
     KeywordsModule,
     UsersModule,

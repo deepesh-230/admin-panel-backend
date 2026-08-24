@@ -17,21 +17,22 @@ let EnquiriesService = class EnquiriesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async findAll(searchQuery) {
+    async findAll(searchQuery, kind) {
+        const where = {};
+        if (kind)
+            where.kind = kind;
         if (searchQuery) {
-            return this.prisma.enquiry.findMany({
-                where: {
-                    OR: [
-                        { product: { contains: searchQuery, mode: 'insensitive' } },
-                        { name: { contains: searchQuery, mode: 'insensitive' } },
-                        { email: { contains: searchQuery, mode: 'insensitive' } },
-                        { category: { contains: searchQuery, mode: 'insensitive' } },
-                    ],
-                },
-                orderBy: { sNo: 'asc' },
-            });
+            where.OR = [
+                { product: { contains: searchQuery, mode: 'insensitive' } },
+                { name: { contains: searchQuery, mode: 'insensitive' } },
+                { email: { contains: searchQuery, mode: 'insensitive' } },
+                { category: { contains: searchQuery, mode: 'insensitive' } },
+            ];
         }
-        return this.prisma.enquiry.findMany({ orderBy: { sNo: 'asc' } });
+        return this.prisma.enquiry.findMany({
+            where,
+            orderBy: { sNo: 'asc' },
+        });
     }
     async findOne(id) {
         const enquiry = await this.prisma.enquiry.findUnique({ where: { id } });
@@ -43,7 +44,7 @@ let EnquiriesService = class EnquiriesService {
         const last = await this.prisma.enquiry.findFirst({ orderBy: { sNo: 'desc' } });
         const nextSNo = (last?.sNo ?? 0) + 1;
         return this.prisma.enquiry.create({
-            data: { ...data, sNo: nextSNo },
+            data: { ...data, sNo: nextSNo, kind: data.kind || 'USER' },
         });
     }
     async update(id, data) {

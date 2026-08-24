@@ -196,6 +196,8 @@ model ServiceProviderAdmin {
 model Enquiry {
   id          String   @id @default(uuid())
   sNo         Int      @unique
+  /// USER = app-user enquiry, PROVIDER = emergency / service-provider enquiry
+  kind        String   @default("USER")
   category    String
   subCategory String
   product     String
@@ -205,6 +207,117 @@ model Enquiry {
   createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([kind])
+}
+
+model Faq {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UsefulLink {
+  id          String    @id @default(uuid())
+  title       String
+  url         String
+  isActive    Boolean   @default(true)
+  broadcastAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model HelpTicket {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CmsPage {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Blog {
+  id                String   @id @default(uuid())
+  title             String
+  shortDescription  String?
+  description       String?
+  image             String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model JobAlert {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  postDate    String?
+  lastDate    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Suggestion {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("NEW")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Volunteer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  location  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MarketplaceProduct {
+  id            String   @id @default(uuid())
+  name          String
+  actualPrice   String?
+  offerPrice    String?
+  phone         String?
+  listingIntent String   @default("sell")
+  sellerName    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MarketplaceParty {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  /// BUYER | SELLER
+  kind      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
 }
 
 model Listing {

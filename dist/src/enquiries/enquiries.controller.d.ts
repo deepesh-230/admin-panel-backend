@@ -2,7 +2,7 @@ import { EnquiriesService } from './enquiries.service';
 export declare class EnquiriesController {
     private readonly enquiriesService;
     constructor(enquiriesService: EnquiriesService);
-    findAll(search?: string): Promise<{
+    findAll(search?: string, kind?: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -10,6 +10,7 @@ export declare class EnquiriesController {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -23,6 +24,7 @@ export declare class EnquiriesController {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -36,6 +38,7 @@ export declare class EnquiriesController {
         email: string;
         date: string;
         createdBy: string;
+        kind?: string;
     }): Promise<{
         id: string;
         createdAt: Date;
@@ -44,6 +47,7 @@ export declare class EnquiriesController {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -65,6 +69,7 @@ export declare class EnquiriesController {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -78,6 +83,7 @@ export declare class EnquiriesController {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;

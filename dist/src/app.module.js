@@ -14,6 +14,7 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
 const categories_module_1 = require("./categories/categories.module");
+const cms_module_1 = require("./cms/cms.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const permissions_guard_1 = require("./common/guards/permissions.guard");
@@ -44,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             states_module_1.StatesModule,
             state_admins_module_1.StateAdminsModule,
             categories_module_1.CategoriesModule,
+            cms_module_1.CmsModule,
             subcategories_module_1.SubcategoriesModule,
             keywords_module_1.KeywordsModule,
             users_module_1.UsersModule,

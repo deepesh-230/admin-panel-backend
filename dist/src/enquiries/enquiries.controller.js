@@ -23,8 +23,8 @@ let EnquiriesController = class EnquiriesController {
     constructor(enquiriesService) {
         this.enquiriesService = enquiriesService;
     }
-    findAll(search) {
-        return this.enquiriesService.findAll(search);
+    findAll(search, kind) {
+        return this.enquiriesService.findAll(search, kind);
     }
     findOne(id) {
         return this.enquiriesService.findOne(id);
@@ -44,8 +44,9 @@ __decorate([
     (0, common_1.Get)(),
     (0, permissions_decorator_1.Permissions)('enquiries.read'),
     __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('kind')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], EnquiriesController.prototype, "findAll", null);
 __decorate([

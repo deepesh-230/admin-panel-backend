@@ -2,7 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class EnquiriesService {
     private prisma;
     constructor(prisma: PrismaService);
-    findAll(searchQuery?: string): Promise<{
+    findAll(searchQuery?: string, kind?: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -10,6 +10,7 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -23,6 +24,7 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -36,6 +38,7 @@ export declare class EnquiriesService {
         email: string;
         date: string;
         createdBy: string;
+        kind?: string;
     }): Promise<{
         id: string;
         createdAt: Date;
@@ -44,6 +47,7 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -65,6 +69,7 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;
@@ -78,6 +83,7 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
+        kind: string;
         subCategory: string;
         product: string;
         date: string;

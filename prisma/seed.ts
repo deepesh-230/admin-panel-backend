@@ -20,6 +20,12 @@ const PERMISSIONS = [
   { code: 'state_admins.write', description: 'Manage state admins' },
   { code: 'categories.read', description: 'View categories, subcategories, and keywords' },
   { code: 'categories.write', description: 'Manage categories, subcategories, and keywords' },
+  { code: 'cms.read', description: 'View FAQ, pages, blogs, links, jobs, help, suggestions' },
+  { code: 'cms.write', description: 'Manage FAQ, pages, blogs, links, jobs, help, suggestions' },
+  { code: 'volunteers.read', description: 'View volunteers' },
+  { code: 'volunteers.write', description: 'Manage volunteers' },
+  { code: 'marketplace.read', description: 'View marketplace products, buyers, and sellers' },
+  { code: 'marketplace.write', description: 'Manage marketplace products, buyers, and sellers' },
 ];
 
 function slugify(name: string): string {
@@ -63,6 +69,12 @@ async function main() {
         'state_admins.read',
         'categories.read',
         'categories.write',
+        'cms.read',
+        'cms.write',
+        'volunteers.read',
+        'volunteers.write',
+        'marketplace.read',
+        'marketplace.write',
       ],
     },
     {
@@ -231,13 +243,13 @@ async function main() {
   }
 
   const enquiriesData = [
-    { id: '1', sNo: 1, category: 'Physiotherapy', subCategory: 'Neurological Physiotherapy', product: 'Swaha Allergy Asthma Hospital', name: 'Vivek', email: 'vivektest@gmail.com', date: '02 Aug 2026 00:00', createdBy: 'Vivek' },
-    { id: '2', sNo: 2, category: 'Physiotherapy', subCategory: 'Neurological Physiotherapy', product: 'Gowds Dental Hospital', name: null, email: 'test@gmail.com', date: '29 Jul 2026 00:00', createdBy: 'N/A' },
-    { id: '3', sNo: 3, category: 'N/A', subCategory: 'N/A', product: 'International Drug Discovery & Clinical Research', name: 'Abdul Rahman', email: 'rahmansmiles@gmail.com', date: '25 Mar 2026 00:00', createdBy: 'Abdul Rahman' },
-    { id: '4', sNo: 4, category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Vivek', email: 'vivekanand.p@gmail.com', date: '24 Mar 2026 00:00', createdBy: 'Vivek' },
-    { id: '5', sNo: 5, category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '21 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
-    { id: '6', sNo: 6, category: 'N/A', subCategory: 'N/A', product: 'N/A', name: 'Abdul Rahman', email: 'rahmansmiles@gmail.com', date: '18 Mar 2026 00:00', createdBy: 'Abdul Rahman' },
-    { id: '7', sNo: 7, category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '16 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
+    { id: '1', sNo: 1, kind: 'USER', category: 'Physiotherapy', subCategory: 'Neurological Physiotherapy', product: 'Swaha Allergy Asthma Hospital', name: 'Vivek', email: 'vivektest@gmail.com', date: '02 Aug 2026 00:00', createdBy: 'Vivek' },
+    { id: '2', sNo: 2, kind: 'USER', category: 'Physiotherapy', subCategory: 'Neurological Physiotherapy', product: 'Gowds Dental Hospital', name: null, email: 'test@gmail.com', date: '29 Jul 2026 00:00', createdBy: 'N/A' },
+    { id: '3', sNo: 3, kind: 'USER', category: 'N/A', subCategory: 'N/A', product: 'International Drug Discovery & Clinical Research', name: 'Abdul Rahman', email: 'rahmansmiles@gmail.com', date: '25 Mar 2026 00:00', createdBy: 'Abdul Rahman' },
+    { id: '4', sNo: 4, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Vivek', email: 'vivekanand.p@gmail.com', date: '24 Mar 2026 00:00', createdBy: 'Vivek' },
+    { id: '5', sNo: 5, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '21 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
+    { id: '6', sNo: 6, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: 'N/A', name: 'Abdul Rahman', email: 'rahmansmiles@gmail.com', date: '18 Mar 2026 00:00', createdBy: 'Abdul Rahman' },
+    { id: '7', sNo: 7, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '16 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
   ];
 
   const listingsData = [
@@ -258,7 +270,7 @@ async function main() {
   for (const eq of enquiriesData) {
     await prisma.enquiry.upsert({
       where: { id: eq.id },
-      update: {},
+      update: { kind: eq.kind },
       create: eq,
     });
   }
