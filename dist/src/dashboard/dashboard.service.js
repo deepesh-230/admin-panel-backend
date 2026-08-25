@@ -11,27 +11,58 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const state_scope_1 = require("../common/utils/state-scope");
 const prisma_service_1 = require("../prisma/prisma.service");
 let DashboardService = class DashboardService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async getStats() {
-        const totalEnquiries = await this.prisma.enquiry.count();
-        const totalListings = await this.prisma.listing.count();
-        const activeListings = await this.prisma.listing.count({ where: { status: true } });
+    async getStats(currentUser) {
+        const stateId = (0, state_scope_1.resolveScopedStateId)(currentUser);
+        const since = new Date();
+        since.setDate(since.getDate() - 7);
+        const userWhere = {
+            role: { name: client_1.RoleName.END_USER },
+            ...(stateId ? { stateId } : {}),
+        };
+        const providerWhere = stateId ? { stateId } : {};
+        const [totalUsers, activeUsers, inactiveUsers, totalServiceProviders, activeServiceProviders, inactiveServiceProviders, listings, activeListings, listEnquiries, productEnquiries, last7ActiveUsers, last7ActiveServiceProviders, last7ActiveListings,] = await Promise.all([
+            this.prisma.user.count({ where: userWhere }),
+            this.prisma.user.count({ where: { ...userWhere, isActive: true } }),
+            this.prisma.user.count({ where: { ...userWhere, isActive: false } }),
+            this.prisma.serviceProvider.count({ where: providerWhere }),
+            this.prisma.serviceProvider.count({ where: { ...providerWhere, isActive: true } }),
+            this.prisma.serviceProvider.count({ where: { ...providerWhere, isActive: false } }),
+            this.prisma.marketplaceProduct.count(),
+            this.prisma.marketplaceProduct.count({ where: { isActive: true } }),
+            this.prisma.enquiry.count({ where: { kind: 'PROVIDER' } }),
+            this.prisma.enquiry.count({ where: { kind: 'USER' } }),
+            this.prisma.user.count({
+                where: { ...userWhere, isActive: true, createdAt: { gte: since } },
+            }),
+            this.prisma.serviceProvider.count({
+                where: { ...providerWhere, isActive: true, createdAt: { gte: since } },
+            }),
+            this.prisma.marketplaceProduct.count({
+                where: { isActive: true, createdAt: { gte: since } },
+            }),
+        ]);
         return {
-            totalUsers: 43,
-            activeUsers: 32,
-            inactiveUsers: 11,
-            totalServiceProviders: 531,
-            activeServiceProviders: 530,
-            inactiveServiceProviders: 1,
-            listings: totalListings,
-            activeListings: activeListings,
-            listEnquiries: totalEnquiries,
-            productEnquiries: 10,
+            totalUsers,
+            activeUsers,
+            inactiveUsers,
+            totalServiceProviders,
+            activeServiceProviders,
+            inactiveServiceProviders,
+            listings,
+            activeListings,
+            listEnquiries,
+            productEnquiries,
+            last7ActiveUsers,
+            last7ActiveServiceProviders,
+            last7ActiveListings,
         };
     }
 };

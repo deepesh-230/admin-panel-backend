@@ -1,8 +1,9 @@
+import { type AuthUser } from '../common/decorators/current-user.decorator';
 import { DashboardService } from './dashboard.service';
 export declare class DashboardController {
     private readonly dashboardService;
     constructor(dashboardService: DashboardService);
-    getStats(): Promise<{
+    getStats(user: AuthUser): Promise<{
         totalUsers: number;
         activeUsers: number;
         inactiveUsers: number;
@@ -13,5 +14,8 @@ export declare class DashboardController {
         activeListings: number;
         listEnquiries: number;
         productEnquiries: number;
+        last7ActiveUsers: number;
+        last7ActiveServiceProviders: number;
+        last7ActiveListings: number;
     }>;
 }
