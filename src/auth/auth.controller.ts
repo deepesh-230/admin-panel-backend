@@ -64,7 +64,13 @@ export class AuthController {
   }
 
   @Get('me')
-  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.END_USER, RoleName.SERVICE_PROVIDER_ADMIN)
+  @Roles(
+    RoleName.ADMIN,
+    RoleName.STATE_ADMIN,
+    RoleName.END_USER,
+    RoleName.SERVICE_PROVIDER_ADMIN,
+    RoleName.VOLUNTEER,
+  )
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
   }

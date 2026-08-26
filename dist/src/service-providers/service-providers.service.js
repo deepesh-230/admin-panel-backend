@@ -110,6 +110,21 @@ let ServiceProvidersService = class ServiceProvidersService {
             }
         }
     }
+    async assertProviderAdminAccess(currentUser, providerId) {
+        if (currentUser.role !== client_1.RoleName.SERVICE_PROVIDER_ADMIN)
+            return;
+        const assignment = await this.prisma.serviceProviderAdmin.findUnique({
+            where: {
+                serviceProviderId_userId: {
+                    serviceProviderId: providerId,
+                    userId: currentUser.id,
+                },
+            },
+        });
+        if (!assignment) {
+            throw new common_1.ForbiddenException('You can only access providers you administer');
+        }
+    }
     async getScopedOrThrow(id, currentUser) {
         const provider = await this.prisma.serviceProvider.findUnique({
             where: { id },
@@ -118,6 +133,7 @@ let ServiceProvidersService = class ServiceProvidersService {
         if (!provider)
             throw new common_1.NotFoundException('Service provider not found');
         (0, state_scope_1.assertStateAccess)(currentUser, provider.stateId);
+        await this.assertProviderAdminAccess(currentUser, id);
         return provider;
     }
     async resolveKeywordSubcategoryIds(term) {
@@ -132,6 +148,9 @@ let ServiceProvidersService = class ServiceProvidersService {
     }
     async buildSearchWhere(query, options) {
         const where = {};
+        if (options?.providerAdminUserId) {
+            where.admins = { some: { userId: options.providerAdminUserId } };
+        }
         if (options?.forceApprovedActive) {
             where.approvalStatus = client_1.ProviderApprovalStatus.APPROVED;
             where.isActive = true;
@@ -278,7 +297,8 @@ let ServiceProvidersService = class ServiceProvidersService {
     }
     async findAll(currentUser, query) {
         const scopedStateId = (0, state_scope_1.resolveScopedStateId)(currentUser, query.stateId);
-        return this.runSearch(query, { scopedStateId });
+        const providerAdminUserId = currentUser.role === client_1.RoleName.SERVICE_PROVIDER_ADMIN ? currentUser.id : undefined;
+        return this.runSearch(query, { scopedStateId, providerAdminUserId });
     }
     async searchPublic(query) {
         if ((query.latitude != null || query.longitude != null || query.radius != null) &&
@@ -349,6 +369,14 @@ let ServiceProvidersService = class ServiceProvidersService {
     }
     async update(id, dto, currentUser) {
         const existing = await this.getScopedOrThrow(id, currentUser);
+        if (currentUser.role === client_1.RoleName.SERVICE_PROVIDER_ADMIN) {
+            if (dto.stateId !== undefined && dto.stateId !== existing.stateId) {
+                throw new common_1.ForbiddenException('Service provider admins cannot change state');
+            }
+            if (dto.isActive !== undefined) {
+                throw new common_1.ForbiddenException('Service provider admins cannot change active status');
+            }
+        }
         const nextCategoryId = dto.categoryId ?? existing.categoryId;
         const nextSubcategoryId = dto.subcategoryId === undefined ? existing.subcategoryId : dto.subcategoryId;
         await this.assertCategoryLinks(nextCategoryId, nextSubcategoryId);

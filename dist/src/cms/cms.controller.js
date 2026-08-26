@@ -18,7 +18,7 @@ const client_1 = require("@prisma/client");
 const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const cms_service_1 = require("./cms.service");
-function resourceController(path, model, permission, searchFields, extraWhere) {
+function resourceController(path, model, permission, searchFields, extraWhere, roles = [client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN]) {
     let ResourceController = class ResourceController {
         cms;
         constructor(cms) {
@@ -86,7 +86,7 @@ function resourceController(path, model, permission, searchFields, extraWhere) {
     ], ResourceController.prototype, "remove", null);
     ResourceController = __decorate([
         (0, common_1.Controller)(path),
-        (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+        (0, roles_decorator_1.Roles)(...roles),
         __metadata("design:paramtypes", [cms_service_1.CmsService])
     ], ResourceController);
     return ResourceController;
@@ -202,7 +202,7 @@ exports.JobAlertsController = JobAlertsController;
 class SuggestionsController extends resourceController('suggestions', 'suggestion', 'cms', ['title', 'description']) {
 }
 exports.SuggestionsController = SuggestionsController;
-class VolunteersController extends resourceController('volunteers', 'volunteer', 'volunteers', ['name', 'email', 'phone', 'location']) {
+class VolunteersController extends resourceController('volunteers', 'volunteer', 'volunteers', ['name', 'email', 'phone', 'location'], undefined, [client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.VOLUNTEER]) {
 }
 exports.VolunteersController = VolunteersController;
 class MarketplaceProductsController extends resourceController('marketplace/products', 'marketplaceProduct', 'marketplace', ['name', 'sellerName', 'phone']) {

@@ -23,7 +23,7 @@ import {
 import { ServiceProvidersService } from './service-providers.service';
 
 @Controller('service-providers')
-@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
 export class ServiceProvidersController {
   constructor(private readonly serviceProvidersService: ServiceProvidersService) {}
 
@@ -53,6 +53,7 @@ export class ServiceProvidersController {
   }
 
   @Post()
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   create(@Body() dto: CreateServiceProviderDto, @CurrentUser() user: AuthUser) {
     return this.serviceProvidersService.create(dto, user);
@@ -69,18 +70,21 @@ export class ServiceProvidersController {
   }
 
   @Delete(':id')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.serviceProvidersService.remove(id, user);
   }
 
   @Post(':id/approve')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   approve(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.serviceProvidersService.approve(id, user);
   }
 
   @Post(':id/reject')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   reject(
     @Param('id') id: string,
@@ -91,12 +95,14 @@ export class ServiceProvidersController {
   }
 
   @Get(':id/admins')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.read')
   listAdmins(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.serviceProvidersService.listAdmins(id, user);
   }
 
   @Post(':id/admins')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   assignAdmin(
     @Param('id') id: string,
@@ -107,6 +113,7 @@ export class ServiceProvidersController {
   }
 
   @Delete(':id/admins/:userId')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   @Permissions('providers.write')
   removeAdmin(
     @Param('id') id: string,

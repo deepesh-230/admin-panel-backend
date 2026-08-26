@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -120,6 +121,22 @@ export class ServiceProvidersService {
     }
   }
 
+  private async assertProviderAdminAccess(currentUser: AuthUser, providerId: string) {
+    if (currentUser.role !== RoleName.SERVICE_PROVIDER_ADMIN) return;
+
+    const assignment = await this.prisma.serviceProviderAdmin.findUnique({
+      where: {
+        serviceProviderId_userId: {
+          serviceProviderId: providerId,
+          userId: currentUser.id,
+        },
+      },
+    });
+    if (!assignment) {
+      throw new ForbiddenException('You can only access providers you administer');
+    }
+  }
+
   private async getScopedOrThrow(id: string, currentUser: AuthUser) {
     const provider = await this.prisma.serviceProvider.findUnique({
       where: { id },
@@ -127,6 +144,7 @@ export class ServiceProvidersService {
     });
     if (!provider) throw new NotFoundException('Service provider not found');
     assertStateAccess(currentUser, provider.stateId);
+    await this.assertProviderAdminAccess(currentUser, id);
     return provider;
   }
 
@@ -143,9 +161,17 @@ export class ServiceProvidersService {
 
   private async buildSearchWhere(
     query: ListServiceProvidersQueryDto,
-    options?: { forceApprovedActive?: boolean; scopedStateId?: string },
+    options?: {
+      forceApprovedActive?: boolean;
+      scopedStateId?: string;
+      providerAdminUserId?: string;
+    },
   ): Promise<Prisma.ServiceProviderWhereInput> {
     const where: Prisma.ServiceProviderWhereInput = {};
+
+    if (options?.providerAdminUserId) {
+      where.admins = { some: { userId: options.providerAdminUserId } };
+    }
 
     if (options?.forceApprovedActive) {
       where.approvalStatus = ProviderApprovalStatus.APPROVED;
@@ -212,7 +238,11 @@ export class ServiceProvidersService {
 
   private async runSearch(
     query: ListServiceProvidersQueryDto,
-    options?: { forceApprovedActive?: boolean; scopedStateId?: string },
+    options?: {
+      forceApprovedActive?: boolean;
+      scopedStateId?: string;
+      providerAdminUserId?: string;
+    },
   ) {
     const page = query.page || 1;
     const limit = Math.min(query.limit || 20, 100);
@@ -318,7 +348,9 @@ export class ServiceProvidersService {
 
   async findAll(currentUser: AuthUser, query: ListServiceProvidersQueryDto) {
     const scopedStateId = resolveScopedStateId(currentUser, query.stateId);
-    return this.runSearch(query, { scopedStateId });
+    const providerAdminUserId =
+      currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN ? currentUser.id : undefined;
+    return this.runSearch(query, { scopedStateId, providerAdminUserId });
   }
 
   /** Mobile/public discovery: approved + active only */
@@ -404,6 +436,15 @@ export class ServiceProvidersService {
 
   async update(id: string, dto: UpdateServiceProviderDto, currentUser: AuthUser) {
     const existing = await this.getScopedOrThrow(id, currentUser);
+
+    if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {
+      if (dto.stateId !== undefined && dto.stateId !== existing.stateId) {
+        throw new ForbiddenException('Service provider admins cannot change state');
+      }
+      if (dto.isActive !== undefined) {
+        throw new ForbiddenException('Service provider admins cannot change active status');
+      }
+    }
 
     const nextCategoryId = dto.categoryId ?? existing.categoryId;
     const nextSubcategoryId =

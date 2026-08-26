@@ -5,7 +5,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { EnquiriesService } from './enquiries.service';
 
 @Controller('enquiries')
-@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN, RoleName.VOLUNTEER)
 export class EnquiriesController {
   constructor(private readonly enquiriesService: EnquiriesService) {}
 

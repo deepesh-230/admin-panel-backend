@@ -114,7 +114,22 @@ async function main() {
         {
             name: client_1.RoleName.SERVICE_PROVIDER_ADMIN,
             description: 'Service provider administrator',
-            permissionCodes: ['enquiries.read', 'enquiries.write', 'providers.read'],
+            permissionCodes: [
+                'enquiries.read',
+                'enquiries.write',
+                'providers.read',
+                'providers.write',
+            ],
+        },
+        {
+            name: client_1.RoleName.VOLUNTEER,
+            description: 'Volunteer coordinator',
+            permissionCodes: [
+                'volunteers.read',
+                'volunteers.write',
+                'enquiries.read',
+                'enquiries.write',
+            ],
         },
     ];
     for (const roleDef of roles) {

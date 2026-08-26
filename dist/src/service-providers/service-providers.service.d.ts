@@ -6,6 +6,7 @@ export declare class ServiceProvidersService {
     constructor(prisma: PrismaService);
     private sanitize;
     private assertCategoryLinks;
+    private assertProviderAdminAccess;
     private getScopedOrThrow;
     private resolveKeywordSubcategoryIds;
     private buildSearchWhere;

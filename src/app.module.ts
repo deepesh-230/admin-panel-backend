@@ -20,6 +20,7 @@ import { ServiceProvidersModule } from './service-providers/service-providers.mo
 import { StateAdminsModule } from './state-admins/state-admins.module';
 import { StatesModule } from './states/states.module';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
+import { VolunteerAdminsModule } from './volunteer-admins/volunteer-admins.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { UsersModule } from './users/users.module';
     KeywordsModule,
     UsersModule,
     ServiceProvidersModule,
+    VolunteerAdminsModule,
   ],
   controllers: [AppController],
   providers: [

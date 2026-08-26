@@ -110,7 +110,7 @@ __decorate([
 ], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, common_1.Get)('me'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN, client_1.RoleName.VOLUNTEER),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

@@ -12,79 +12,84 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnquiriesController = void 0;
+exports.VolunteerAdminsController = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
-const enquiries_service_1 = require("./enquiries.service");
-let EnquiriesController = class EnquiriesController {
-    enquiriesService;
-    constructor(enquiriesService) {
-        this.enquiriesService = enquiriesService;
+const volunteer_admin_dto_1 = require("./dto/volunteer-admin.dto");
+const volunteer_admins_service_1 = require("./volunteer-admins.service");
+let VolunteerAdminsController = class VolunteerAdminsController {
+    volunteerAdminsService;
+    constructor(volunteerAdminsService) {
+        this.volunteerAdminsService = volunteerAdminsService;
     }
-    findAll(search, kind) {
-        return this.enquiriesService.findAll(search, kind);
+    findAll(search, isActive) {
+        const activeFilter = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+        return this.volunteerAdminsService.findAll({ search, isActive: activeFilter });
     }
     findOne(id) {
-        return this.enquiriesService.findOne(id);
+        return this.volunteerAdminsService.findOne(id);
     }
-    create(body) {
-        return this.enquiriesService.create(body);
+    create(dto) {
+        return this.volunteerAdminsService.create(dto);
     }
-    update(id, body) {
-        return this.enquiriesService.update(id, body);
+    update(id, dto) {
+        return this.volunteerAdminsService.update(id, dto);
     }
     remove(id) {
-        return this.enquiriesService.remove(id);
+        return this.volunteerAdminsService.remove(id);
     }
 };
-exports.EnquiriesController = EnquiriesController;
+exports.VolunteerAdminsController = VolunteerAdminsController;
 __decorate([
     (0, common_1.Get)(),
-    (0, permissions_decorator_1.Permissions)('enquiries.read'),
+    (0, permissions_decorator_1.Permissions)('users.read'),
     __param(0, (0, common_1.Query)('search')),
-    __param(1, (0, common_1.Query)('kind')),
+    __param(1, (0, common_1.Query)('isActive')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
-], EnquiriesController.prototype, "findAll", null);
+], VolunteerAdminsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, permissions_decorator_1.Permissions)('enquiries.read'),
+    (0, permissions_decorator_1.Permissions)('users.read'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], EnquiriesController.prototype, "findOne", null);
+], VolunteerAdminsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, permissions_decorator_1.Permissions)('enquiries.write'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('users.write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [volunteer_admin_dto_1.CreateVolunteerAdminDto]),
     __metadata("design:returntype", void 0)
-], EnquiriesController.prototype, "create", null);
+], VolunteerAdminsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, permissions_decorator_1.Permissions)('enquiries.write'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('users.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, volunteer_admin_dto_1.UpdateVolunteerAdminDto]),
     __metadata("design:returntype", void 0)
-], EnquiriesController.prototype, "update", null);
+], VolunteerAdminsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, permissions_decorator_1.Permissions)('enquiries.write'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN),
+    (0, permissions_decorator_1.Permissions)('users.write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
-], EnquiriesController.prototype, "remove", null);
-exports.EnquiriesController = EnquiriesController = __decorate([
-    (0, common_1.Controller)('enquiries'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN, client_1.RoleName.VOLUNTEER),
-    __metadata("design:paramtypes", [enquiries_service_1.EnquiriesService])
-], EnquiriesController);
-//# sourceMappingURL=enquiries.controller.js.map
+], VolunteerAdminsController.prototype, "remove", null);
+exports.VolunteerAdminsController = VolunteerAdminsController = __decorate([
+    (0, common_1.Controller)('volunteer-admins'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [volunteer_admins_service_1.VolunteerAdminsService])
+], VolunteerAdminsController);
+//# sourceMappingURL=volunteer-admins.controller.js.map

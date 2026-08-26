@@ -29,6 +29,7 @@ const service_providers_module_1 = require("./service-providers/service-provider
 const state_admins_module_1 = require("./state-admins/state-admins.module");
 const states_module_1 = require("./states/states.module");
 const subcategories_module_1 = require("./subcategories/subcategories.module");
+const volunteer_admins_module_1 = require("./volunteer-admins/volunteer-admins.module");
 const users_module_1 = require("./users/users.module");
 let AppModule = class AppModule {
 };
@@ -50,6 +51,7 @@ exports.AppModule = AppModule = __decorate([
             keywords_module_1.KeywordsModule,
             users_module_1.UsersModule,
             service_providers_module_1.ServiceProvidersModule,
+            volunteer_admins_module_1.VolunteerAdminsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

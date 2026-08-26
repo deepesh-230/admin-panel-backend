@@ -100,6 +100,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
@@ -119,6 +120,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
@@ -128,6 +130,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "remove", null);
 __decorate([
     (0, common_1.Post)(':id/approve'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
@@ -137,6 +140,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "approve", null);
 __decorate([
     (0, common_1.Post)(':id/reject'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -147,6 +151,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "reject", null);
 __decorate([
     (0, common_1.Get)(':id/admins'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.read'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
@@ -156,6 +161,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "listAdmins", null);
 __decorate([
     (0, common_1.Post)(':id/admins'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -166,6 +172,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "assignAdmin", null);
 __decorate([
     (0, common_1.Delete)(':id/admins/:userId'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
     (0, permissions_decorator_1.Permissions)('providers.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Param)('userId')),
@@ -176,7 +183,7 @@ __decorate([
 ], ServiceProvidersController.prototype, "removeAdmin", null);
 exports.ServiceProvidersController = ServiceProvidersController = __decorate([
     (0, common_1.Controller)('service-providers'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __metadata("design:paramtypes", [service_providers_service_1.ServiceProvidersService])
 ], ServiceProvidersController);
 //# sourceMappingURL=service-providers.controller.js.map

@@ -85,7 +85,22 @@ async function main() {
     {
       name: RoleName.SERVICE_PROVIDER_ADMIN,
       description: 'Service provider administrator',
-      permissionCodes: ['enquiries.read', 'enquiries.write', 'providers.read'],
+      permissionCodes: [
+        'enquiries.read',
+        'enquiries.write',
+        'providers.read',
+        'providers.write',
+      ],
+    },
+    {
+      name: RoleName.VOLUNTEER,
+      description: 'Volunteer coordinator',
+      permissionCodes: [
+        'volunteers.read',
+        'volunteers.write',
+        'enquiries.read',
+        'enquiries.write',
+      ],
     },
   ];
 

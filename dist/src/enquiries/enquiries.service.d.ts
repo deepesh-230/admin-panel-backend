@@ -10,11 +10,11 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
-        kind: string;
         subCategory: string;
         product: string;
         date: string;
         createdBy: string;
+        kind: string;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
@@ -24,11 +24,11 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
-        kind: string;
         subCategory: string;
         product: string;
         date: string;
         createdBy: string;
+        kind: string;
     }>;
     create(data: {
         category: string;
@@ -47,11 +47,11 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
-        kind: string;
         subCategory: string;
         product: string;
         date: string;
         createdBy: string;
+        kind: string;
     }>;
     update(id: string, data: {
         category?: string;
@@ -69,11 +69,11 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
-        kind: string;
         subCategory: string;
         product: string;
         date: string;
         createdBy: string;
+        kind: string;
     }>;
     remove(id: string): Promise<{
         id: string;
@@ -83,10 +83,10 @@ export declare class EnquiriesService {
         email: string;
         category: string;
         sNo: number;
-        kind: string;
         subCategory: string;
         product: string;
         date: string;
         createdBy: string;
+        kind: string;
     }>;
 }

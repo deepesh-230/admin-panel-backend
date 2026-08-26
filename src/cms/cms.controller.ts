@@ -19,9 +19,10 @@ function resourceController(
   permission: 'cms' | 'volunteers' | 'marketplace',
   searchFields: string[],
   extraWhere?: (query: Record<string, string | undefined>) => Record<string, unknown>,
+  roles: RoleName[] = [RoleName.ADMIN, RoleName.STATE_ADMIN],
 ) {
   @Controller(path)
-  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+  @Roles(...roles)
   class ResourceController {
     constructor(public readonly cms: CmsService) {}
 
@@ -147,6 +148,8 @@ export class VolunteersController extends resourceController(
   'volunteer',
   'volunteers',
   ['name', 'email', 'phone', 'location'],
+  undefined,
+  [RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.VOLUNTEER],
 ) {}
 
 export class MarketplaceProductsController extends resourceController(
