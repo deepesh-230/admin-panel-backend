@@ -12,6 +12,7 @@ import { RoleName } from '@prisma/client';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CmsModel, CmsService } from './cms.service';
+import { BroadcastsService } from './broadcasts.service';
 
 function resourceController(
   path: string,
@@ -73,7 +74,10 @@ export class FaqsController extends resourceController('faqs', 'faq', 'cms', [
 @Controller('useful-links')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
 export class UsefulLinksController {
-  constructor(private readonly cms: CmsService) {}
+  constructor(
+    private readonly cms: CmsService,
+    private readonly broadcasts: BroadcastsService,
+  ) {}
 
   @Get()
   @Permissions('cms.read')
@@ -96,7 +100,7 @@ export class UsefulLinksController {
   @Patch(':id/broadcast')
   @Permissions('cms.write')
   broadcast(@Param('id') id: string) {
-    return this.cms.broadcastLink(id);
+    return this.broadcasts.broadcastUsefulLink(id);
   }
 
   @Patch(':id')
@@ -131,10 +135,50 @@ export class BlogsController extends resourceController('blogs', 'blog', 'cms', 
   'description',
 ]) {}
 
-export class JobAlertsController extends resourceController('job-alerts', 'jobAlert', 'cms', [
-  'title',
-  'description',
-]) {}
+@Controller('job-alerts')
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+export class JobAlertsController {
+  constructor(
+    private readonly cms: CmsService,
+    private readonly broadcasts: BroadcastsService,
+  ) {}
+
+  @Get()
+  @Permissions('cms.read')
+  findAll(@Query('search') search?: string) {
+    return this.cms.findAll('jobAlert', search, ['title', 'description']);
+  }
+
+  @Get(':id')
+  @Permissions('cms.read')
+  findOne(@Param('id') id: string) {
+    return this.cms.findOne('jobAlert', id);
+  }
+
+  @Post()
+  @Permissions('cms.write')
+  create(@Body() body: Record<string, unknown>) {
+    return this.cms.create('jobAlert', body);
+  }
+
+  @Patch(':id/broadcast')
+  @Permissions('cms.write')
+  broadcast(@Param('id') id: string) {
+    return this.broadcasts.broadcastJobAlert(id);
+  }
+
+  @Patch(':id')
+  @Permissions('cms.write')
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.cms.update('jobAlert', id, body);
+  }
+
+  @Delete(':id')
+  @Permissions('cms.write')
+  remove(@Param('id') id: string) {
+    return this.cms.remove('jobAlert', id);
+  }
+}
 
 export class SuggestionsController extends resourceController(
   'suggestions',

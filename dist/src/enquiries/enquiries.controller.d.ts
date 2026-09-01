@@ -1,13 +1,28 @@
+import { type AuthUser } from '../common/decorators/current-user.decorator';
+import { CreateEnquiryDto, ListEnquiriesQueryDto, UpdateEnquiryDto } from './dto/enquiry.dto';
 import { EnquiriesService } from './enquiries.service';
 export declare class EnquiriesController {
     private readonly enquiriesService;
     constructor(enquiriesService: EnquiriesService);
-    findAll(search?: string, kind?: string): Promise<{
+    findAll(user: AuthUser, query: ListEnquiriesQueryDto): Promise<({
+        state: {
+            id: string;
+            code: string | null;
+            name: string;
+        } | null;
+        provider: {
+            id: string;
+            name: string;
+            stateId: string;
+        } | null;
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
         email: string;
+        phone: string | null;
+        stateId: string | null;
         category: string;
         sNo: number;
         subCategory: string;
@@ -15,13 +30,30 @@ export declare class EnquiriesController {
         date: string;
         createdBy: string;
         kind: string;
-    }[]>;
-    findOne(id: string): Promise<{
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
+        marketplaceProductId: string | null;
+    })[]>;
+    findOne(id: string, user: AuthUser): Promise<{
+        state: {
+            id: string;
+            code: string | null;
+            name: string;
+        } | null;
+        provider: {
+            id: string;
+            name: string;
+            stateId: string;
+        } | null;
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
         email: string;
+        phone: string | null;
+        stateId: string | null;
         category: string;
         sNo: number;
         subCategory: string;
@@ -29,22 +61,30 @@ export declare class EnquiriesController {
         date: string;
         createdBy: string;
         kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
+        marketplaceProductId: string | null;
     }>;
-    create(body: {
-        category: string;
-        subCategory: string;
-        product: string;
-        name?: string;
-        email: string;
-        date: string;
-        createdBy: string;
-        kind?: string;
-    }): Promise<{
+    create(user: AuthUser, body: CreateEnquiryDto): Promise<{
+        state: {
+            id: string;
+            code: string | null;
+            name: string;
+        } | null;
+        provider: {
+            id: string;
+            name: string;
+            stateId: string;
+        } | null;
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
         email: string;
+        phone: string | null;
+        stateId: string | null;
         category: string;
         sNo: number;
         subCategory: string;
@@ -52,21 +92,30 @@ export declare class EnquiriesController {
         date: string;
         createdBy: string;
         kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
+        marketplaceProductId: string | null;
     }>;
-    update(id: string, body: {
-        category?: string;
-        subCategory?: string;
-        product?: string;
-        name?: string;
-        email?: string;
-        date?: string;
-        createdBy?: string;
-    }): Promise<{
+    update(id: string, user: AuthUser, body: UpdateEnquiryDto): Promise<{
+        state: {
+            id: string;
+            code: string | null;
+            name: string;
+        } | null;
+        provider: {
+            id: string;
+            name: string;
+            stateId: string;
+        } | null;
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
         email: string;
+        phone: string | null;
+        stateId: string | null;
         category: string;
         sNo: number;
         subCategory: string;
@@ -74,13 +123,19 @@ export declare class EnquiriesController {
         date: string;
         createdBy: string;
         kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
+        marketplaceProductId: string | null;
     }>;
-    remove(id: string): Promise<{
+    remove(id: string, user: AuthUser): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
         email: string;
+        phone: string | null;
+        stateId: string | null;
         category: string;
         sNo: number;
         subCategory: string;
@@ -88,5 +143,9 @@ export declare class EnquiriesController {
         date: string;
         createdBy: string;
         kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
+        marketplaceProductId: string | null;
     }>;
 }

@@ -8,7 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { RoleName } from '@prisma/client';
+import { CategoryType, RoleName } from '@prisma/client';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CategoriesService } from './categories.service';
@@ -24,10 +24,13 @@ export class CategoriesController {
   findAll(
     @Query('search') search?: string,
     @Query('isActive') isActive?: string,
+    @Query('type') type?: CategoryType,
   ) {
     const activeFilter =
       isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-    return this.categoriesService.findAll(search, activeFilter);
+    const typeFilter =
+      type === CategoryType.CARE || type === CategoryType.SERVICE ? type : undefined;
+    return this.categoriesService.findAll(search, activeFilter, typeFilter);
   }
 
   @Get(':categoryId/subcategories')

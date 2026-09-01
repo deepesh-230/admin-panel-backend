@@ -1,0 +1,75 @@
+import { type AuthUser } from '../common/decorators/current-user.decorator';
+import { BroadcastsService } from '../cms/broadcasts.service';
+import { CreateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import { MarketplaceService } from '../marketplace/marketplace.service';
+import { PrismaService } from '../prisma/prisma.service';
+export declare class ProfileController {
+    private readonly marketplace;
+    private readonly prisma;
+    private readonly broadcasts;
+    constructor(marketplace: MarketplaceService, prisma: PrismaService, broadcasts: BroadcastsService);
+    myMarketplaceProducts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+        location: string | null;
+    }[]>;
+    createMarketplaceProduct(user: AuthUser, dto: CreateMarketplaceProductDto): Promise<{
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+        location: string | null;
+    }>;
+    listBroadcasts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        createdAt: Date;
+        userId: string;
+        title: string;
+        url: string | null;
+        contentType: import("@prisma/client").$Enums.BroadcastContentType;
+        body: string | null;
+        readAt: Date | null;
+        usefulLinkId: string | null;
+        jobAlertId: string | null;
+    }[]>;
+    markBroadcastRead(user: AuthUser, id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        userId: string;
+        title: string;
+        url: string | null;
+        contentType: import("@prisma/client").$Enums.BroadcastContentType;
+        body: string | null;
+        readAt: Date | null;
+        usefulLinkId: string | null;
+        jobAlertId: string | null;
+    }>;
+}

@@ -50,13 +50,6 @@ let CmsService = class CmsService {
         await this.findOne(model, id);
         return this.client(model).delete({ where: { id } });
     }
-    async broadcastLink(id) {
-        await this.findOne('usefulLink', id);
-        return this.client('usefulLink').update({
-            where: { id },
-            data: { broadcastAt: new Date() },
-        });
-    }
 };
 exports.CmsService = CmsService;
 exports.CmsService = CmsService = __decorate([

@@ -19,10 +19,12 @@ let CategoriesService = class CategoriesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async findAll(search, isActive) {
+    async findAll(search, isActive, type) {
         const where = {};
         if (typeof isActive === 'boolean')
             where.isActive = isActive;
+        if (type)
+            where.type = type;
         if (search?.trim()) {
             where.OR = [
                 { name: { contains: search.trim(), mode: 'insensitive' } },
@@ -73,6 +75,7 @@ let CategoriesService = class CategoriesService {
                     description: dto.description,
                     isActive: dto.isActive ?? true,
                     sortOrder: dto.sortOrder ?? 0,
+                    type: dto.type ?? client_1.CategoryType.SERVICE,
                 },
             });
         }
@@ -100,6 +103,7 @@ let CategoriesService = class CategoriesService {
                     ...(dto.description !== undefined && { description: dto.description }),
                     ...(dto.isActive !== undefined && { isActive: dto.isActive }),
                     ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+                    ...(dto.type !== undefined && { type: dto.type }),
                 },
             });
         }

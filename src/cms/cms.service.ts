@@ -65,12 +65,4 @@ export class CmsService {
     await this.findOne(model, id);
     return this.client(model).delete({ where: { id } });
   }
-
-  async broadcastLink(id: string) {
-    await this.findOne('usefulLink', id);
-    return this.client('usefulLink').update({
-      where: { id },
-      data: { broadcastAt: new Date() },
-    });
-  }
 }

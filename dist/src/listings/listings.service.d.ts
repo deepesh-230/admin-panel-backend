@@ -13,8 +13,8 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
@@ -27,8 +27,8 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }>;
     create(data: {
         category: string;
@@ -50,8 +50,8 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }>;
     update(id: string, data: {
         category?: string;
@@ -73,8 +73,8 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }>;
     updateStatus(id: string, status: boolean): Promise<{
         id: string;
@@ -87,8 +87,8 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }>;
     remove(id: string): Promise<{
         id: string;
@@ -101,7 +101,7 @@ export declare class ListingsService {
         product: string;
         date: string;
         createdBy: string;
-        image: string;
         status: boolean;
+        image: string;
     }>;
 }

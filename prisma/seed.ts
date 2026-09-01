@@ -1,4 +1,4 @@
-import { PrismaClient, RoleName } from '@prisma/client';
+import { PaymentPurpose, PaymentStatus, PrismaClient, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -26,6 +26,8 @@ const PERMISSIONS = [
   { code: 'volunteers.write', description: 'Manage volunteers' },
   { code: 'marketplace.read', description: 'View marketplace products, buyers, and sellers' },
   { code: 'marketplace.write', description: 'Manage marketplace products, buyers, and sellers' },
+  { code: 'payments.read', description: 'View payment records' },
+  { code: 'payments.write', description: 'Manage payment records' },
 ];
 
 function slugify(name: string): string {
@@ -75,6 +77,8 @@ async function main() {
         'volunteers.write',
         'marketplace.read',
         'marketplace.write',
+        'payments.read',
+        'payments.write',
       ],
     },
     {
@@ -176,6 +180,7 @@ async function main() {
       name: 'Physical Disabilities',
       description: 'Services and aids related to physical disabilities',
       sortOrder: 1,
+      type: 'CARE' as const,
       subcategories: [
         {
           name: 'Mobility Aids',
@@ -188,6 +193,7 @@ async function main() {
       name: 'Sensory Disabilities',
       description: 'Services and aids related to sensory disabilities',
       sortOrder: 2,
+      type: 'SERVICE' as const,
       subcategories: [
         {
           name: 'Vision Support',
@@ -206,6 +212,7 @@ async function main() {
         sortOrder: cat.sortOrder,
         isActive: true,
         slug: slugify(cat.name),
+        type: cat.type ?? 'SERVICE',
       },
       create: {
         name: cat.name,
@@ -213,6 +220,7 @@ async function main() {
         sortOrder: cat.sortOrder,
         isActive: true,
         slug: slugify(cat.name),
+        type: cat.type ?? 'SERVICE',
       },
     });
 
@@ -285,8 +293,8 @@ async function main() {
   for (const eq of enquiriesData) {
     await prisma.enquiry.upsert({
       where: { id: eq.id },
-      update: { kind: eq.kind },
-      create: eq,
+      update: { kind: eq.kind, stateId: defaultState.id, status: 'NEW' },
+      create: { ...eq, stateId: defaultState.id, status: 'NEW' },
     });
   }
 
@@ -355,6 +363,260 @@ async function main() {
       });
     }
   }
+
+  const mobilityProvider = await prisma.serviceProvider.findFirst({
+    where: { name: 'Hyderabad Mobility Care Centre' },
+  });
+  if (mobilityProvider) {
+    await prisma.enquiry.updateMany({
+      where: { kind: 'PROVIDER' },
+      data: { providerId: mobilityProvider.id, stateId: defaultState.id },
+    });
+  }
+
+  const cmsPages = [
+    {
+      slug: 'about',
+      title: 'About Us',
+      content:
+        'Divyaang Disha connects persons with disabilities to verified service providers, resources, and community support across India.',
+    },
+    {
+      slug: 'privacy-policy',
+      title: 'Privacy Policy',
+      content:
+        'We collect only the information needed to operate your account and improve our services. We do not sell your personal data.',
+    },
+    {
+      slug: 'terms',
+      title: 'Terms & Conditions',
+      content:
+        'By using Divyaang Disha you agree to use the platform respectfully and to provide accurate information in listings and enquiries.',
+    },
+  ];
+
+  for (const page of cmsPages) {
+    await prisma.cmsPage.upsert({
+      where: { slug: page.slug },
+      update: { title: page.title, content: page.content, isActive: true },
+      create: { ...page, isActive: true },
+    });
+  }
+
+  await prisma.faq.upsert({
+    where: { id: 'seed-faq-1' },
+    update: { title: 'What is Divyaang Disha?', description: 'A directory of disability services and support.', isActive: true },
+    create: {
+      id: 'seed-faq-1',
+      title: 'What is Divyaang Disha?',
+      description: 'A directory of disability services and support.',
+      isActive: true,
+    },
+  });
+
+  await prisma.blog.upsert({
+    where: { id: 'seed-blog-1' },
+    update: {
+      title: 'Welcome to Divyaang Disha',
+      shortDescription: 'Our mobile app is now connected to the live platform.',
+      description: 'Browse approved providers, read announcements, and manage your profile from the app.',
+      isActive: true,
+    },
+    create: {
+      id: 'seed-blog-1',
+      title: 'Welcome to Divyaang Disha',
+      shortDescription: 'Our mobile app is now connected to the live platform.',
+      description: 'Browse approved providers, read announcements, and manage your profile from the app.',
+      isActive: true,
+    },
+  });
+
+  await prisma.jobAlert.upsert({
+    where: { id: 'seed-job-1' },
+    update: {
+      title: 'Inclusive hiring drive',
+      description: 'Several partner organisations are hiring across Telangana this month.',
+      postDate: '01 Sep 2026',
+      lastDate: '30 Sep 2026',
+      isActive: true,
+    },
+    create: {
+      id: 'seed-job-1',
+      title: 'Inclusive hiring drive',
+      description: 'Several partner organisations are hiring across Telangana this month.',
+      postDate: '01 Sep 2026',
+      lastDate: '30 Sep 2026',
+      isActive: true,
+    },
+  });
+
+  await prisma.usefulLink.upsert({
+    where: { id: 'seed-link-1' },
+    update: {
+      title: 'Swavlamban Card',
+      url: 'https://swavlambancard.gov.in',
+      isActive: true,
+    },
+    create: {
+      id: 'seed-link-1',
+      title: 'Swavlamban Card',
+      url: 'https://swavlambancard.gov.in',
+      isActive: true,
+    },
+  });
+
+  await prisma.marketplaceProduct.upsert({
+    where: { id: 'seed-mp-1' },
+    update: {
+      name: 'Lightweight wheelchair',
+      actualPrice: '18000',
+      offerPrice: '14999',
+      phone: '9876543210',
+      listingIntent: 'sell',
+      address: 'Hyderabad',
+      color: 'Black',
+      brand: 'EasyMove',
+      features: 'Foldable, 12 kg',
+      description: 'Gently used wheelchair in excellent condition.',
+      gallery: ['https://images.unsplash.com/photo-1576765608535-5f04d1e3b4a3?q=80&w=800&auto=format&fit=crop'],
+      isActive: true,
+    },
+    create: {
+      id: 'seed-mp-1',
+      name: 'Lightweight wheelchair',
+      actualPrice: '18000',
+      offerPrice: '14999',
+      phone: '9876543210',
+      listingIntent: 'sell',
+      address: 'Hyderabad',
+      color: 'Black',
+      brand: 'EasyMove',
+      features: 'Foldable, 12 kg',
+      description: 'Gently used wheelchair in excellent condition.',
+      gallery: ['https://images.unsplash.com/photo-1576765608535-5f04d1e3b4a3?q=80&w=800&auto=format&fit=crop'],
+      isActive: true,
+    },
+  });
+
+  await prisma.marketplaceProduct.upsert({
+    where: { id: 'seed-mp-2' },
+    update: {
+      name: 'Digital hearing aid',
+      actualPrice: '25000',
+      offerPrice: '21000',
+      phone: '9123456780',
+      listingIntent: 'buy',
+      address: 'Secunderabad',
+      color: 'Beige',
+      brand: 'HearPlus',
+      features: 'Rechargeable, noise reduction',
+      description: 'Looking to buy a mid-range hearing aid.',
+      gallery: ['https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?q=80&w=800&auto=format&fit=crop'],
+      isActive: true,
+    },
+    create: {
+      id: 'seed-mp-2',
+      name: 'Digital hearing aid',
+      actualPrice: '25000',
+      offerPrice: '21000',
+      phone: '9123456780',
+      listingIntent: 'buy',
+      address: 'Secunderabad',
+      color: 'Beige',
+      brand: 'HearPlus',
+      features: 'Rechargeable, noise reduction',
+      description: 'Looking to buy a mid-range hearing aid.',
+      gallery: ['https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?q=80&w=800&auto=format&fit=crop'],
+      isActive: true,
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: 'seed-pay-1' },
+    update: {
+      payerName: 'Ravi Kumar',
+      payerEmail: 'ravi@example.com',
+      payerPhone: '9876500001',
+      amount: 499,
+      status: PaymentStatus.SUCCESS,
+      purpose: PaymentPurpose.SPONSORSHIP,
+      planId: 'gold',
+      gateway: 'razorpay',
+      orderId: 'order_seed_gold_1',
+      paymentId: 'pay_seed_gold_1',
+      referenceNo: 'SPN-GOLD-001',
+      paidAt: new Date('2026-08-15T10:30:00Z'),
+    },
+    create: {
+      id: 'seed-pay-1',
+      payerName: 'Ravi Kumar',
+      payerEmail: 'ravi@example.com',
+      payerPhone: '9876500001',
+      amount: 499,
+      status: PaymentStatus.SUCCESS,
+      purpose: PaymentPurpose.SPONSORSHIP,
+      planId: 'gold',
+      gateway: 'razorpay',
+      orderId: 'order_seed_gold_1',
+      paymentId: 'pay_seed_gold_1',
+      referenceNo: 'SPN-GOLD-001',
+      paidAt: new Date('2026-08-15T10:30:00Z'),
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: 'seed-pay-2' },
+    update: {
+      payerName: 'Priya Sharma',
+      payerEmail: 'priya@example.com',
+      payerPhone: '9876500002',
+      amount: 199,
+      status: PaymentStatus.PENDING,
+      purpose: PaymentPurpose.SPONSORSHIP,
+      planId: 'silver',
+      gateway: 'razorpay',
+      orderId: 'order_seed_silver_1',
+      referenceNo: 'SPN-SILVER-002',
+    },
+    create: {
+      id: 'seed-pay-2',
+      payerName: 'Priya Sharma',
+      payerEmail: 'priya@example.com',
+      payerPhone: '9876500002',
+      amount: 199,
+      status: PaymentStatus.PENDING,
+      purpose: PaymentPurpose.SPONSORSHIP,
+      planId: 'silver',
+      gateway: 'razorpay',
+      orderId: 'order_seed_silver_1',
+      referenceNo: 'SPN-SILVER-002',
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: 'seed-pay-3' },
+    update: {
+      payerName: 'Anonymous donor',
+      amount: 1000,
+      status: PaymentStatus.SUCCESS,
+      purpose: PaymentPurpose.DONATION,
+      gateway: 'manual',
+      referenceNo: 'DON-003',
+      notes: 'Offline bank transfer',
+      paidAt: new Date('2026-08-20T14:00:00Z'),
+    },
+    create: {
+      id: 'seed-pay-3',
+      payerName: 'Anonymous donor',
+      amount: 1000,
+      status: PaymentStatus.SUCCESS,
+      purpose: PaymentPurpose.DONATION,
+      gateway: 'manual',
+      referenceNo: 'DON-003',
+      notes: 'Offline bank transfer',
+      paidAt: new Date('2026-08-20T14:00:00Z'),
+    },
+  });
 
   console.log('Seeding finished.');
   console.log('Default admin: admin@divyaangdisha.com / Admin@123');

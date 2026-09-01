@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateCategoryDto = exports.CreateCategoryDto = void 0;
+const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 class CreateCategoryDto {
     name;
@@ -17,6 +18,7 @@ class CreateCategoryDto {
     description;
     isActive;
     sortOrder;
+    type;
 }
 exports.CreateCategoryDto = CreateCategoryDto;
 __decorate([
@@ -44,12 +46,18 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], CreateCategoryDto.prototype, "sortOrder", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.CategoryType),
+    __metadata("design:type", String)
+], CreateCategoryDto.prototype, "type", void 0);
 class UpdateCategoryDto {
     name;
     slug;
     description;
     isActive;
     sortOrder;
+    type;
 }
 exports.UpdateCategoryDto = UpdateCategoryDto;
 __decorate([
@@ -78,4 +86,9 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], UpdateCategoryDto.prototype, "sortOrder", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.CategoryType),
+    __metadata("design:type", String)
+], UpdateCategoryDto.prototype, "type", void 0);
 //# sourceMappingURL=category.dto.js.map

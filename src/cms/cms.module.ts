@@ -12,6 +12,7 @@ import {
   VolunteersController,
 } from './cms.controller';
 import { CmsService } from './cms.service';
+import { BroadcastsService } from './broadcasts.service';
 
 @Module({
   controllers: [
@@ -26,6 +27,7 @@ import { CmsService } from './cms.service';
     MarketplaceProductsController,
     MarketplacePartiesController,
   ],
-  providers: [CmsService],
+  providers: [CmsService, BroadcastsService],
+  exports: [CmsService, BroadcastsService],
 })
 export class CmsModule {}

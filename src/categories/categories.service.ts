@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { CategoryType, Prisma } from '@prisma/client';
 import { slugify } from '../common/utils/slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
@@ -12,10 +12,11 @@ import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 export class CategoriesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(search?: string, isActive?: boolean) {
+  async findAll(search?: string, isActive?: boolean, type?: CategoryType) {
     const where: Prisma.CategoryWhereInput = {};
 
     if (typeof isActive === 'boolean') where.isActive = isActive;
+    if (type) where.type = type;
     if (search?.trim()) {
       where.OR = [
         { name: { contains: search.trim(), mode: 'insensitive' } },
@@ -70,6 +71,7 @@ export class CategoriesService {
           description: dto.description,
           isActive: dto.isActive ?? true,
           sortOrder: dto.sortOrder ?? 0,
+          type: dto.type ?? CategoryType.SERVICE,
         },
       });
     } catch (error) {
@@ -101,6 +103,7 @@ export class CategoriesService {
           ...(dto.description !== undefined && { description: dto.description }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+          ...(dto.type !== undefined && { type: dto.type }),
         },
       });
     } catch (error) {

@@ -1,9 +1,10 @@
+import { CategoryType } from '@prisma/client';
 import {
   IsBoolean,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
   Min,
 } from 'class-validator';
 
@@ -27,6 +28,10 @@ export class CreateCategoryDto {
   @IsInt()
   @Min(0)
   sortOrder?: number;
+
+  @IsOptional()
+  @IsEnum(CategoryType)
+  type?: CategoryType;
 }
 
 export class UpdateCategoryDto {
@@ -50,4 +55,8 @@ export class UpdateCategoryDto {
   @IsInt()
   @Min(0)
   sortOrder?: number;
+
+  @IsOptional()
+  @IsEnum(CategoryType)
+  type?: CategoryType;
 }

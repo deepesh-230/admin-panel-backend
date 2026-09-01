@@ -9,5 +9,4 @@ export declare class CmsService {
     create(model: CmsModel, data: Record<string, unknown>): Promise<Record<string, unknown>>;
     update(model: CmsModel, id: string, data: Record<string, unknown>): Promise<Record<string, unknown>>;
     remove(model: CmsModel, id: string): Promise<Record<string, unknown>>;
-    broadcastLink(id: string): Promise<Record<string, unknown>>;
 }

@@ -12,6 +12,7 @@ export declare class SubcategoriesService {
             name: string;
             isActive: boolean;
             slug: string | null;
+            type: import("@prisma/client").$Enums.CategoryType;
             sortOrder: number;
         };
         keywords: {

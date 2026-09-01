@@ -10,6 +10,7 @@ exports.CmsModule = void 0;
 const common_1 = require("@nestjs/common");
 const cms_controller_1 = require("./cms.controller");
 const cms_service_1 = require("./cms.service");
+const broadcasts_service_1 = require("./broadcasts.service");
 let CmsModule = class CmsModule {
 };
 exports.CmsModule = CmsModule;
@@ -27,7 +28,8 @@ exports.CmsModule = CmsModule = __decorate([
             cms_controller_1.MarketplaceProductsController,
             cms_controller_1.MarketplacePartiesController,
         ],
-        providers: [cms_service_1.CmsService],
+        providers: [cms_service_1.CmsService, broadcasts_service_1.BroadcastsService],
+        exports: [cms_service_1.CmsService, broadcasts_service_1.BroadcastsService],
     })
 ], CmsModule);
 //# sourceMappingURL=cms.module.js.map

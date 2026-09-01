@@ -18,6 +18,7 @@ const client_1 = require("@prisma/client");
 const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const cms_service_1 = require("./cms.service");
+const broadcasts_service_1 = require("./broadcasts.service");
 function resourceController(path, model, permission, searchFields, extraWhere, roles = [client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN]) {
     let ResourceController = class ResourceController {
         cms;
@@ -99,8 +100,10 @@ class FaqsController extends resourceController('faqs', 'faq', 'cms', [
 exports.FaqsController = FaqsController;
 let UsefulLinksController = class UsefulLinksController {
     cms;
-    constructor(cms) {
+    broadcasts;
+    constructor(cms, broadcasts) {
         this.cms = cms;
+        this.broadcasts = broadcasts;
     }
     findAll(search) {
         return this.cms.findAll('usefulLink', search, ['title', 'url']);
@@ -112,7 +115,7 @@ let UsefulLinksController = class UsefulLinksController {
         return this.cms.create('usefulLink', body);
     }
     broadcast(id) {
-        return this.cms.broadcastLink(id);
+        return this.broadcasts.broadcastUsefulLink(id);
     }
     update(id, body) {
         return this.cms.update('usefulLink', id, body);
@@ -174,7 +177,8 @@ __decorate([
 exports.UsefulLinksController = UsefulLinksController = __decorate([
     (0, common_1.Controller)('useful-links'),
     (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
-    __metadata("design:paramtypes", [cms_service_1.CmsService])
+    __metadata("design:paramtypes", [cms_service_1.CmsService,
+        broadcasts_service_1.BroadcastsService])
 ], UsefulLinksController);
 class HelpTicketsController extends resourceController('help-tickets', 'helpTicket', 'cms', ['name', 'email', 'message']) {
 }
@@ -193,12 +197,88 @@ class BlogsController extends resourceController('blogs', 'blog', 'cms', [
 ]) {
 }
 exports.BlogsController = BlogsController;
-class JobAlertsController extends resourceController('job-alerts', 'jobAlert', 'cms', [
-    'title',
-    'description',
-]) {
-}
+let JobAlertsController = class JobAlertsController {
+    cms;
+    broadcasts;
+    constructor(cms, broadcasts) {
+        this.cms = cms;
+        this.broadcasts = broadcasts;
+    }
+    findAll(search) {
+        return this.cms.findAll('jobAlert', search, ['title', 'description']);
+    }
+    findOne(id) {
+        return this.cms.findOne('jobAlert', id);
+    }
+    create(body) {
+        return this.cms.create('jobAlert', body);
+    }
+    broadcast(id) {
+        return this.broadcasts.broadcastJobAlert(id);
+    }
+    update(id, body) {
+        return this.cms.update('jobAlert', id, body);
+    }
+    remove(id) {
+        return this.cms.remove('jobAlert', id);
+    }
+};
 exports.JobAlertsController = JobAlertsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Query)('search')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id/broadcast'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "broadcast", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], JobAlertsController.prototype, "remove", null);
+exports.JobAlertsController = JobAlertsController = __decorate([
+    (0, common_1.Controller)('job-alerts'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [cms_service_1.CmsService,
+        broadcasts_service_1.BroadcastsService])
+], JobAlertsController);
 class SuggestionsController extends resourceController('suggestions', 'suggestion', 'cms', ['title', 'description']) {
 }
 exports.SuggestionsController = SuggestionsController;

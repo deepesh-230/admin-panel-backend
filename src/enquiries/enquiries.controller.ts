@@ -1,7 +1,22 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { RoleName } from '@prisma/client';
+import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import {
+  CreateEnquiryDto,
+  ListEnquiriesQueryDto,
+  UpdateEnquiryDto,
+} from './dto/enquiry.dto';
 import { EnquiriesService } from './enquiries.service';
 
 @Controller('enquiries')
@@ -11,55 +26,35 @@ export class EnquiriesController {
 
   @Get()
   @Permissions('enquiries.read')
-  findAll(@Query('search') search?: string, @Query('kind') kind?: string) {
-    return this.enquiriesService.findAll(search, kind);
+  findAll(@CurrentUser() user: AuthUser, @Query() query: ListEnquiriesQueryDto) {
+    return this.enquiriesService.findAll(user, query.search, query.kind, query.status);
   }
 
   @Get(':id')
   @Permissions('enquiries.read')
-  findOne(@Param('id') id: string) {
-    return this.enquiriesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.enquiriesService.findOne(id, user);
   }
 
   @Post()
   @Permissions('enquiries.write')
-  create(
-    @Body()
-    body: {
-      category: string;
-      subCategory: string;
-      product: string;
-      name?: string;
-      email: string;
-      date: string;
-      createdBy: string;
-      kind?: string;
-    },
-  ) {
-    return this.enquiriesService.create(body);
+  create(@CurrentUser() user: AuthUser, @Body() body: CreateEnquiryDto) {
+    return this.enquiriesService.create(user, body);
   }
 
   @Patch(':id')
   @Permissions('enquiries.write')
   update(
     @Param('id') id: string,
-    @Body()
-    body: {
-      category?: string;
-      subCategory?: string;
-      product?: string;
-      name?: string;
-      email?: string;
-      date?: string;
-      createdBy?: string;
-    },
+    @CurrentUser() user: AuthUser,
+    @Body() body: UpdateEnquiryDto,
   ) {
-    return this.enquiriesService.update(id, body);
+    return this.enquiriesService.update(id, user, body);
   }
 
   @Delete(':id')
   @Permissions('enquiries.write')
-  remove(@Param('id') id: string) {
-    return this.enquiriesService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.enquiriesService.remove(id, user);
   }
 }

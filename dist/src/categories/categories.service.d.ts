@@ -1,9 +1,10 @@
+import { CategoryType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 export declare class CategoriesService {
     private prisma;
     constructor(prisma: PrismaService);
-    findAll(search?: string, isActive?: boolean): Promise<({
+    findAll(search?: string, isActive?: boolean, type?: CategoryType): Promise<({
         _count: {
             subcategories: number;
         };
@@ -15,6 +16,7 @@ export declare class CategoriesService {
         name: string;
         isActive: boolean;
         slug: string | null;
+        type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     })[]>;
     findOne(id: string): Promise<{
@@ -46,6 +48,7 @@ export declare class CategoriesService {
         name: string;
         isActive: boolean;
         slug: string | null;
+        type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     listSubcategories(categoryId: string): Promise<({
@@ -79,6 +82,7 @@ export declare class CategoriesService {
         name: string;
         isActive: boolean;
         slug: string | null;
+        type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     update(id: string, dto: UpdateCategoryDto): Promise<{
@@ -89,6 +93,7 @@ export declare class CategoriesService {
         name: string;
         isActive: boolean;
         slug: string | null;
+        type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     remove(id: string): Promise<{
@@ -99,6 +104,7 @@ export declare class CategoriesService {
         name: string;
         isActive: boolean;
         slug: string | null;
+        type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
 }

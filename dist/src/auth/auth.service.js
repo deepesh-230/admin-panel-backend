@@ -49,15 +49,18 @@ const jwt_1 = require("@nestjs/jwt");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const crypto_1 = require("crypto");
+const mail_service_1 = require("../mail/mail.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
     prisma;
     jwt;
     config;
-    constructor(prisma, jwt, config) {
+    mail;
+    constructor(prisma, jwt, config, mail) {
         this.prisma = prisma;
         this.jwt = jwt;
         this.config = config;
+        this.mail = mail;
     }
     hashToken(token) {
         return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
@@ -260,7 +263,9 @@ let AuthService = class AuthService {
                     expiresAt,
                 },
             });
-            console.log(`[forgot-password] reset token for ${user.email}: ${rawToken}`);
+            const adminUrl = (this.config.get('ADMIN_URL') || 'http://localhost:5173').replace(/\/$/, '');
+            const resetUrl = `${adminUrl}/reset-password?token=${rawToken}`;
+            await this.mail.sendPasswordReset(user.email, resetUrl);
             const expose = this.config.get('AUTH_EXPOSE_RESET_TOKEN') === 'true' ||
                 this.config.get('NODE_ENV') !== 'production';
             if (expose) {
@@ -312,6 +317,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        mail_service_1.MailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

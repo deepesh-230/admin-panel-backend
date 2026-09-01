@@ -45,6 +45,7 @@ model State {
   serviceProviders ServiceProvider[]
   users            User[]            @relation("UserPrimaryState")
   userStates       UserState[]
+  enquiries        Enquiry[]
 }
 
 model User {
@@ -65,6 +66,9 @@ model User {
   createdServiceProviders  ServiceProvider[]      @relation("ProviderCreatedBy")
   serviceProviderAdmins    ServiceProviderAdmin[]
   sessions                 Session[]
+  marketplaceProducts      MarketplaceProduct[]
+  payments                 Payment[]
+  broadcasts               UserBroadcast[]
   role                     Role                   @relation(fields: [roleId], references: [id])
   state                    State?                 @relation("UserPrimaryState", fields: [stateId], references: [id])
   userStates               UserState[]
@@ -156,6 +160,7 @@ model ServiceProvider {
   state          State                  @relation(fields: [stateId], references: [id])
   subcategory    Subcategory?           @relation(fields: [subcategoryId], references: [id])
   admins         ServiceProviderAdmin[]
+  enquiries      Enquiry[]
 
   @@index([stateId])
   @@index([categoryId])
@@ -180,8 +185,8 @@ model ServiceProviderAdmin {
 }
 
 model Enquiry {
-  id          String   @id @default(uuid())
-  sNo         Int      @unique
+  id          String        @id @default(uuid())
+  sNo         Int           @unique
   category    String
   subCategory String
   product     String
@@ -189,12 +194,25 @@ model Enquiry {
   email       String
   date        String
   createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   /// USER = app-user enquiry, PROVIDER = emergency / service-provider enquiry
-  kind        String   @default("USER")
+  kind        String        @default("USER")
+  status      EnquiryStatus @default(NEW)
+  providerId  String?
+  stateId     String?
+  phone                  String?
+  message                String?
+  marketplaceProductId   String?
+  marketplaceProduct     MarketplaceProduct? @relation(fields: [marketplaceProductId], references: [id], onDelete: SetNull)
+  provider    ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  state       State?           @relation(fields: [stateId], references: [id], onDelete: SetNull)
 
   @@index([kind])
+  @@index([status])
+  @@index([providerId])
+  @@index([stateId])
+  @@index([marketplaceProductId])
 }
 
 model Faq {
@@ -207,13 +225,14 @@ model Faq {
 }
 
 model UsefulLink {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   url         String
-  isActive    Boolean   @default(true)
+  isActive    Boolean         @default(true)
   broadcastAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  broadcasts  UserBroadcast[]
 }
 
 model HelpTicket {
@@ -249,14 +268,16 @@ model Blog {
 }
 
 model JobAlert {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   description String?
   postDate    String?
   lastDate    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean         @default(true)
+  broadcastAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  broadcasts  UserBroadcast[]
 }
 
 model Suggestion {
@@ -287,9 +308,22 @@ model MarketplaceProduct {
   phone         String?
   listingIntent String   @default("sell")
   sellerName    String?
+  description   String?
+  address       String?
+  color         String?
+  brand         String?
+  features      String?
+  gallery       String[] @default([])
+  location      String?
+  createdById   String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  createdBy     User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  enquiries     Enquiry[]
+
+  @@index([createdById])
+  @@index([isActive])
 }
 
 model MarketplaceParty {
@@ -326,12 +360,16 @@ model Category {
   name             String            @unique
   slug             String?           @unique
   description      String?
+  /// CARE = Home tab, SERVICE = Providers tab
+  type             CategoryType      @default(SERVICE)
   isActive         Boolean           @default(true)
   sortOrder        Int               @default(0)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   serviceProviders ServiceProvider[]
   subcategories    Subcategory[]
+
+  @@index([type])
 }
 
 model Subcategory {
@@ -365,6 +403,55 @@ model Keyword {
   @@index([term])
 }
 
+model Payment {
+  id          String         @id @default(uuid())
+  userId      String?
+  payerName   String?
+  payerEmail  String?
+  payerPhone  String?
+  amount      Decimal        @db.Decimal(12, 2)
+  currency    String         @default("INR")
+  status      PaymentStatus  @default(PENDING)
+  purpose     PaymentPurpose @default(OTHER)
+  planId      String?
+  gateway     String?
+  orderId     String?
+  paymentId   String?        @unique
+  referenceNo String?
+  notes       String?
+  paidAt      DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([purpose])
+  @@index([paidAt])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model UserBroadcast {
+  id           String               @id @default(uuid())
+  userId       String
+  contentType  BroadcastContentType
+  jobAlertId   String?
+  usefulLinkId String?
+  title        String
+  body         String?
+  url          String?
+  readAt       DateTime?
+  createdAt    DateTime             @default(now())
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobAlert     JobAlert?            @relation(fields: [jobAlertId], references: [id], onDelete: Cascade)
+  usefulLink   UsefulLink?          @relation(fields: [usefulLinkId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([jobAlertId])
+  @@index([usefulLinkId])
+}
+
 enum RoleName {
   ADMIN
   STATE_ADMIN
@@ -378,4 +465,36 @@ enum ProviderApprovalStatus {
   PENDING_APPROVAL
   APPROVED
   REJECTED
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
+enum CategoryType {
+  CARE
+  SERVICE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentPurpose {
+  SPONSORSHIP
+  MARKETPLACE
+  SUBSCRIPTION
+  DONATION
+  OTHER
+}
+
+enum BroadcastContentType {
+  JOB_ALERT
+  USEFUL_LINK
 }

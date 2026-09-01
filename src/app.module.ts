@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { BulkImportModule } from './bulk-import/bulk-import.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CmsModule } from './cms/cms.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -15,11 +16,17 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { EnquiriesModule } from './enquiries/enquiries.module';
 import { KeywordsModule } from './keywords/keywords.module';
 import { ListingsModule } from './listings/listings.module';
+import { MailModule } from './mail/mail.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
+import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProfileModule } from './profile/profile.module';
+import { PublicModule } from './public/public.module';
 import { ServiceProvidersModule } from './service-providers/service-providers.module';
 import { StateAdminsModule } from './state-admins/state-admins.module';
 import { StatesModule } from './states/states.module';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { VolunteerAdminsModule } from './volunteer-admins/volunteer-admins.module';
 import { UsersModule } from './users/users.module';
 
@@ -27,7 +34,9 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    MailModule,
     AuthModule,
+    BulkImportModule,
     DashboardModule,
     EnquiriesModule,
     ListingsModule,
@@ -40,6 +49,11 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ServiceProvidersModule,
     VolunteerAdminsModule,
+    UploadsModule,
+    PublicModule,
+    ProfileModule,
+    MarketplaceModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [

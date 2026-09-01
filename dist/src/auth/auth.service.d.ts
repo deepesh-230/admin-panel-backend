@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
 type SessionMeta = {
@@ -10,7 +11,8 @@ export declare class AuthService {
     private prisma;
     private jwt;
     private config;
-    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService);
+    private mail;
+    constructor(prisma: PrismaService, jwt: JwtService, config: ConfigService, mail: MailService);
     private hashToken;
     private getRoleByName;
     private sanitizeUser;

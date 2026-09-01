@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ForgotPasswordDto,
@@ -28,6 +29,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private mail: MailService,
   ) {}
 
   private hashToken(token: string) {
@@ -274,9 +276,14 @@ export class AuthService {
         },
       });
 
-      // Email provider not configured yet — log for development
-      console.log(`[forgot-password] reset token for ${user.email}: ${rawToken}`);
+      const adminUrl = (
+        this.config.get<string>('ADMIN_URL') || 'http://localhost:5173'
+      ).replace(/\/$/, '');
+      const resetUrl = `${adminUrl}/reset-password?token=${rawToken}`;
 
+      await this.mail.sendPasswordReset(user.email, resetUrl);
+
+      // Only expose raw token in non-prod / explicit opt-in (local testing)
       const expose =
         this.config.get<string>('AUTH_EXPOSE_RESET_TOKEN') === 'true' ||
         this.config.get<string>('NODE_ENV') !== 'production';

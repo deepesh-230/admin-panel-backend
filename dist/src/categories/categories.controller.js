@@ -24,9 +24,10 @@ let CategoriesController = class CategoriesController {
     constructor(categoriesService) {
         this.categoriesService = categoriesService;
     }
-    findAll(search, isActive) {
+    findAll(search, isActive, type) {
         const activeFilter = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-        return this.categoriesService.findAll(search, activeFilter);
+        const typeFilter = type === client_1.CategoryType.CARE || type === client_1.CategoryType.SERVICE ? type : undefined;
+        return this.categoriesService.findAll(search, activeFilter, typeFilter);
     }
     listSubcategories(categoryId) {
         return this.categoriesService.listSubcategories(categoryId);
@@ -50,8 +51,9 @@ __decorate([
     (0, permissions_decorator_1.Permissions)('categories.read'),
     __param(0, (0, common_1.Query)('search')),
     __param(1, (0, common_1.Query)('isActive')),
+    __param(2, (0, common_1.Query)('type')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "findAll", null);
 __decorate([
