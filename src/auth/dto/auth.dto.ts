@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNumber, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -15,6 +15,24 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  km?: number;
 }
 
 export class LoginDto {
@@ -40,6 +58,18 @@ export class ForgotPasswordDto {
 export class ResetPasswordDto {
   @IsString()
   token!: string;
+
+  @IsString()
+  @MinLength(8)
+  newPassword!: string;
+}
+
+export class ResetPasswordByOtpDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  otp!: string;
 
   @IsString()
   @MinLength(8)

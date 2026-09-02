@@ -4,6 +4,7 @@ import { CurrentUser, type AuthUser } from '../common/decorators/current-user.de
 import { Roles } from '../common/decorators/roles.decorator';
 import { BroadcastsService } from '../cms/broadcasts.service';
 import { CreateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -15,6 +16,39 @@ export class ProfileController {
     private readonly prisma: PrismaService,
     private readonly broadcasts: BroadcastsService,
   ) {}
+
+  @Patch()
+  @Roles(RoleName.END_USER)
+  async updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: dto.name,
+        phone: dto.phone,
+        location: dto.location,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        km: dto.km,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        km: true,
+        isActive: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Profile updated',
+      data: updated,
+    };
+  }
 
   @Get('marketplace/products')
   myMarketplaceProducts(@CurrentUser() user: AuthUser) {

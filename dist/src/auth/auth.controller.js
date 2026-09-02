@@ -52,6 +52,9 @@ let AuthController = class AuthController {
     resetPassword(dto) {
         return this.authService.resetPassword(dto);
     }
+    resetPasswordByOtp(dto) {
+        return this.authService.resetPasswordByOtp(dto);
+    }
     me(user) {
         return this.authService.me(user.id);
     }
@@ -108,6 +111,14 @@ __decorate([
     __metadata("design:paramtypes", [auth_dto_1.ResetPasswordDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('reset-password-otp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ResetPasswordByOtpDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resetPasswordByOtp", null);
 __decorate([
     (0, common_1.Get)('me'),
     (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN, client_1.RoleName.VOLUNTEER),

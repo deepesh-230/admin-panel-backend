@@ -273,6 +273,9 @@ async function main() {
     { id: '5', sNo: 5, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '21 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
     { id: '6', sNo: 6, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: 'N/A', name: 'Abdul Rahman', email: 'rahmansmiles@gmail.com', date: '18 Mar 2026 00:00', createdBy: 'Abdul Rahman' },
     { id: '7', sNo: 7, kind: 'PROVIDER', category: 'N/A', subCategory: 'N/A', product: "Preety's Top Liner Beauty Clinic & Nails Studio", name: 'Rayan Sahil Mohammad', email: 'rayansmiles07@gmail.com', date: '16 Mar 2026 00:00', createdBy: 'Rayan Sahil Mohammad' },
+    { id: '8', sNo: 8, kind: 'VOLUNTEER', category: 'Volunteer', subCategory: 'Community support', product: 'Weekend mobility camp', name: 'Priya Sharma', email: 'priya.sharma@example.com', date: '01 Sep 2026 00:00', createdBy: 'Priya Sharma' },
+    { id: '9', sNo: 9, kind: 'STATE_ADMIN', category: 'State admin', subCategory: 'Onboarding', product: 'Karnataka district rollout', name: 'Rajesh Kumar', email: 'rajesh.kumar@example.com', date: '28 Aug 2026 00:00', createdBy: 'Rajesh Kumar' },
+    { id: '10', sNo: 10, kind: 'PRODUCT', category: 'Marketplace', subCategory: 'Sale', product: 'Lightweight wheelchair', name: 'Anita Desai', email: 'anita.desai@example.com', date: '30 Aug 2026 00:00', createdBy: 'Anita Desai' },
   ];
 
   const listingsData = [
@@ -389,7 +392,7 @@ async function main() {
     },
     {
       slug: 'terms',
-      title: 'Terms & Conditions',
+      title: 'Terms and Conditions',
       content:
         'By using Divyaang Disha you agree to use the platform respectfully and to provide accurate information in listings and enquiries.',
     },
@@ -405,11 +408,17 @@ async function main() {
 
   await prisma.faq.upsert({
     where: { id: 'seed-faq-1' },
-    update: { title: 'What is Divyaang Disha?', description: 'A directory of disability services and support.', isActive: true },
+    update: {
+      title: 'Is the app free to use?',
+      slug: 'is-the-app-free-to-use',
+      description: '<p>Yes. <strong>Divyaang Disha</strong> is free for users to browse providers and content.</p>',
+      isActive: true,
+    },
     create: {
       id: 'seed-faq-1',
-      title: 'What is Divyaang Disha?',
-      description: 'A directory of disability services and support.',
+      title: 'Is the app free to use?',
+      slug: 'is-the-app-free-to-use',
+      description: '<p>Yes. <strong>Divyaang Disha</strong> is free for users to browse providers and content.</p>',
       isActive: true,
     },
   });
@@ -461,6 +470,44 @@ async function main() {
       id: 'seed-link-1',
       title: 'Swavlamban Card',
       url: 'https://swavlambancard.gov.in',
+      isActive: true,
+    },
+  });
+
+  await prisma.suggestion.upsert({
+    where: { id: 'seed-suggestion-1' },
+    update: {
+      title: 'Need hospitals details in my area',
+      description: 'Please add more hospital listings with wheelchair access near Secunderabad.',
+      receivedFrom: 'Abdul Rahman',
+      status: 'OPEN',
+      isActive: true,
+    },
+    create: {
+      id: 'seed-suggestion-1',
+      title: 'Need hospitals details in my area',
+      description: 'Please add more hospital listings with wheelchair access near Secunderabad.',
+      receivedFrom: 'Abdul Rahman',
+      status: 'OPEN',
+      isActive: true,
+    },
+  });
+
+  await prisma.suggestion.upsert({
+    where: { id: 'seed-suggestion-2' },
+    update: {
+      title: 'App feedback on notifications',
+      description: 'Job alert notifications are helpful. Could we get reminders before the last date?',
+      receivedFrom: 'VS RAMAKRISHNA P',
+      status: 'CLOSED',
+      isActive: true,
+    },
+    create: {
+      id: 'seed-suggestion-2',
+      title: 'App feedback on notifications',
+      description: 'Job alert notifications are helpful. Could we get reminders before the last date?',
+      receivedFrom: 'VS RAMAKRISHNA P',
+      status: 'CLOSED',
       isActive: true,
     },
   });

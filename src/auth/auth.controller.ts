@@ -10,6 +10,7 @@ import {
   LoginDto,
   RefreshTokenDto,
   RegisterDto,
+  ResetPasswordByOtpDto,
   ResetPasswordDto,
 } from './dto/auth.dto';
 
@@ -61,6 +62,12 @@ export class AuthController {
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password-otp')
+  resetPasswordByOtp(@Body() dto: ResetPasswordByOtpDto) {
+    return this.authService.resetPasswordByOtp(dto);
   }
 
   @Get('me')

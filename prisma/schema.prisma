@@ -54,6 +54,10 @@ model User {
   passwordHash             String
   name                     String?
   phone                    String?
+  location                 String?
+  latitude                 Float?
+  longitude                Float?
+  km                       Int?                   @default(1)
   isActive                 Boolean                @default(true)
   roleId                   String
   /// Primary/home state (especially for STATE_ADMIN)
@@ -218,6 +222,7 @@ model Enquiry {
 model Faq {
   id          String   @id @default(uuid())
   title       String
+  slug        String?  @unique
   description String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -281,12 +286,14 @@ model JobAlert {
 }
 
 model Suggestion {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  status      String   @default("NEW")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  receivedFrom String?
+  status       String   @default("OPEN")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Volunteer {

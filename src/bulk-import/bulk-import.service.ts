@@ -140,8 +140,9 @@ export class BulkImportService {
         return this.importVolunteer(row, dryRun);
       case 'faqs':
         return this.importCms('faq', row, dryRun, ['title'], (r) => ({
-          title: pick(r, 'title'),
-          description: pick(r, 'description') || undefined,
+          title: pick(r, 'title', 'question'),
+          slug: pick(r, 'slug') || undefined,
+          description: pick(r, 'description', 'answer', 'shortdescription') || undefined,
           isActive: parseBool(pick(r, 'isactive', 'active'), true),
         }));
       case 'blogs':
@@ -599,8 +600,13 @@ export class BulkImportService {
         sample: ['Jane Doe', 'jane@example.com', '9876543210', 'Delhi', 'true'],
       },
       faqs: {
-        columns: ['title', 'description', 'isActive'],
-        sample: ['How to register?', 'Use the mobile app sign up flow.', 'true'],
+        columns: ['title', 'slug', 'description', 'isActive'],
+        sample: [
+          'Is the app free to use?',
+          'is-the-app-free-to-use',
+          '<p>Yes. <strong>Divyaang Disha</strong> is free.</p>',
+          'true',
+        ],
       },
       blogs: {
         columns: ['title', 'shortDescription', 'description', 'image', 'isActive'],

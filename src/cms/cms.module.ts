@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MarketplaceModule } from '../marketplace/marketplace.module';
 import {
   BlogsController,
   CmsPagesController,
@@ -15,6 +16,7 @@ import { CmsService } from './cms.service';
 import { BroadcastsService } from './broadcasts.service';
 
 @Module({
+  imports: [MarketplaceModule],
   controllers: [
     FaqsController,
     UsefulLinksController,

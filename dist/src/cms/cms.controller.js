@@ -19,6 +19,7 @@ const permissions_decorator_1 = require("../common/decorators/permissions.decora
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const cms_service_1 = require("./cms.service");
 const broadcasts_service_1 = require("./broadcasts.service");
+const marketplace_service_1 = require("../marketplace/marketplace.service");
 function resourceController(path, model, permission, searchFields, extraWhere, roles = [client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN]) {
     let ResourceController = class ResourceController {
         cms;
@@ -92,12 +93,74 @@ function resourceController(path, model, permission, searchFields, extraWhere, r
     ], ResourceController);
     return ResourceController;
 }
-class FaqsController extends resourceController('faqs', 'faq', 'cms', [
-    'title',
-    'description',
-]) {
-}
+let FaqsController = class FaqsController {
+    cms;
+    constructor(cms) {
+        this.cms = cms;
+    }
+    findAll(search) {
+        return this.cms.findAll('faq', search, ['title', 'description', 'slug']);
+    }
+    findOne(id) {
+        return this.cms.findOne('faq', id);
+    }
+    create(body) {
+        return this.cms.create('faq', body);
+    }
+    update(id, body) {
+        return this.cms.update('faq', id, body);
+    }
+    remove(id) {
+        return this.cms.remove('faq', id);
+    }
+};
 exports.FaqsController = FaqsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Query)('search')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FaqsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FaqsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], FaqsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], FaqsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FaqsController.prototype, "remove", null);
+exports.FaqsController = FaqsController = __decorate([
+    (0, common_1.Controller)('faqs'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [cms_service_1.CmsService])
+], FaqsController);
 let UsefulLinksController = class UsefulLinksController {
     cms;
     broadcasts;
@@ -279,15 +342,81 @@ exports.JobAlertsController = JobAlertsController = __decorate([
     __metadata("design:paramtypes", [cms_service_1.CmsService,
         broadcasts_service_1.BroadcastsService])
 ], JobAlertsController);
-class SuggestionsController extends resourceController('suggestions', 'suggestion', 'cms', ['title', 'description']) {
+class SuggestionsController extends resourceController('suggestions', 'suggestion', 'cms', ['title', 'description', 'receivedFrom']) {
 }
 exports.SuggestionsController = SuggestionsController;
 class VolunteersController extends resourceController('volunteers', 'volunteer', 'volunteers', ['name', 'email', 'phone', 'location'], undefined, [client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.VOLUNTEER]) {
 }
 exports.VolunteersController = VolunteersController;
-class MarketplaceProductsController extends resourceController('marketplace/products', 'marketplaceProduct', 'marketplace', ['name', 'sellerName', 'phone']) {
-}
+let MarketplaceProductsController = class MarketplaceProductsController {
+    marketplace;
+    constructor(marketplace) {
+        this.marketplace = marketplace;
+    }
+    findAll(search, listingIntent) {
+        return this.marketplace.listAdmin(search, listingIntent);
+    }
+    findOne(id) {
+        return this.marketplace.findAdmin(id);
+    }
+    create(body) {
+        return this.marketplace.createAdmin(body);
+    }
+    update(id, body) {
+        return this.marketplace.updateAdmin(id, body);
+    }
+    remove(id) {
+        return this.marketplace.removeAdmin(id);
+    }
+};
 exports.MarketplaceProductsController = MarketplaceProductsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('marketplace.read'),
+    __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('listingIntent')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], MarketplaceProductsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('marketplace.read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MarketplaceProductsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, permissions_decorator_1.Permissions)('marketplace.write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], MarketplaceProductsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('marketplace.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], MarketplaceProductsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, permissions_decorator_1.Permissions)('marketplace.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MarketplaceProductsController.prototype, "remove", null);
+exports.MarketplaceProductsController = MarketplaceProductsController = __decorate([
+    (0, common_1.Controller)('marketplace/products'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [marketplace_service_1.MarketplaceService])
+], MarketplaceProductsController);
 class MarketplacePartiesController extends resourceController('marketplace/parties', 'marketplaceParty', 'marketplace', ['name', 'email', 'phone'], (query) => (query.kind ? { kind: query.kind } : {})) {
 }
 exports.MarketplacePartiesController = MarketplacePartiesController;

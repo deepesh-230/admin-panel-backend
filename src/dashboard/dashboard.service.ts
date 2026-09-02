@@ -43,7 +43,7 @@ export class DashboardService {
       this.prisma.marketplaceProduct.count(),
       this.prisma.marketplaceProduct.count({ where: { isActive: true } }),
       this.prisma.enquiry.count({ where: { kind: 'PROVIDER' } }),
-      this.prisma.enquiry.count({ where: { kind: 'USER' } }),
+      this.prisma.enquiry.count({ where: { kind: 'PRODUCT' } }),
       this.prisma.user.count({
         where: { ...userWhere, isActive: true, createdAt: { gte: since } },
       }),

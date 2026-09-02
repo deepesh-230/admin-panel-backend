@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { type AuthUser } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
+import { ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterDto, ResetPasswordByOtpDto, ResetPasswordDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -18,6 +18,10 @@ export declare class AuthController {
                 email: string;
                 name: string | null;
                 phone: string | null;
+                location: string | null;
+                latitude: number | null;
+                longitude: number | null;
+                km: number | null;
                 isActive: boolean;
                 stateId: string | null;
                 role: import("@prisma/client").$Enums.RoleName;
@@ -43,6 +47,10 @@ export declare class AuthController {
                 email: string;
                 name: string | null;
                 phone: string | null;
+                location: string | null;
+                latitude: number | null;
+                longitude: number | null;
+                km: number | null;
                 isActive: boolean;
                 stateId: string | null;
                 role: import("@prisma/client").$Enums.RoleName;
@@ -82,6 +90,11 @@ export declare class AuthController {
         message: string;
         data: null;
     }>;
+    resetPasswordByOtp(dto: ResetPasswordByOtpDto): Promise<{
+        success: boolean;
+        message: string;
+        data: null;
+    }>;
     me(user: AuthUser): Promise<{
         success: boolean;
         message: string;
@@ -90,6 +103,10 @@ export declare class AuthController {
             email: string;
             name: string | null;
             phone: string | null;
+            location: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            km: number | null;
             isActive: boolean;
             stateId: string | null;
             role: import("@prisma/client").$Enums.RoleName;

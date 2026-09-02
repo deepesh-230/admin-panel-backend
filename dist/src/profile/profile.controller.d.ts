@@ -1,6 +1,7 @@
 import { type AuthUser } from '../common/decorators/current-user.decorator';
 import { BroadcastsService } from '../cms/broadcasts.service';
 import { CreateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { PrismaService } from '../prisma/prisma.service';
 export declare class ProfileController {
@@ -8,6 +9,21 @@ export declare class ProfileController {
     private readonly prisma;
     private readonly broadcasts;
     constructor(marketplace: MarketplaceService, prisma: PrismaService, broadcasts: BroadcastsService);
+    updateProfile(user: AuthUser, dto: UpdateProfileDto): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            id: string;
+            name: string | null;
+            isActive: boolean;
+            email: string;
+            phone: string | null;
+            location: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            km: number | null;
+        };
+    }>;
     myMarketplaceProducts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
         description: string | null;
@@ -16,6 +32,7 @@ export declare class ProfileController {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -26,7 +43,6 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }[]>;
     createMarketplaceProduct(user: AuthUser, dto: CreateMarketplaceProductDto): Promise<{
         id: string;
@@ -36,6 +52,7 @@ export declare class ProfileController {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -46,7 +63,6 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }>;
     listBroadcasts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;

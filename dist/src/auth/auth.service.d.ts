@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
+import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordByOtpDto, ResetPasswordDto } from './dto/auth.dto';
 type SessionMeta = {
     userAgent?: string;
     ipAddress?: string;
@@ -30,6 +30,10 @@ export declare class AuthService {
                 email: string;
                 name: string | null;
                 phone: string | null;
+                location: string | null;
+                latitude: number | null;
+                longitude: number | null;
+                km: number | null;
                 isActive: boolean;
                 stateId: string | null;
                 role: import("@prisma/client").$Enums.RoleName;
@@ -55,6 +59,10 @@ export declare class AuthService {
                 email: string;
                 name: string | null;
                 phone: string | null;
+                location: string | null;
+                latitude: number | null;
+                longitude: number | null;
+                km: number | null;
                 isActive: boolean;
                 stateId: string | null;
                 role: import("@prisma/client").$Enums.RoleName;
@@ -90,6 +98,10 @@ export declare class AuthService {
             email: string;
             name: string | null;
             phone: string | null;
+            location: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            km: number | null;
             isActive: boolean;
             stateId: string | null;
             role: import("@prisma/client").$Enums.RoleName;
@@ -110,6 +122,11 @@ export declare class AuthService {
         } | null;
     }>;
     resetPassword(dto: ResetPasswordDto): Promise<{
+        success: boolean;
+        message: string;
+        data: null;
+    }>;
+    resetPasswordByOtp(dto: ResetPasswordByOtpDto): Promise<{
         success: boolean;
         message: string;
         data: null;

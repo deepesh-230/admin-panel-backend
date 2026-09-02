@@ -107,7 +107,7 @@ let PublicService = class PublicService {
                 message: dto.message,
                 date,
                 createdBy: dto.createdBy,
-                kind: 'USER',
+                kind: dto.marketplaceProductId ? 'PRODUCT' : 'USER',
                 status: client_1.EnquiryStatus.NEW,
                 marketplaceProductId: dto.marketplaceProductId,
             },

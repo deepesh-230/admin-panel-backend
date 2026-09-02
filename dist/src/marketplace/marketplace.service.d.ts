@@ -3,7 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class MarketplaceService {
     private prisma;
     constructor(prisma: PrismaService);
-    listPublic(search?: string): Prisma.PrismaPromise<{
+    listAdmin(search?: string, listingIntent?: string): Prisma.PrismaPromise<({
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+    } & {
         id: string;
         description: string | null;
         createdAt: Date;
@@ -11,6 +17,7 @@ export declare class MarketplaceService {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -21,7 +28,154 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+    })[]>;
+    findAdmin(id: string): Promise<{
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+    } & {
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
         location: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+    }>;
+    createAdmin(data: {
+        name: string;
+        actualPrice?: string;
+        offerPrice?: string;
+        phone?: string;
+        listingIntent?: string;
+        sellerName?: string;
+        description?: string;
+        address?: string;
+        color?: string;
+        brand?: string;
+        features?: string;
+        location?: string;
+        gallery?: string[];
+        isActive?: boolean;
+    }): Prisma.Prisma__MarketplaceProductClient<{
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+    } & {
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        location: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    updateAdmin(id: string, data: Partial<{
+        name: string;
+        actualPrice: string;
+        offerPrice: string;
+        phone: string;
+        listingIntent: string;
+        sellerName: string;
+        description: string;
+        address: string;
+        color: string;
+        brand: string;
+        features: string;
+        location: string;
+        gallery: string[];
+        isActive: boolean;
+    }>): Promise<{
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+    } & {
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        location: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+    }>;
+    removeAdmin(id: string): Promise<{
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        location: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
+    }>;
+    listPublic(search?: string): Prisma.PrismaPromise<{
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        phone: string | null;
+        location: string | null;
+        address: string | null;
+        gallery: string[];
+        createdById: string | null;
+        actualPrice: string | null;
+        offerPrice: string | null;
+        listingIntent: string;
+        sellerName: string | null;
+        color: string | null;
+        brand: string | null;
+        features: string | null;
     }[]>;
     findPublic(id: string): Promise<{
         id: string;
@@ -31,6 +185,7 @@ export declare class MarketplaceService {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -41,7 +196,6 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }>;
     listForUser(userId: string): Prisma.PrismaPromise<{
         id: string;
@@ -51,6 +205,7 @@ export declare class MarketplaceService {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -61,7 +216,6 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }[]>;
     createForUser(userId: string, sellerName: string | null | undefined, data: {
         name: string;
@@ -84,6 +238,7 @@ export declare class MarketplaceService {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -94,6 +249,5 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
 }

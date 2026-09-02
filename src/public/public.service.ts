@@ -104,7 +104,7 @@ export class PublicService {
         message: dto.message,
         date,
         createdBy: dto.createdBy,
-        kind: 'USER',
+        kind: dto.marketplaceProductId ? 'PRODUCT' : 'USER',
         status: EnquiryStatus.NEW,
         marketplaceProductId: dto.marketplaceProductId,
       },

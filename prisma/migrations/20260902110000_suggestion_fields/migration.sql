@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Suggestion" ADD COLUMN IF NOT EXISTS "receivedFrom" TEXT;
+ALTER TABLE "Suggestion" ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true;

@@ -65,6 +65,7 @@ export declare class PublicController {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -75,7 +76,6 @@ export declare class PublicController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }[]>;
     getMarketplaceProduct(id: string): Promise<{
         id: string;
@@ -85,6 +85,7 @@ export declare class PublicController {
         name: string;
         isActive: boolean;
         phone: string | null;
+        location: string | null;
         address: string | null;
         gallery: string[];
         createdById: string | null;
@@ -95,7 +96,6 @@ export declare class PublicController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        location: string | null;
     }>;
     createEnquiry(dto: CreatePublicEnquiryDto): Promise<{
         id: string;

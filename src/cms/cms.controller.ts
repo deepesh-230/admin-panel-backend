@@ -13,6 +13,7 @@ import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CmsModel, CmsService } from './cms.service';
 import { BroadcastsService } from './broadcasts.service';
+import { MarketplaceService } from '../marketplace/marketplace.service';
 
 function resourceController(
   path: string,
@@ -66,10 +67,41 @@ function resourceController(
   return ResourceController;
 }
 
-export class FaqsController extends resourceController('faqs', 'faq', 'cms', [
-  'title',
-  'description',
-]) {}
+@Controller('faqs')
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+export class FaqsController {
+  constructor(private readonly cms: CmsService) {}
+
+  @Get()
+  @Permissions('cms.read')
+  findAll(@Query('search') search?: string) {
+    return this.cms.findAll('faq', search, ['title', 'description', 'slug']);
+  }
+
+  @Get(':id')
+  @Permissions('cms.read')
+  findOne(@Param('id') id: string) {
+    return this.cms.findOne('faq', id);
+  }
+
+  @Post()
+  @Permissions('cms.write')
+  create(@Body() body: Record<string, unknown>) {
+    return this.cms.create('faq', body);
+  }
+
+  @Patch(':id')
+  @Permissions('cms.write')
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.cms.update('faq', id, body);
+  }
+
+  @Delete(':id')
+  @Permissions('cms.write')
+  remove(@Param('id') id: string) {
+    return this.cms.remove('faq', id);
+  }
+}
 
 @Controller('useful-links')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
@@ -184,7 +216,7 @@ export class SuggestionsController extends resourceController(
   'suggestions',
   'suggestion',
   'cms',
-  ['title', 'description'],
+  ['title', 'description', 'receivedFrom'],
 ) {}
 
 export class VolunteersController extends resourceController(
@@ -196,12 +228,44 @@ export class VolunteersController extends resourceController(
   [RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.VOLUNTEER],
 ) {}
 
-export class MarketplaceProductsController extends resourceController(
-  'marketplace/products',
-  'marketplaceProduct',
-  'marketplace',
-  ['name', 'sellerName', 'phone'],
-) {}
+@Controller('marketplace/products')
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+export class MarketplaceProductsController {
+  constructor(private readonly marketplace: MarketplaceService) {}
+
+  @Get()
+  @Permissions('marketplace.read')
+  findAll(
+    @Query('search') search?: string,
+    @Query('listingIntent') listingIntent?: string,
+  ) {
+    return this.marketplace.listAdmin(search, listingIntent);
+  }
+
+  @Get(':id')
+  @Permissions('marketplace.read')
+  findOne(@Param('id') id: string) {
+    return this.marketplace.findAdmin(id);
+  }
+
+  @Post()
+  @Permissions('marketplace.write')
+  create(@Body() body: Record<string, unknown>) {
+    return this.marketplace.createAdmin(body as Parameters<MarketplaceService['createAdmin']>[0]);
+  }
+
+  @Patch(':id')
+  @Permissions('marketplace.write')
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.marketplace.updateAdmin(id, body);
+  }
+
+  @Delete(':id')
+  @Permissions('marketplace.write')
+  remove(@Param('id') id: string) {
+    return this.marketplace.removeAdmin(id);
+  }
+}
 
 export class MarketplacePartiesController extends resourceController(
   'marketplace/parties',

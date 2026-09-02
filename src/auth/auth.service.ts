@@ -15,6 +15,7 @@ import {
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
+  ResetPasswordByOtpDto,
   ResetPasswordDto,
 } from './dto/auth.dto';
 
@@ -47,6 +48,10 @@ export class AuthService {
     email: string;
     name: string | null;
     phone: string | null;
+    location: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    km: number | null;
     isActive: boolean;
     stateId: string | null;
     role: { name: RoleName; permissions?: { permission: { code: string } }[] };
@@ -57,6 +62,10 @@ export class AuthService {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      location: user.location,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      km: user.km,
       isActive: user.isActive,
       stateId: user.stateId,
       role: user.role.name,
@@ -124,6 +133,10 @@ export class AuthService {
         passwordHash,
         name: dto.name,
         phone: dto.phone,
+        location: dto.location,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        km: dto.km ?? 1,
         roleId: role.id,
       },
       include: this.userInclude(),
@@ -327,6 +340,44 @@ export class AuthService {
       }),
       this.prisma.session.updateMany({
         where: { userId: stored.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+
+    return {
+      success: true,
+      message: 'Password reset successfully',
+      data: null,
+    };
+  }
+
+  async resetPasswordByOtp(dto: ResetPasswordByOtpDto) {
+    const devOtp = this.config.get<string>('AUTH_DEV_OTP') || '0000';
+    if (dto.otp !== devOtp) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.session.updateMany({
+        where: { userId: user.id, revokedAt: null },
         data: { revokedAt: new Date() },
       }),
     ]);
