@@ -29,6 +29,10 @@ export class RegisterDto {
   longitude?: number;
 
   @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(100)

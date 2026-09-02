@@ -33,6 +33,8 @@ export declare class AuthService {
                 location: string | null;
                 latitude: number | null;
                 longitude: number | null;
+                digipin: string | null;
+                pincode: string | null;
                 km: number | null;
                 isActive: boolean;
                 stateId: string | null;
@@ -62,6 +64,8 @@ export declare class AuthService {
                 location: string | null;
                 latitude: number | null;
                 longitude: number | null;
+                digipin: string | null;
+                pincode: string | null;
                 km: number | null;
                 isActive: boolean;
                 stateId: string | null;
@@ -101,6 +105,8 @@ export declare class AuthService {
             location: string | null;
             latitude: number | null;
             longitude: number | null;
+            digipin: string | null;
+            pincode: string | null;
             km: number | null;
             isActive: boolean;
             stateId: string | null;

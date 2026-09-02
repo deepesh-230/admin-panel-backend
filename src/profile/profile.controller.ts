@@ -7,6 +7,7 @@ import { CreateMarketplaceProductDto } from './dto/create-marketplace-product.dt
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveDigipinFields } from '../common/digipin.util';
 
 @Controller('profile')
 @Roles(RoleName.END_USER, RoleName.ADMIN)
@@ -20,6 +21,13 @@ export class ProfileController {
   @Patch()
   @Roles(RoleName.END_USER)
   async updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+    const shouldRecomputeDigipin = dto.latitude !== undefined && dto.longitude !== undefined;
+    const digipinFields = shouldRecomputeDigipin
+      ? resolveDigipinFields(dto.latitude, dto.longitude, dto.pincode)
+      : dto.pincode !== undefined
+        ? { digipin: undefined, pincode: dto.pincode.trim() || null }
+        : {};
+
     const updated = await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -29,6 +37,8 @@ export class ProfileController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         km: dto.km,
+        ...(digipinFields.digipin !== undefined ? { digipin: digipinFields.digipin } : {}),
+        ...(digipinFields.pincode !== undefined ? { pincode: digipinFields.pincode } : {}),
       },
       select: {
         id: true,
@@ -38,6 +48,8 @@ export class ProfileController {
         location: true,
         latitude: true,
         longitude: true,
+        digipin: true,
+        pincode: true,
         km: true,
         isActive: true,
       },

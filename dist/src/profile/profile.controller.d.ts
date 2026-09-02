@@ -21,6 +21,8 @@ export declare class ProfileController {
             location: string | null;
             latitude: number | null;
             longitude: number | null;
+            digipin: string | null;
+            pincode: string | null;
             km: number | null;
         };
     }>;

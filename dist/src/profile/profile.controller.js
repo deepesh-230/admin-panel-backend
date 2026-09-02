@@ -22,6 +22,7 @@ const create_marketplace_product_dto_1 = require("./dto/create-marketplace-produ
 const update_profile_dto_1 = require("./dto/update-profile.dto");
 const marketplace_service_1 = require("../marketplace/marketplace.service");
 const prisma_service_1 = require("../prisma/prisma.service");
+const digipin_util_1 = require("../common/digipin.util");
 let ProfileController = class ProfileController {
     marketplace;
     prisma;
@@ -32,6 +33,12 @@ let ProfileController = class ProfileController {
         this.broadcasts = broadcasts;
     }
     async updateProfile(user, dto) {
+        const shouldRecomputeDigipin = dto.latitude !== undefined && dto.longitude !== undefined;
+        const digipinFields = shouldRecomputeDigipin
+            ? (0, digipin_util_1.resolveDigipinFields)(dto.latitude, dto.longitude, dto.pincode)
+            : dto.pincode !== undefined
+                ? { digipin: undefined, pincode: dto.pincode.trim() || null }
+                : {};
         const updated = await this.prisma.user.update({
             where: { id: user.id },
             data: {
@@ -41,6 +48,8 @@ let ProfileController = class ProfileController {
                 latitude: dto.latitude,
                 longitude: dto.longitude,
                 km: dto.km,
+                ...(digipinFields.digipin !== undefined ? { digipin: digipinFields.digipin } : {}),
+                ...(digipinFields.pincode !== undefined ? { pincode: digipinFields.pincode } : {}),
             },
             select: {
                 id: true,
@@ -50,6 +59,8 @@ let ProfileController = class ProfileController {
                 location: true,
                 latitude: true,
                 longitude: true,
+                digipin: true,
+                pincode: true,
                 km: true,
                 isActive: true,
             },

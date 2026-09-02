@@ -57,6 +57,8 @@ model User {
   location                 String?
   latitude                 Float?
   longitude                Float?
+  digipin                  String?
+  pincode                  String?
   km                       Int?                   @default(1)
   isActive                 Boolean                @default(true)
   roleId                   String

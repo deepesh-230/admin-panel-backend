@@ -19,6 +19,7 @@ class RegisterDto {
     location;
     latitude;
     longitude;
+    pincode;
     km;
 }
 exports.RegisterDto = RegisterDto;
@@ -56,6 +57,11 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], RegisterDto.prototype, "longitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "pincode", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),

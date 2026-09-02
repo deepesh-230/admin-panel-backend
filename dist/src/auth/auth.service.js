@@ -51,6 +51,7 @@ const bcrypt = __importStar(require("bcryptjs"));
 const crypto_1 = require("crypto");
 const mail_service_1 = require("../mail/mail.service");
 const prisma_service_1 = require("../prisma/prisma.service");
+const digipin_util_1 = require("../common/digipin.util");
 let AuthService = class AuthService {
     prisma;
     jwt;
@@ -80,6 +81,8 @@ let AuthService = class AuthService {
             location: user.location,
             latitude: user.latitude,
             longitude: user.longitude,
+            digipin: user.digipin,
+            pincode: user.pincode,
             km: user.km,
             isActive: user.isActive,
             stateId: user.stateId,
@@ -133,6 +136,7 @@ let AuthService = class AuthService {
             throw new common_1.ConflictException('Email already registered');
         const role = await this.getRoleByName(client_1.RoleName.END_USER);
         const passwordHash = await bcrypt.hash(dto.password, 12);
+        const { digipin, pincode } = (0, digipin_util_1.resolveDigipinFields)(dto.latitude, dto.longitude, dto.pincode);
         const user = await this.prisma.user.create({
             data: {
                 email: dto.email.toLowerCase(),
@@ -142,6 +146,8 @@ let AuthService = class AuthService {
                 location: dto.location,
                 latitude: dto.latitude,
                 longitude: dto.longitude,
+                digipin,
+                pincode,
                 km: dto.km ?? 1,
                 roleId: role.id,
             },

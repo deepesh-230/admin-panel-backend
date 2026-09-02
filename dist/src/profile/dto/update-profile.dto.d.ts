@@ -4,5 +4,6 @@ export declare class UpdateProfileDto {
     location?: string;
     latitude?: number;
     longitude?: number;
+    pincode?: string;
     km?: number;
 }

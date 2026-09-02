@@ -17,6 +17,7 @@ class UpdateProfileDto {
     location;
     latitude;
     longitude;
+    pincode;
     km;
 }
 exports.UpdateProfileDto = UpdateProfileDto;
@@ -45,6 +46,11 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], UpdateProfileDto.prototype, "longitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "pincode", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),

@@ -11,6 +11,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveDigipinFields } from '../common/digipin.util';
 import {
   ForgotPasswordDto,
   LoginDto,
@@ -51,6 +52,8 @@ export class AuthService {
     location: string | null;
     latitude: number | null;
     longitude: number | null;
+    digipin: string | null;
+    pincode: string | null;
     km: number | null;
     isActive: boolean;
     stateId: string | null;
@@ -65,6 +68,8 @@ export class AuthService {
       location: user.location,
       latitude: user.latitude,
       longitude: user.longitude,
+      digipin: user.digipin,
+      pincode: user.pincode,
       km: user.km,
       isActive: user.isActive,
       stateId: user.stateId,
@@ -126,6 +131,7 @@ export class AuthService {
 
     const role = await this.getRoleByName(RoleName.END_USER);
     const passwordHash = await bcrypt.hash(dto.password, 12);
+    const { digipin, pincode } = resolveDigipinFields(dto.latitude, dto.longitude, dto.pincode);
 
     const user = await this.prisma.user.create({
       data: {
@@ -136,6 +142,8 @@ export class AuthService {
         location: dto.location,
         latitude: dto.latitude,
         longitude: dto.longitude,
+        digipin,
+        pincode,
         km: dto.km ?? 1,
         roleId: role.id,
       },
