@@ -19,6 +19,7 @@ import { ListingsModule } from './listings/listings.module';
 import { MailModule } from './mail/mail.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PermissionsModule } from './permissions/permissions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { PublicModule } from './public/public.module';
@@ -54,6 +55,7 @@ import { UsersModule } from './users/users.module';
     ProfileModule,
     MarketplaceModule,
     PaymentsModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [

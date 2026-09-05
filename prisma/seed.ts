@@ -1,34 +1,14 @@
 import { PaymentPurpose, PaymentStatus, PrismaClient, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_CATALOG,
+  ROLE_DESCRIPTIONS,
+} from '../src/permissions/permission-registry';
 
 const prisma = new PrismaClient();
 
-const PERMISSIONS = [
-  { code: 'dashboard.read', description: 'View dashboard statistics' },
-  { code: 'users.read', description: 'View users' },
-  { code: 'users.write', description: 'Manage users' },
-  { code: 'listings.read', description: 'View listings' },
-  { code: 'listings.write', description: 'Manage listings' },
-  { code: 'enquiries.read', description: 'View enquiries' },
-  { code: 'enquiries.write', description: 'Manage enquiries' },
-  { code: 'providers.read', description: 'View service providers' },
-  { code: 'providers.write', description: 'Manage service providers' },
-  { code: 'settings.write', description: 'Manage settings' },
-  { code: 'states.read', description: 'View states' },
-  { code: 'states.write', description: 'Manage states' },
-  { code: 'state_admins.read', description: 'View state admins' },
-  { code: 'state_admins.write', description: 'Manage state admins' },
-  { code: 'categories.read', description: 'View categories, subcategories, and keywords' },
-  { code: 'categories.write', description: 'Manage categories, subcategories, and keywords' },
-  { code: 'cms.read', description: 'View FAQ, pages, blogs, links, jobs, help, suggestions' },
-  { code: 'cms.write', description: 'Manage FAQ, pages, blogs, links, jobs, help, suggestions' },
-  { code: 'volunteers.read', description: 'View volunteers' },
-  { code: 'volunteers.write', description: 'Manage volunteers' },
-  { code: 'marketplace.read', description: 'View marketplace products, buyers, and sellers' },
-  { code: 'marketplace.write', description: 'Manage marketplace products, buyers, and sellers' },
-  { code: 'payments.read', description: 'View payment records' },
-  { code: 'payments.write', description: 'Manage payment records' },
-];
+const PERMISSIONS = PERMISSION_CATALOG.map(({ code, description }) => ({ code, description }));
 
 function slugify(name: string): string {
   return name
@@ -47,66 +27,13 @@ async function main() {
   }
 
   const allPermissions = await prisma.permission.findMany();
+  const permissionByCode = new Map(allPermissions.map((p) => [p.code, p]));
 
-  const roles: { name: RoleName; description: string; permissionCodes: string[] }[] = [
-    {
-      name: RoleName.ADMIN,
-      description: 'Main platform administrator',
-      permissionCodes: allPermissions.map((p) => p.code),
-    },
-    {
-      name: RoleName.STATE_ADMIN,
-      description: 'State-scoped administrator',
-      permissionCodes: [
-        'dashboard.read',
-        'users.read',
-        'users.write',
-        'listings.read',
-        'listings.write',
-        'enquiries.read',
-        'enquiries.write',
-        'providers.read',
-        'providers.write',
-        'states.read',
-        'state_admins.read',
-        'categories.read',
-        'categories.write',
-        'cms.read',
-        'cms.write',
-        'volunteers.read',
-        'volunteers.write',
-        'marketplace.read',
-        'marketplace.write',
-        'payments.read',
-        'payments.write',
-      ],
-    },
-    {
-      name: RoleName.END_USER,
-      description: 'Mobile end user',
-      permissionCodes: [],
-    },
-    {
-      name: RoleName.SERVICE_PROVIDER_ADMIN,
-      description: 'Service provider administrator',
-      permissionCodes: [
-        'enquiries.read',
-        'enquiries.write',
-        'providers.read',
-        'providers.write',
-      ],
-    },
-    {
-      name: RoleName.VOLUNTEER,
-      description: 'Volunteer coordinator',
-      permissionCodes: [
-        'volunteers.read',
-        'volunteers.write',
-        'enquiries.read',
-        'enquiries.write',
-      ],
-    },
-  ];
+  const roles = (Object.values(RoleName) as RoleName[]).map((name) => ({
+    name,
+    description: ROLE_DESCRIPTIONS[name],
+    permissionCodes: DEFAULT_ROLE_PERMISSIONS[name] || [],
+  }));
 
   for (const roleDef of roles) {
     const role = await prisma.role.upsert({
@@ -115,11 +42,25 @@ async function main() {
       create: { name: roleDef.name, description: roleDef.description },
     });
 
+    const existingCount = await prisma.rolePermission.count({ where: { roleId: role.id } });
+    const shouldSync =
+      roleDef.name === RoleName.ADMIN || existingCount === 0;
+
+    if (!shouldSync) {
+      // Preserve Central Admin customizations for non-ADMIN roles.
+      continue;
+    }
+
     await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
 
-    const permissionIds = allPermissions
-      .filter((p) => roleDef.permissionCodes.includes(p.code))
-      .map((p) => p.id);
+    const codes =
+      roleDef.name === RoleName.ADMIN
+        ? allPermissions.map((p) => p.code)
+        : roleDef.permissionCodes;
+
+    const permissionIds = codes
+      .map((code) => permissionByCode.get(code)?.id)
+      .filter(Boolean) as string[];
 
     if (permissionIds.length) {
       await prisma.rolePermission.createMany({
