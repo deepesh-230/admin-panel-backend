@@ -59,6 +59,9 @@ export class MarketplaceService {
     location?: string;
     gallery?: string[];
     isActive?: boolean;
+    stateId?: string;
+    approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    adminFlag?: 'READ' | 'ACTIVE' | 'DELETE';
   }) {
     const intent = (data.listingIntent || 'sell').toLowerCase();
     return this.prisma.marketplaceProduct.create({
@@ -77,6 +80,9 @@ export class MarketplaceService {
         location: data.location,
         gallery: data.gallery || [],
         isActive: data.isActive ?? true,
+        stateId: data.stateId,
+        approvalStatus: data.approvalStatus ?? 'APPROVED',
+        adminFlag: data.adminFlag ?? 'ACTIVE',
       },
       include: adminProductInclude,
     });
@@ -99,14 +105,22 @@ export class MarketplaceService {
       location: string;
       gallery: string[];
       isActive: boolean;
+      stateId: string | null;
+      approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+      adminFlag: 'READ' | 'ACTIVE' | 'DELETE';
     }>,
   ) {
     await this.findAdmin(id);
-    const payload = { ...data };
-    if (payload.name) payload.name = payload.name.trim();
-    if (payload.listingIntent) {
+    const payload: Record<string, unknown> = { ...data };
+    if (typeof payload.name === 'string') payload.name = payload.name.trim();
+    if (typeof payload.listingIntent === 'string') {
       const intent = payload.listingIntent.toLowerCase();
       payload.listingIntent = intent === 'buy' ? 'buy' : 'sell';
+    }
+    if (payload.adminFlag === 'DELETE') {
+      payload.deletedAt = new Date();
+    } else if (payload.adminFlag) {
+      payload.deletedAt = null;
     }
     return this.prisma.marketplaceProduct.update({
       where: { id },
@@ -121,13 +135,23 @@ export class MarketplaceService {
   }
 
   listPublic(search?: string) {
-    const where: Prisma.MarketplaceProductWhereInput = { isActive: true };
+    const where: Prisma.MarketplaceProductWhereInput = {
+      isActive: true,
+      deletedAt: null,
+      adminFlag: { not: 'DELETE' },
+      approvalStatus: { in: ['APPROVED', 'PENDING'] },
+    };
     if (search?.trim()) {
-      where.OR = [
-        { name: { contains: search.trim(), mode: 'insensitive' } },
-        { address: { contains: search.trim(), mode: 'insensitive' } },
-        { brand: { contains: search.trim(), mode: 'insensitive' } },
-        { description: { contains: search.trim(), mode: 'insensitive' } },
+      const q = search.trim();
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { address: { contains: q, mode: 'insensitive' } },
+            { brand: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+          ],
+        },
       ];
     }
     return this.prisma.marketplaceProduct.findMany({
@@ -138,7 +162,12 @@ export class MarketplaceService {
 
   async findPublic(id: string) {
     const product = await this.prisma.marketplaceProduct.findFirst({
-      where: { id, isActive: true },
+      where: {
+        id,
+        isActive: true,
+        deletedAt: null,
+        adminFlag: { not: 'DELETE' },
+      },
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
@@ -151,7 +180,7 @@ export class MarketplaceService {
     });
   }
 
-  createForUser(
+  async createForUser(
     userId: string,
     sellerName: string | null | undefined,
     data: {
@@ -167,9 +196,14 @@ export class MarketplaceService {
       features?: string;
       location?: string;
       gallery?: string[];
+      stateId?: string;
     },
   ) {
     const intent = (data.listingIntent || 'sell').toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { stateId: true },
+    });
     return this.prisma.marketplaceProduct.create({
       data: {
         name: data.name.trim(),
@@ -186,7 +220,9 @@ export class MarketplaceService {
         location: data.location,
         gallery: data.gallery || [],
         createdById: userId,
+        stateId: data.stateId || user?.stateId || undefined,
         isActive: true,
+        approvalStatus: 'PENDING',
       },
     });
   }

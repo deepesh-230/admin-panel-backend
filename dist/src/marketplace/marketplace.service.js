@@ -71,6 +71,9 @@ let MarketplaceService = class MarketplaceService {
                 location: data.location,
                 gallery: data.gallery || [],
                 isActive: data.isActive ?? true,
+                stateId: data.stateId,
+                approvalStatus: data.approvalStatus ?? 'APPROVED',
+                adminFlag: data.adminFlag ?? 'ACTIVE',
             },
             include: adminProductInclude,
         });
@@ -78,11 +81,17 @@ let MarketplaceService = class MarketplaceService {
     async updateAdmin(id, data) {
         await this.findAdmin(id);
         const payload = { ...data };
-        if (payload.name)
+        if (typeof payload.name === 'string')
             payload.name = payload.name.trim();
-        if (payload.listingIntent) {
+        if (typeof payload.listingIntent === 'string') {
             const intent = payload.listingIntent.toLowerCase();
             payload.listingIntent = intent === 'buy' ? 'buy' : 'sell';
+        }
+        if (payload.adminFlag === 'DELETE') {
+            payload.deletedAt = new Date();
+        }
+        else if (payload.adminFlag) {
+            payload.deletedAt = null;
         }
         return this.prisma.marketplaceProduct.update({
             where: { id },
@@ -95,13 +104,23 @@ let MarketplaceService = class MarketplaceService {
         return this.prisma.marketplaceProduct.delete({ where: { id } });
     }
     listPublic(search) {
-        const where = { isActive: true };
+        const where = {
+            isActive: true,
+            deletedAt: null,
+            adminFlag: { not: 'DELETE' },
+            approvalStatus: { in: ['APPROVED', 'PENDING'] },
+        };
         if (search?.trim()) {
-            where.OR = [
-                { name: { contains: search.trim(), mode: 'insensitive' } },
-                { address: { contains: search.trim(), mode: 'insensitive' } },
-                { brand: { contains: search.trim(), mode: 'insensitive' } },
-                { description: { contains: search.trim(), mode: 'insensitive' } },
+            const q = search.trim();
+            where.AND = [
+                {
+                    OR: [
+                        { name: { contains: q, mode: 'insensitive' } },
+                        { address: { contains: q, mode: 'insensitive' } },
+                        { brand: { contains: q, mode: 'insensitive' } },
+                        { description: { contains: q, mode: 'insensitive' } },
+                    ],
+                },
             ];
         }
         return this.prisma.marketplaceProduct.findMany({
@@ -111,7 +130,12 @@ let MarketplaceService = class MarketplaceService {
     }
     async findPublic(id) {
         const product = await this.prisma.marketplaceProduct.findFirst({
-            where: { id, isActive: true },
+            where: {
+                id,
+                isActive: true,
+                deletedAt: null,
+                adminFlag: { not: 'DELETE' },
+            },
         });
         if (!product)
             throw new common_1.NotFoundException('Product not found');
@@ -123,8 +147,12 @@ let MarketplaceService = class MarketplaceService {
             orderBy: { createdAt: 'desc' },
         });
     }
-    createForUser(userId, sellerName, data) {
+    async createForUser(userId, sellerName, data) {
         const intent = (data.listingIntent || 'sell').toLowerCase();
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { stateId: true },
+        });
         return this.prisma.marketplaceProduct.create({
             data: {
                 name: data.name.trim(),
@@ -141,7 +169,9 @@ let MarketplaceService = class MarketplaceService {
                 location: data.location,
                 gallery: data.gallery || [],
                 createdById: userId,
+                stateId: data.stateId || user?.stateId || undefined,
                 isActive: true,
+                approvalStatus: 'PENDING',
             },
         });
     }

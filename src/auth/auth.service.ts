@@ -146,6 +146,7 @@ export class AuthService {
         pincode,
         km: dto.km ?? 1,
         roleId: role.id,
+        emailVerifiedAt: new Date(),
       },
       include: this.userInclude(),
     });

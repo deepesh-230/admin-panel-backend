@@ -18,8 +18,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -44,8 +48,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -70,6 +78,9 @@ export declare class MarketplaceService {
         location?: string;
         gallery?: string[];
         isActive?: boolean;
+        stateId?: string;
+        approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+        adminFlag?: 'READ' | 'ACTIVE' | 'DELETE';
     }): Prisma.Prisma__MarketplaceProductClient<{
         createdBy: {
             id: string;
@@ -85,8 +96,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -111,6 +126,9 @@ export declare class MarketplaceService {
         location: string;
         gallery: string[];
         isActive: boolean;
+        stateId: string | null;
+        approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+        adminFlag: 'READ' | 'ACTIVE' | 'DELETE';
     }>): Promise<{
         createdBy: {
             id: string;
@@ -126,8 +144,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -146,8 +168,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -166,8 +192,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -186,8 +216,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -206,8 +240,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -230,7 +268,8 @@ export declare class MarketplaceService {
         features?: string;
         location?: string;
         gallery?: string[];
-    }): Prisma.Prisma__MarketplaceProductClient<{
+        stateId?: string;
+    }): Promise<{
         id: string;
         description: string | null;
         createdAt: Date;
@@ -239,8 +278,12 @@ export declare class MarketplaceService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -249,5 +292,5 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    }>;
 }

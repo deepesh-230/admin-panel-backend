@@ -28,9 +28,13 @@ export declare class BroadcastsService {
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         title: string;
         postDate: string | null;
         lastDate: string | null;
+        startsAt: Date | null;
+        endsAt: Date | null;
     }>;
     listForUser(userId: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;

@@ -132,6 +132,11 @@ export class PaymentsService {
         : status === PaymentStatus.SUCCESS
           ? new Date()
           : undefined;
+    const purpose = dto.purpose ?? PaymentPurpose.OTHER;
+    const validUntil =
+      status === PaymentStatus.SUCCESS && purpose === PaymentPurpose.SPONSORSHIP && paidAt
+        ? new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000)
+        : undefined;
 
     try {
       const row = await this.prisma.payment.create({
@@ -143,7 +148,7 @@ export class PaymentsService {
           amount: dto.amount,
           currency: dto.currency ?? 'INR',
           status,
-          purpose: dto.purpose ?? PaymentPurpose.OTHER,
+          purpose,
           planId: dto.planId,
           gateway: dto.gateway,
           orderId: dto.orderId,
@@ -151,6 +156,7 @@ export class PaymentsService {
           referenceNo: dto.referenceNo,
           notes: dto.notes,
           paidAt,
+          validUntil,
         },
         include: paymentInclude,
       });
@@ -178,10 +184,11 @@ export class PaymentsService {
 
     const nextStatus = dto.status;
     let paidAt: Date | null | undefined = undefined;
+    let validUntil: Date | null | undefined = undefined;
+    const current = await this.prisma.payment.findUnique({ where: { id } });
     if (dto.paidAt !== undefined) {
       paidAt = dto.paidAt ? new Date(dto.paidAt) : null;
     } else if (nextStatus === PaymentStatus.SUCCESS) {
-      const current = await this.prisma.payment.findUnique({ where: { id } });
       if (current && !current.paidAt) paidAt = new Date();
     } else if (
       nextStatus === PaymentStatus.PENDING ||
@@ -189,6 +196,18 @@ export class PaymentsService {
       nextStatus === PaymentStatus.CANCELLED
     ) {
       paidAt = null;
+      validUntil = null;
+    }
+
+    const effectivePurpose = dto.purpose ?? current?.purpose;
+    const effectivePaidAt = paidAt === undefined ? current?.paidAt : paidAt;
+    if (
+      (nextStatus === PaymentStatus.SUCCESS || current?.status === PaymentStatus.SUCCESS) &&
+      effectivePurpose === PaymentPurpose.SPONSORSHIP &&
+      effectivePaidAt &&
+      !current?.validUntil
+    ) {
+      validUntil = new Date(new Date(effectivePaidAt).getTime() + 365 * 24 * 60 * 60 * 1000);
     }
 
     try {
@@ -210,6 +229,7 @@ export class PaymentsService {
           ...(dto.referenceNo !== undefined && { referenceNo: dto.referenceNo }),
           ...(dto.notes !== undefined && { notes: dto.notes }),
           ...(paidAt !== undefined && { paidAt }),
+          ...(validUntil !== undefined && { validUntil }),
         },
         include: paymentInclude,
       });

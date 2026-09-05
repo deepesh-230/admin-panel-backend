@@ -218,7 +218,11 @@ let UsersService = class UsersService {
             }
             (0, state_scope_1.assertStateAccess)(currentUser, existing.stateId);
             if (dto.role && dto.role !== existing.role.name) {
-                throw new common_1.ForbiddenException('You cannot change user roles');
+                const allowed = (existing.role.name === client_1.RoleName.END_USER && dto.role === client_1.RoleName.VOLUNTEER) ||
+                    (existing.role.name === client_1.RoleName.VOLUNTEER && dto.role === client_1.RoleName.END_USER);
+                if (!allowed) {
+                    throw new common_1.ForbiddenException('You can only promote/demote END_USER ↔ VOLUNTEER');
+                }
             }
             if (dto.stateId && dto.stateId !== currentUser.stateId) {
                 throw new common_1.ForbiddenException('You cannot move users to another state');

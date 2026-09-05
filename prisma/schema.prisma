@@ -36,14 +36,15 @@ model RolePermission {
 }
 
 model State {
-  id               String            @id @default(uuid())
-  name             String            @unique
-  code             String?           @unique
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  isActive         Boolean           @default(true)
+  id               String               @id @default(uuid())
+  name             String               @unique
+  code             String?              @unique
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  isActive         Boolean              @default(true)
   serviceProviders ServiceProvider[]
-  users            User[]            @relation("UserPrimaryState")
+  marketplaceProducts MarketplaceProduct[]
+  users            User[]               @relation("UserPrimaryState")
   userStates       UserState[]
   enquiries        Enquiry[]
 }
@@ -61,6 +62,10 @@ model User {
   pincode                  String?
   km                       Int?                   @default(1)
   isActive                 Boolean                @default(true)
+  /// Set when email/OTP verification succeeds
+  emailVerifiedAt          DateTime?
+  /// User opted in as volunteer during registration/profile
+  wantsVolunteer           Boolean                @default(false)
   roleId                   String
   /// Primary/home state (especially for STATE_ADMIN)
   stateId                  String?
@@ -210,6 +215,8 @@ model Enquiry {
   phone                  String?
   message                String?
   marketplaceProductId   String?
+  adminFlag              AdminLifecycleFlag @default(ACTIVE)
+  deletedAt              DateTime?
   marketplaceProduct     MarketplaceProduct? @relation(fields: [marketplaceProductId], references: [id], onDelete: SetNull)
   provider    ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
   state       State?           @relation(fields: [stateId], references: [id], onDelete: SetNull)
@@ -219,6 +226,8 @@ model Enquiry {
   @@index([providerId])
   @@index([stateId])
   @@index([marketplaceProductId])
+  @@index([adminFlag])
+  @@index([deletedAt])
 }
 
 model Faq {
@@ -275,27 +284,64 @@ model Blog {
 }
 
 model JobAlert {
-  id          String          @id @default(uuid())
+  id          String              @id @default(uuid())
   title       String
   description String?
   postDate    String?
   lastDate    String?
-  isActive    Boolean         @default(true)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isActive    Boolean             @default(true)
+  adminFlag   AdminLifecycleFlag  @default(ACTIVE)
+  deletedAt   DateTime?
   broadcastAt DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
   broadcasts  UserBroadcast[]
+
+  @@index([isActive])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@index([adminFlag])
+  @@index([deletedAt])
 }
 
 model Suggestion {
-  id           String   @id @default(uuid())
+  id           String             @id @default(uuid())
   title        String
   description  String?
   receivedFrom String?
-  status       String   @default("OPEN")
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status       String             @default("OPEN")
+  isActive     Boolean            @default(true)
+  adminFlag    AdminLifecycleFlag @default(ACTIVE)
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([status])
+  @@index([adminFlag])
+  @@index([deletedAt])
+}
+
+model Event {
+  id          String             @id @default(uuid())
+  title       String
+  description String?
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  isActive    Boolean            @default(true)
+  adminFlag   AdminLifecycleFlag @default(ACTIVE)
+  deletedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([location])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@index([isActive])
+  @@index([adminFlag])
+  @@index([deletedAt])
 }
 
 model Volunteer {
@@ -310,29 +356,39 @@ model Volunteer {
 }
 
 model MarketplaceProduct {
-  id            String   @id @default(uuid())
-  name          String
-  actualPrice   String?
-  offerPrice    String?
-  phone         String?
-  listingIntent String   @default("sell")
-  sellerName    String?
-  description   String?
-  address       String?
-  color         String?
-  brand         String?
-  features      String?
-  gallery       String[] @default([])
-  location      String?
-  createdById   String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  createdBy     User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  enquiries     Enquiry[]
+  id             String                     @id @default(uuid())
+  name           String
+  actualPrice    String?
+  offerPrice     String?
+  phone          String?
+  listingIntent  String                     @default("sell")
+  sellerName     String?
+  description    String?
+  address        String?
+  color          String?
+  brand          String?
+  features       String?
+  gallery        String[]                   @default([])
+  location       String?
+  stateId        String?
+  createdById    String?
+  isActive       Boolean                    @default(true)
+  approvalStatus MarketplaceApprovalStatus  @default(PENDING)
+  adminFlag      AdminLifecycleFlag         @default(ACTIVE)
+  deletedAt      DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+  createdBy      User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  state          State?                     @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  enquiries      Enquiry[]
 
   @@index([createdById])
   @@index([isActive])
+  @@index([stateId])
+  @@index([approvalStatus])
+  @@index([adminFlag])
+  @@index([deletedAt])
+  @@index([createdAt])
 }
 
 model MarketplaceParty {
@@ -429,6 +485,8 @@ model Payment {
   referenceNo String?
   notes       String?
   paidAt      DateTime?
+  /// Sponsorship / subscription validity end (set on successful payment)
+  validUntil  DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -436,6 +494,7 @@ model Payment {
   @@index([status])
   @@index([purpose])
   @@index([paidAt])
+  @@index([validUntil])
   @@index([userId])
   @@index([createdAt])
 }
@@ -474,6 +533,18 @@ enum ProviderApprovalStatus {
   PENDING_APPROVAL
   APPROVED
   REJECTED
+}
+
+enum MarketplaceApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AdminLifecycleFlag {
+  READ
+  ACTIVE
+  DELETE
 }
 
 enum EnquiryStatus {

@@ -76,8 +76,12 @@ export declare class PublicService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -96,8 +100,12 @@ export declare class PublicService {
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
         createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
@@ -126,5 +134,7 @@ export declare class PublicService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
 }

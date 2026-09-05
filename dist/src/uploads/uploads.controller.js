@@ -19,6 +19,14 @@ const multer_1 = require("multer");
 const client_1 = require("@prisma/client");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const uploads_service_1 = require("./uploads.service");
+const ALLOWED_MIME = new Set([
+    'image/jpeg',
+    'image/jpg',
+    'image/pjpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+]);
 let UploadsController = class UploadsController {
     uploadsService;
     constructor(uploadsService) {
@@ -34,6 +42,13 @@ __decorate([
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
         storage: (0, multer_1.memoryStorage)(),
         limits: { fileSize: 5 * 1024 * 1024 },
+        fileFilter: (_req, file, cb) => {
+            if (!ALLOWED_MIME.has(file.mimetype)) {
+                cb(new common_1.BadRequestException('Only JPEG, PNG, WebP, and GIF images are allowed'), false);
+                return;
+            }
+            cb(null, true);
+        },
     })),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
@@ -42,7 +57,7 @@ __decorate([
 ], UploadsController.prototype, "upload", null);
 exports.UploadsController = UploadsController = __decorate([
     (0, common_1.Controller)('uploads'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __metadata("design:paramtypes", [uploads_service_1.UploadsService])
 ], UploadsController);
 //# sourceMappingURL=uploads.controller.js.map

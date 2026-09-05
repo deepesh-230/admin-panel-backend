@@ -35,6 +35,8 @@ export declare class EnquiriesService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     })[]>;
     findOne(id: string, currentUser: AuthUser): Promise<{
         state: {
@@ -66,6 +68,8 @@ export declare class EnquiriesService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     create(currentUser: AuthUser, data: CreateEnquiryDto): Promise<{
         state: {
@@ -97,6 +101,8 @@ export declare class EnquiriesService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     update(id: string, currentUser: AuthUser, data: UpdateEnquiryDto): Promise<{
         state: {
@@ -128,6 +134,8 @@ export declare class EnquiriesService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     remove(id: string, currentUser: AuthUser): Promise<{
         id: string;
@@ -148,6 +156,8 @@ export declare class EnquiriesService {
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     private scopeWhere;
     private assertCanAccess;
