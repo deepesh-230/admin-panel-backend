@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketplacePartiesController = exports.MarketplaceProductsController = exports.VolunteersController = exports.SuggestionsController = exports.JobAlertsController = exports.BlogsController = exports.CmsPagesController = exports.HelpTicketsController = exports.UsefulLinksController = exports.FaqsController = void 0;
+exports.MarketplacePartiesController = exports.MarketplaceProductsController = exports.VolunteersController = exports.SuggestionsController = exports.JobAlertsController = exports.BlogsController = exports.CmsPagesController = exports.HelpTicketsController = exports.SocialSettingsController = exports.UsefulLinksController = exports.FaqsController = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
@@ -243,6 +243,9 @@ exports.UsefulLinksController = UsefulLinksController = __decorate([
     __metadata("design:paramtypes", [cms_service_1.CmsService,
         broadcasts_service_1.BroadcastsService])
 ], UsefulLinksController);
+class SocialSettingsController extends resourceController('social-settings', 'socialSetting', 'cms', ['name', 'code']) {
+}
+exports.SocialSettingsController = SocialSettingsController;
 class HelpTicketsController extends resourceController('help-tickets', 'helpTicket', 'cms', ['name', 'email', 'message']) {
 }
 exports.HelpTicketsController = HelpTicketsController;

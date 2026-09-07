@@ -28,6 +28,8 @@ const listings_module_1 = require("./listings/listings.module");
 const mail_module_1 = require("./mail/mail.module");
 const marketplace_module_1 = require("./marketplace/marketplace.module");
 const payments_module_1 = require("./payments/payments.module");
+const permissions_module_1 = require("./permissions/permissions.module");
+const places_module_1 = require("./places/places.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const profile_module_1 = require("./profile/profile.module");
 const public_module_1 = require("./public/public.module");
@@ -66,6 +68,8 @@ exports.AppModule = AppModule = __decorate([
             profile_module_1.ProfileModule,
             marketplace_module_1.MarketplaceModule,
             payments_module_1.PaymentsModule,
+            permissions_module_1.PermissionsModule,
+            places_module_1.PlacesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

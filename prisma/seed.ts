@@ -5,6 +5,7 @@ import {
   PERMISSION_CATALOG,
   ROLE_DESCRIPTIONS,
 } from '../src/permissions/permission-registry';
+import { INDIA_STATES } from '../src/states/india-states';
 
 const prisma = new PrismaClient();
 
@@ -42,17 +43,6 @@ async function main() {
       create: { name: roleDef.name, description: roleDef.description },
     });
 
-    const existingCount = await prisma.rolePermission.count({ where: { roleId: role.id } });
-    const shouldSync =
-      roleDef.name === RoleName.ADMIN || existingCount === 0;
-
-    if (!shouldSync) {
-      // Preserve Central Admin customizations for non-ADMIN roles.
-      continue;
-    }
-
-    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
-
     const codes =
       roleDef.name === RoleName.ADMIN
         ? allPermissions.map((p) => p.code)
@@ -62,6 +52,8 @@ async function main() {
       .map((code) => permissionByCode.get(code)?.id)
       .filter(Boolean) as string[];
 
+    // Additive: grant missing defaults without removing customizations.
+    // ADMIN also gets any newly added catalog permissions.
     if (permissionIds.length) {
       await prisma.rolePermission.createMany({
         data: permissionIds.map((permissionId) => ({
@@ -76,11 +68,15 @@ async function main() {
   const adminRole = await prisma.role.findUniqueOrThrow({ where: { name: RoleName.ADMIN } });
   const passwordHash = await bcrypt.hash('Admin@123', 12);
 
-  const defaultState = await prisma.state.upsert({
-    where: { name: 'Telangana' },
-    update: { code: 'TS', isActive: true },
-    create: { name: 'Telangana', code: 'TS', isActive: true },
-  });
+  for (const state of INDIA_STATES) {
+    await prisma.state.upsert({
+      where: { name: state.name },
+      update: { code: state.code, isActive: true },
+      create: { name: state.name, code: state.code, isActive: true },
+    });
+  }
+
+  const defaultState = await prisma.state.findUniqueOrThrow({ where: { name: 'Telangana' } });
 
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@divyaangdisha.com' },
@@ -414,6 +410,47 @@ async function main() {
       isActive: true,
     },
   });
+
+  const socialSettings = [
+    {
+      id: 'seed-social-whatsapp',
+      name: 'WhatsApp',
+      code: 'https://wa.me/918895199939',
+      createdAt: new Date('2024-08-12'),
+    },
+    {
+      id: 'seed-social-facebook',
+      name: 'facebook',
+      code: 'divyaangdisha.com',
+      createdAt: new Date('2021-05-01'),
+    },
+    {
+      id: 'seed-social-twitter',
+      name: 'Twitter',
+      code: 'divyaangdisha.com',
+      createdAt: new Date('2021-04-18'),
+    },
+    {
+      id: 'seed-social-instagram',
+      name: 'instagram',
+      code: 'divyaangdisha.com',
+      createdAt: new Date('2021-07-19'),
+    },
+  ];
+
+  for (const row of socialSettings) {
+    await prisma.socialSetting.upsert({
+      where: { id: row.id },
+      update: { name: row.name, code: row.code, isActive: true },
+      create: {
+        id: row.id,
+        name: row.name,
+        code: row.code,
+        isActive: true,
+        createdAt: row.createdAt,
+      },
+    });
+  }
 
   await prisma.suggestion.upsert({
     where: { id: 'seed-suggestion-1' },

@@ -106,16 +106,23 @@ export class UsersService {
       ];
     }
 
-    const allowedSort = new Set(['createdAt', 'email', 'name', 'updatedAt']);
+    const allowedSort = new Set(['createdAt', 'email', 'name', 'updatedAt', 'isActive', 'role', 'state']);
     const sortBy = allowedSort.has(query.sortBy || '') ? query.sortBy! : 'createdAt';
-    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const sortOrder: Prisma.SortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const orderBy: Prisma.UserOrderByWithRelationInput =
+      sortBy === 'role'
+        ? { role: { name: sortOrder } }
+        : sortBy === 'state'
+          ? { state: { name: sortOrder } }
+          : { [sortBy]: sortOrder };
 
     const [total, users] = await this.prisma.$transaction([
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,
         include: userInclude,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy,
         skip,
         take: limit,
       }),

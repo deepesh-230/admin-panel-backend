@@ -45,6 +45,9 @@ let PublicController = class PublicController {
     listUsefulLinks() {
         return this.publicService.listUsefulLinks();
     }
+    listSocialSettings() {
+        return this.publicService.listSocialSettings();
+    }
     getPage(slug) {
         return this.publicService.getPageBySlug(slug);
     }
@@ -106,6 +109,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "listUsefulLinks", null);
+__decorate([
+    (0, common_1.Get)('social-settings'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "listSocialSettings", null);
 __decorate([
     (0, common_1.Get)('pages/:slug'),
     __param(0, (0, common_1.Param)('slug')),

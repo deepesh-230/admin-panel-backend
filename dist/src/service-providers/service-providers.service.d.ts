@@ -49,8 +49,8 @@ export declare class ServiceProvidersService {
             } | null;
             state: {
                 id: string;
-                code: string | null;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -126,8 +126,8 @@ export declare class ServiceProvidersService {
             } | null;
             state: {
                 id: string;
-                code: string | null;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -202,8 +202,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -271,8 +271,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -340,8 +340,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -409,8 +409,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -482,8 +482,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -551,8 +551,8 @@ export declare class ServiceProvidersService {
         } | null;
         state: {
             id: string;
-            code: string | null;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;

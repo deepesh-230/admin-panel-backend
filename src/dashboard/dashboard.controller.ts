@@ -38,6 +38,14 @@ class CreateEventDto {
   endsAt?: string;
 
   @IsOptional()
+  @IsString()
+  registrationLink?: string;
+
+  @IsOptional()
+  @IsString()
+  contactInfo?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
@@ -62,6 +70,14 @@ class UpdateEventDto {
   @IsOptional()
   @IsString()
   endsAt?: string | null;
+
+  @IsOptional()
+  @IsString()
+  registrationLink?: string | null;
+
+  @IsOptional()
+  @IsString()
+  contactInfo?: string | null;
 
   @IsOptional()
   @IsBoolean()
@@ -125,6 +141,8 @@ export class DashboardController {
   }
 
   @Get('events')
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
+  @Permissions('events.read')
   listEvents(@Query('from') from?: string, @Query('to') to?: string) {
     const now = new Date();
     const windowStart = from ? new Date(from) : now;
@@ -141,22 +159,26 @@ export class DashboardController {
   }
 
   @Post('events')
-  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
+  @Permissions('events.write')
   createEvent(@Body() dto: CreateEventDto) {
     return this.prisma.event.create({
       data: {
         title: dto.title.trim(),
-        description: dto.description,
-        location: dto.location,
+        description: dto.description?.trim() || null,
+        location: dto.location?.trim() || null,
         startsAt: new Date(dto.startsAt),
         endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+        registrationLink: dto.registrationLink?.trim() || null,
+        contactInfo: dto.contactInfo?.trim() || null,
         isActive: dto.isActive ?? true,
       },
     });
   }
 
   @Patch('events/:id')
-  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
+  @Permissions('events.write')
   async updateEvent(@Param('id') id: string, @Body() dto: UpdateEventDto) {
     const deletedAt =
       dto.adminFlag === AdminLifecycleFlag.DELETE
@@ -168,11 +190,19 @@ export class DashboardController {
       where: { id },
       data: {
         ...(dto.title !== undefined && { title: dto.title.trim() }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.location !== undefined && { location: dto.location }),
+        ...(dto.description !== undefined && {
+          description: dto.description?.trim() || null,
+        }),
+        ...(dto.location !== undefined && { location: dto.location?.trim() || null }),
         ...(dto.startsAt !== undefined && { startsAt: new Date(dto.startsAt) }),
         ...(dto.endsAt !== undefined && {
           endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+        }),
+        ...(dto.registrationLink !== undefined && {
+          registrationLink: dto.registrationLink?.trim() || null,
+        }),
+        ...(dto.contactInfo !== undefined && {
+          contactInfo: dto.contactInfo?.trim() || null,
         }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         ...(dto.adminFlag !== undefined && { adminFlag: dto.adminFlag }),
@@ -182,7 +212,8 @@ export class DashboardController {
   }
 
   @Delete('events/:id')
-  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+  @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
+  @Permissions('events.write')
   async removeEvent(@Param('id') id: string) {
     await this.prisma.event.update({
       where: { id },

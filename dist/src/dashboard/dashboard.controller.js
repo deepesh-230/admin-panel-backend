@@ -44,6 +44,8 @@ class CreateEventDto {
     location;
     startsAt;
     endsAt;
+    registrationLink;
+    contactInfo;
     isActive;
 }
 __decorate([
@@ -71,6 +73,16 @@ __decorate([
 ], CreateEventDto.prototype, "endsAt", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEventDto.prototype, "registrationLink", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateEventDto.prototype, "contactInfo", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateEventDto.prototype, "isActive", void 0);
@@ -80,6 +92,8 @@ class UpdateEventDto {
     location;
     startsAt;
     endsAt;
+    registrationLink;
+    contactInfo;
     isActive;
     adminFlag;
 }
@@ -108,6 +122,16 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", Object)
 ], UpdateEventDto.prototype, "endsAt", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], UpdateEventDto.prototype, "registrationLink", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", Object)
+], UpdateEventDto.prototype, "contactInfo", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
@@ -170,10 +194,12 @@ let DashboardController = class DashboardController {
         return this.prisma.event.create({
             data: {
                 title: dto.title.trim(),
-                description: dto.description,
-                location: dto.location,
+                description: dto.description?.trim() || null,
+                location: dto.location?.trim() || null,
                 startsAt: new Date(dto.startsAt),
                 endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+                registrationLink: dto.registrationLink?.trim() || null,
+                contactInfo: dto.contactInfo?.trim() || null,
                 isActive: dto.isActive ?? true,
             },
         });
@@ -188,11 +214,19 @@ let DashboardController = class DashboardController {
             where: { id },
             data: {
                 ...(dto.title !== undefined && { title: dto.title.trim() }),
-                ...(dto.description !== undefined && { description: dto.description }),
-                ...(dto.location !== undefined && { location: dto.location }),
+                ...(dto.description !== undefined && {
+                    description: dto.description?.trim() || null,
+                }),
+                ...(dto.location !== undefined && { location: dto.location?.trim() || null }),
                 ...(dto.startsAt !== undefined && { startsAt: new Date(dto.startsAt) }),
                 ...(dto.endsAt !== undefined && {
                     endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
+                }),
+                ...(dto.registrationLink !== undefined && {
+                    registrationLink: dto.registrationLink?.trim() || null,
+                }),
+                ...(dto.contactInfo !== undefined && {
+                    contactInfo: dto.contactInfo?.trim() || null,
                 }),
                 ...(dto.isActive !== undefined && { isActive: dto.isActive }),
                 ...(dto.adminFlag !== undefined && { adminFlag: dto.adminFlag }),
@@ -242,6 +276,8 @@ __decorate([
 ], DashboardController.prototype, "setFlag", null);
 __decorate([
     (0, common_1.Get)('events'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, permissions_decorator_1.Permissions)('events.read'),
     __param(0, (0, common_1.Query)('from')),
     __param(1, (0, common_1.Query)('to')),
     __metadata("design:type", Function),
@@ -250,7 +286,8 @@ __decorate([
 ], DashboardController.prototype, "listEvents", null);
 __decorate([
     (0, common_1.Post)('events'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, permissions_decorator_1.Permissions)('events.write'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [CreateEventDto]),
@@ -258,7 +295,8 @@ __decorate([
 ], DashboardController.prototype, "createEvent", null);
 __decorate([
     (0, common_1.Patch)('events/:id'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, permissions_decorator_1.Permissions)('events.write'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -267,7 +305,8 @@ __decorate([
 ], DashboardController.prototype, "updateEvent", null);
 __decorate([
     (0, common_1.Delete)('events/:id'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, permissions_decorator_1.Permissions)('events.write'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

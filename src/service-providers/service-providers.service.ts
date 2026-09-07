@@ -261,6 +261,10 @@ export class ServiceProvidersService {
       'name',
       'approvalStatus',
       'distance',
+      'city',
+      'isActive',
+      'state',
+      'category',
     ]);
     const sortBy = allowedSort.has(query.sortBy || '') ? query.sortBy! : 'createdAt';
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -269,7 +273,11 @@ export class ServiceProvidersService {
       const orderBy =
         sortBy === 'distance'
           ? ({ createdAt: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput)
-          : ({ [sortBy]: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput);
+          : sortBy === 'state'
+            ? ({ state: { name: sortOrder } } as Prisma.ServiceProviderOrderByWithRelationInput)
+            : sortBy === 'category'
+              ? ({ category: { name: sortOrder } } as Prisma.ServiceProviderOrderByWithRelationInput)
+              : ({ [sortBy]: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput);
 
       const [rows, total] = await this.prisma.$transaction([
         this.prisma.serviceProvider.findMany({
@@ -315,8 +323,26 @@ export class ServiceProvidersService {
       .filter((item) => item.distanceKm <= radiusKm);
 
     withDistance.sort((a, b) => {
-      if (sortBy === 'name') {
-        const cmp = a.row.name.localeCompare(b.row.name);
+      if (sortBy === 'name' || sortBy === 'city') {
+        const av = String(a.row[sortBy] || '');
+        const bv = String(b.row[sortBy] || '');
+        const cmp = av.localeCompare(bv);
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
+      if (sortBy === 'approvalStatus') {
+        const cmp = a.row.approvalStatus.localeCompare(b.row.approvalStatus);
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
+      if (sortBy === 'isActive') {
+        const cmp = Number(a.row.isActive) - Number(b.row.isActive);
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
+      if (sortBy === 'state') {
+        const cmp = (a.row.state?.name || '').localeCompare(b.row.state?.name || '');
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
+      if (sortBy === 'category') {
+        const cmp = (a.row.category?.name || '').localeCompare(b.row.category?.name || '');
         return sortOrder === 'asc' ? cmp : -cmp;
       }
       if (sortBy === 'createdAt' || sortBy === 'updatedAt') {

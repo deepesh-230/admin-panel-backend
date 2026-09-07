@@ -251,6 +251,18 @@ model UsefulLink {
   broadcasts  UserBroadcast[]
 }
 
+model SocialSetting {
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([name])
+}
+
 model HelpTicket {
   id        String   @id @default(uuid())
   name      String
@@ -324,17 +336,19 @@ model Suggestion {
 }
 
 model Event {
-  id          String             @id @default(uuid())
-  title       String
-  description String?
-  location    String?
-  startsAt    DateTime
-  endsAt      DateTime?
-  isActive    Boolean            @default(true)
-  adminFlag   AdminLifecycleFlag @default(ACTIVE)
-  deletedAt   DateTime?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id               String             @id @default(uuid())
+  title            String
+  description      String?
+  location         String?
+  startsAt         DateTime
+  endsAt           DateTime?
+  registrationLink String?
+  contactInfo      String?
+  isActive         Boolean            @default(true)
+  adminFlag        AdminLifecycleFlag @default(ACTIVE)
+  deletedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   @@index([location])
   @@index([startsAt])

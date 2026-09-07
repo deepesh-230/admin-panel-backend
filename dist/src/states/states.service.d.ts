@@ -5,42 +5,42 @@ export declare class StatesService {
     constructor(prisma: PrismaService);
     findAll(search?: string, isActive?: boolean): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     create(dto: CreateStateDto): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     update(id: string, dto: UpdateStateDto): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     remove(id: string): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
 }

@@ -3,5 +3,7 @@ import { PrismaClient } from '@prisma/client';
 export declare class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
     private readonly logger;
     onModuleInit(): Promise<void>;
+    private ensureSocialSettingTable;
+    private ensureIndiaStates;
     onModuleDestroy(): Promise<void>;
 }

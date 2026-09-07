@@ -56,15 +56,15 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   },
   { code: 'payments.read', description: 'View payment records', group: 'Payments' },
   { code: 'payments.write', description: 'Manage payment records', group: 'Payments' },
+  { code: 'events.read', description: 'View events', group: 'Events' },
+  { code: 'events.write', description: 'Create and manage events', group: 'Events' },
 ];
 
+/** Roles shown on the admin-panel access matrix. */
+export const PANEL_ROLES: RoleName[] = [RoleName.ADMIN, RoleName.STATE_ADMIN];
+
 /** Roles that Central Admin can edit on the access matrix. */
-export const EDITABLE_ROLES: RoleName[] = [
-  RoleName.STATE_ADMIN,
-  RoleName.SERVICE_PROVIDER_ADMIN,
-  RoleName.VOLUNTEER,
-  RoleName.END_USER,
-];
+export const EDITABLE_ROLES: RoleName[] = [RoleName.STATE_ADMIN];
 
 export const ROLE_LABELS: Record<RoleName, string> = {
   [RoleName.ADMIN]: 'Central Admin',
@@ -99,6 +99,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     'marketplace.write',
     'payments.read',
     'payments.write',
+    'events.read',
+    'events.write',
   ],
   [RoleName.END_USER]: [],
   [RoleName.SERVICE_PROVIDER_ADMIN]: [
@@ -106,6 +108,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     'enquiries.write',
     'providers.read',
     'providers.write',
+    'events.read',
+    'events.write',
   ],
   [RoleName.VOLUNTEER]: [
     'volunteers.read',

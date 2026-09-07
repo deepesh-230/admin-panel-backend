@@ -13,6 +13,8 @@ declare class CreateEventDto {
     location?: string;
     startsAt: string;
     endsAt?: string;
+    registrationLink?: string;
+    contactInfo?: string;
     isActive?: boolean;
 }
 declare class UpdateEventDto {
@@ -21,6 +23,8 @@ declare class UpdateEventDto {
     location?: string;
     startsAt?: string;
     endsAt?: string | null;
+    registrationLink?: string | null;
+    contactInfo?: string | null;
     isActive?: boolean;
     adminFlag?: AdminLifecycleFlag;
 }
@@ -173,8 +177,8 @@ export declare class DashboardController {
                 isActive: boolean;
                 state: {
                     id: string;
-                    code: string | null;
                     name: string;
+                    code: string | null;
                 } | null;
                 sessions: {
                     id: string;
@@ -194,10 +198,10 @@ export declare class DashboardController {
                     isValid: boolean;
                     id: string;
                     status: import("@prisma/client").$Enums.PaymentStatus;
+                    paidAt: Date | null;
                     payerName: string | null;
                     payerEmail: string | null;
                     planId: string | null;
-                    paidAt: Date | null;
                     validUntil: Date | null;
                 }[];
             };
@@ -221,62 +225,14 @@ export declare class DashboardController {
     }>;
     setFlag(dto: SetFlagDto): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        name: string | null;
-        email: string;
-        phone: string | null;
-        stateId: string | null;
-        category: string;
-        sNo: number;
-        subCategory: string;
-        product: string;
-        date: string;
-        createdBy: string;
-        kind: string;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        providerId: string | null;
-        message: string | null;
-        marketplaceProductId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-    } | {
-        id: string;
-        description: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        title: string;
-        postDate: string | null;
-        lastDate: string | null;
-        startsAt: Date | null;
-        endsAt: Date | null;
-        broadcastAt: Date | null;
-    } | {
-        id: string;
-        description: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        isActive: boolean;
-        status: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        title: string;
-        receivedFrom: string | null;
-    } | {
-        id: string;
-        description: string | null;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
+        createdAt: Date;
+        updatedAt: Date;
         isActive: boolean;
+        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -288,59 +244,115 @@ export declare class DashboardController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     } | {
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        location: string | null;
+        description: string | null;
+        title: string;
+        postDate: string | null;
+        lastDate: string | null;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
+        startsAt: Date | null;
+        endsAt: Date | null;
+        broadcastAt: Date | null;
+    } | {
+        category: string;
+        id: string;
+        name: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string;
+        phone: string | null;
+        stateId: string | null;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        createdBy: string;
+        product: string;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
+        message: string | null;
+        kind: string;
+        providerId: string | null;
+        sNo: number;
+        subCategory: string;
+        date: string;
+        marketplaceProductId: string | null;
+    } | {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        description: string | null;
         title: string;
+        status: string;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
+        receivedFrom: string | null;
+    } | {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        description: string | null;
+        location: string | null;
+        title: string;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         startsAt: Date;
         endsAt: Date | null;
+        registrationLink: string | null;
+        contactInfo: string | null;
     } | {
         ok: boolean;
     }>;
     listEvents(from?: string, to?: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        description: string | null;
         location: string | null;
+        title: string;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
-        title: string;
         startsAt: Date;
         endsAt: Date | null;
+        registrationLink: string | null;
+        contactInfo: string | null;
     }[]>;
     createEvent(dto: CreateEventDto): import("@prisma/client").Prisma.Prisma__EventClient<{
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        description: string | null;
         location: string | null;
+        title: string;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
-        title: string;
         startsAt: Date;
         endsAt: Date | null;
+        registrationLink: string | null;
+        contactInfo: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     updateEvent(id: string, dto: UpdateEventDto): Promise<{
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        description: string | null;
         location: string | null;
+        title: string;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
-        title: string;
         startsAt: Date;
         endsAt: Date | null;
+        registrationLink: string | null;
+        contactInfo: string | null;
     }>;
     removeEvent(id: string): Promise<{
         id: string;

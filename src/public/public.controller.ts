@@ -46,6 +46,11 @@ export class PublicController {
     return this.publicService.listUsefulLinks();
   }
 
+  @Get('social-settings')
+  listSocialSettings() {
+    return this.publicService.listSocialSettings();
+  }
+
   @Get('pages/:slug')
   getPage(@Param('slug') slug: string) {
     return this.publicService.getPageBySlug(slug);

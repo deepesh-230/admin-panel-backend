@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export type CmsModel =
   | 'faq'
   | 'usefulLink'
+  | 'socialSetting'
   | 'helpTicket'
   | 'cmsPage'
   | 'blog'

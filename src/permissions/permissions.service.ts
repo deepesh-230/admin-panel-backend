@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   EDITABLE_ROLES,
+  PANEL_ROLES,
   PERMISSION_CATALOG,
   ROLE_DESCRIPTIONS,
   ROLE_LABELS,
@@ -54,7 +55,7 @@ export class PermissionsService {
     });
 
     const matrix: Record<string, string[]> = {};
-    const roleMeta = Object.values(RoleName).map((name) => {
+    const roleMeta = PANEL_ROLES.map((name) => {
       const role = roles.find((r) => r.name === name);
       const codes = role
         ? role.permissions.map((rp) => rp.permission.code).sort()
@@ -72,7 +73,9 @@ export class PermissionsService {
       permissions: catalog,
       roles: roleMeta,
       matrix,
-      defaults: DEFAULT_ROLE_PERMISSIONS,
+      defaults: Object.fromEntries(
+        PANEL_ROLES.map((name) => [name, DEFAULT_ROLE_PERMISSIONS[name] || []]),
+      ),
     };
   }
 

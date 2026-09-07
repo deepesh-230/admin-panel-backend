@@ -10,6 +10,7 @@ import {
   MarketplaceProductsController,
   SuggestionsController,
   UsefulLinksController,
+  SocialSettingsController,
   VolunteersController,
 } from './cms.controller';
 import { CmsService } from './cms.service';
@@ -20,6 +21,7 @@ import { BroadcastsService } from './broadcasts.service';
   controllers: [
     FaqsController,
     UsefulLinksController,
+    SocialSettingsController,
     HelpTicketsController,
     CmsPagesController,
     BlogsController,

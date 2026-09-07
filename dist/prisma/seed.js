@@ -35,33 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
+const permission_registry_1 = require("../src/permissions/permission-registry");
+const india_states_1 = require("../src/states/india-states");
 const prisma = new client_1.PrismaClient();
-const PERMISSIONS = [
-    { code: 'dashboard.read', description: 'View dashboard statistics' },
-    { code: 'users.read', description: 'View users' },
-    { code: 'users.write', description: 'Manage users' },
-    { code: 'listings.read', description: 'View listings' },
-    { code: 'listings.write', description: 'Manage listings' },
-    { code: 'enquiries.read', description: 'View enquiries' },
-    { code: 'enquiries.write', description: 'Manage enquiries' },
-    { code: 'providers.read', description: 'View service providers' },
-    { code: 'providers.write', description: 'Manage service providers' },
-    { code: 'settings.write', description: 'Manage settings' },
-    { code: 'states.read', description: 'View states' },
-    { code: 'states.write', description: 'Manage states' },
-    { code: 'state_admins.read', description: 'View state admins' },
-    { code: 'state_admins.write', description: 'Manage state admins' },
-    { code: 'categories.read', description: 'View categories, subcategories, and keywords' },
-    { code: 'categories.write', description: 'Manage categories, subcategories, and keywords' },
-    { code: 'cms.read', description: 'View FAQ, pages, blogs, links, jobs, help, suggestions' },
-    { code: 'cms.write', description: 'Manage FAQ, pages, blogs, links, jobs, help, suggestions' },
-    { code: 'volunteers.read', description: 'View volunteers' },
-    { code: 'volunteers.write', description: 'Manage volunteers' },
-    { code: 'marketplace.read', description: 'View marketplace products, buyers, and sellers' },
-    { code: 'marketplace.write', description: 'Manage marketplace products, buyers, and sellers' },
-    { code: 'payments.read', description: 'View payment records' },
-    { code: 'payments.write', description: 'Manage payment records' },
-];
+const PERMISSIONS = permission_registry_1.PERMISSION_CATALOG.map(({ code, description }) => ({ code, description }));
 function slugify(name) {
     return name
         .toLowerCase()
@@ -77,75 +54,24 @@ async function main() {
         });
     }
     const allPermissions = await prisma.permission.findMany();
-    const roles = [
-        {
-            name: client_1.RoleName.ADMIN,
-            description: 'Main platform administrator',
-            permissionCodes: allPermissions.map((p) => p.code),
-        },
-        {
-            name: client_1.RoleName.STATE_ADMIN,
-            description: 'State-scoped administrator',
-            permissionCodes: [
-                'dashboard.read',
-                'users.read',
-                'users.write',
-                'listings.read',
-                'listings.write',
-                'enquiries.read',
-                'enquiries.write',
-                'providers.read',
-                'providers.write',
-                'states.read',
-                'state_admins.read',
-                'categories.read',
-                'categories.write',
-                'cms.read',
-                'cms.write',
-                'volunteers.read',
-                'volunteers.write',
-                'marketplace.read',
-                'marketplace.write',
-                'payments.read',
-                'payments.write',
-            ],
-        },
-        {
-            name: client_1.RoleName.END_USER,
-            description: 'Mobile end user',
-            permissionCodes: [],
-        },
-        {
-            name: client_1.RoleName.SERVICE_PROVIDER_ADMIN,
-            description: 'Service provider administrator',
-            permissionCodes: [
-                'enquiries.read',
-                'enquiries.write',
-                'providers.read',
-                'providers.write',
-            ],
-        },
-        {
-            name: client_1.RoleName.VOLUNTEER,
-            description: 'Volunteer coordinator',
-            permissionCodes: [
-                'volunteers.read',
-                'volunteers.write',
-                'enquiries.read',
-                'enquiries.write',
-            ],
-        },
-    ];
+    const permissionByCode = new Map(allPermissions.map((p) => [p.code, p]));
+    const roles = Object.values(client_1.RoleName).map((name) => ({
+        name,
+        description: permission_registry_1.ROLE_DESCRIPTIONS[name],
+        permissionCodes: permission_registry_1.DEFAULT_ROLE_PERMISSIONS[name] || [],
+    }));
     for (const roleDef of roles) {
         const role = await prisma.role.upsert({
             where: { name: roleDef.name },
             update: { description: roleDef.description },
             create: { name: roleDef.name, description: roleDef.description },
         });
-        await prisma.rolePermission.deleteMany({ where: { roleId: role.id } });
-        const permissionIds = allPermissions
-            .filter((p) => roleDef.permissionCodes.includes(p.code))
-            .map((p) => p.id);
+        const codes = roleDef.name === client_1.RoleName.ADMIN
+            ? allPermissions.map((p) => p.code)
+            : roleDef.permissionCodes;
+        const permissionIds = codes
+            .map((code) => permissionByCode.get(code)?.id)
+            .filter(Boolean);
         if (permissionIds.length) {
             await prisma.rolePermission.createMany({
                 data: permissionIds.map((permissionId) => ({
@@ -158,11 +84,14 @@ async function main() {
     }
     const adminRole = await prisma.role.findUniqueOrThrow({ where: { name: client_1.RoleName.ADMIN } });
     const passwordHash = await bcrypt.hash('Admin@123', 12);
-    const defaultState = await prisma.state.upsert({
-        where: { name: 'Telangana' },
-        update: { code: 'TS', isActive: true },
-        create: { name: 'Telangana', code: 'TS', isActive: true },
-    });
+    for (const state of india_states_1.INDIA_STATES) {
+        await prisma.state.upsert({
+            where: { name: state.name },
+            update: { code: state.code, isActive: true },
+            create: { name: state.name, code: state.code, isActive: true },
+        });
+    }
+    const defaultState = await prisma.state.findUniqueOrThrow({ where: { name: 'Telangana' } });
     const adminUser = await prisma.user.upsert({
         where: { email: 'admin@divyaangdisha.com' },
         update: {
@@ -473,6 +402,45 @@ async function main() {
             isActive: true,
         },
     });
+    const socialSettings = [
+        {
+            id: 'seed-social-whatsapp',
+            name: 'WhatsApp',
+            code: 'https://wa.me/918895199939',
+            createdAt: new Date('2024-08-12'),
+        },
+        {
+            id: 'seed-social-facebook',
+            name: 'facebook',
+            code: 'divyaangdisha.com',
+            createdAt: new Date('2021-05-01'),
+        },
+        {
+            id: 'seed-social-twitter',
+            name: 'Twitter',
+            code: 'divyaangdisha.com',
+            createdAt: new Date('2021-04-18'),
+        },
+        {
+            id: 'seed-social-instagram',
+            name: 'instagram',
+            code: 'divyaangdisha.com',
+            createdAt: new Date('2021-07-19'),
+        },
+    ];
+    for (const row of socialSettings) {
+        await prisma.socialSetting.upsert({
+            where: { id: row.id },
+            update: { name: row.name, code: row.code, isActive: true },
+            create: {
+                id: row.id,
+                name: row.name,
+                code: row.code,
+                isActive: true,
+                createdAt: row.createdAt,
+            },
+        });
+    }
     await prisma.suggestion.upsert({
         where: { id: 'seed-suggestion-1' },
         update: {

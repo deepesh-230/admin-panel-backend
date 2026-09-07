@@ -20,45 +20,46 @@ export declare class PublicService {
         };
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     })[]>;
     listSubcategories(categoryId: string): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
     }[]>;
     listStates(): Promise<{
         id: string;
+        name: string;
         code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[]>;
     listBlogs(): Promise<Record<string, unknown>[]>;
     listJobAlerts(): Promise<Record<string, unknown>[]>;
     listUsefulLinks(): Promise<Record<string, unknown>[]>;
+    listSocialSettings(): Promise<Record<string, unknown>[]>;
     getPageBySlug(slug: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        slug: string;
         title: string;
+        slug: string;
         content: string;
     }>;
     getContact(): {
@@ -69,16 +70,14 @@ export declare class PublicService {
     };
     listMarketplaceProducts(search?: string): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -90,19 +89,19 @@ export declare class PublicService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }[]>;
     getMarketplaceProduct(id: string): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -114,27 +113,29 @@ export declare class PublicService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     createEnquiry(dto: CreatePublicEnquiryDto): Promise<{
+        category: string;
         id: string;
+        name: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        category: string;
-        sNo: number;
-        subCategory: string;
-        product: string;
-        date: string;
-        createdBy: string;
-        kind: string;
         status: import("@prisma/client").$Enums.EnquiryStatus;
-        providerId: string | null;
-        message: string | null;
-        marketplaceProductId: string | null;
+        createdBy: string;
+        product: string;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
+        message: string | null;
+        kind: string;
+        providerId: string | null;
+        sNo: number;
+        subCategory: string;
+        date: string;
+        marketplaceProductId: string | null;
     }>;
 }

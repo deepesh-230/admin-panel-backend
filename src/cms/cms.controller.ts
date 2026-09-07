@@ -148,6 +148,13 @@ export class UsefulLinksController {
   }
 }
 
+export class SocialSettingsController extends resourceController(
+  'social-settings',
+  'socialSetting',
+  'cms',
+  ['name', 'code'],
+) {}
+
 export class HelpTicketsController extends resourceController(
   'help-tickets',
   'helpTicket',

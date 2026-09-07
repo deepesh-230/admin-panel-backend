@@ -24,15 +24,15 @@ export declare class BroadcastsService {
         broadcastAt: Date;
         message: string;
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
+        description: string | null;
         title: string;
         postDate: string | null;
         lastDate: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         startsAt: Date | null;
         endsAt: Date | null;
     }>;

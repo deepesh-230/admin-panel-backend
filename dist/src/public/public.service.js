@@ -64,6 +64,9 @@ let PublicService = class PublicService {
     listUsefulLinks() {
         return this.cms.findAll('usefulLink', undefined, ['title', 'url'], { isActive: true });
     }
+    listSocialSettings() {
+        return this.cms.findAll('socialSetting', undefined, ['name', 'code'], { isActive: true });
+    }
     async getPageBySlug(slug) {
         const page = await this.prisma.cmsPage.findFirst({
             where: { slug, isActive: true },

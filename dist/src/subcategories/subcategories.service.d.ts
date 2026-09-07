@@ -6,11 +6,11 @@ export declare class SubcategoriesService {
     findOne(id: string): Promise<{
         category: {
             id: string;
-            description: string | null;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             isActive: boolean;
+            description: string | null;
             slug: string | null;
             type: import("@prisma/client").$Enums.CategoryType;
             sortOrder: number;
@@ -25,11 +25,11 @@ export declare class SubcategoriesService {
         }[];
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
@@ -53,11 +53,11 @@ export declare class SubcategoriesService {
         }[];
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
@@ -73,22 +73,22 @@ export declare class SubcategoriesService {
         }[];
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
     }>;
     remove(id: string): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;

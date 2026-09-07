@@ -10,11 +10,11 @@ export declare class CategoriesService {
         };
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
@@ -31,22 +31,22 @@ export declare class CategoriesService {
             }[];
         } & {
             id: string;
-            description: string | null;
+            name: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             isActive: boolean;
+            description: string | null;
             slug: string | null;
             sortOrder: number;
             categoryId: string;
         })[];
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
@@ -65,44 +65,44 @@ export declare class CategoriesService {
         }[];
     } & {
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
     })[]>;
     create(dto: CreateCategoryDto): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     update(id: string, dto: UpdateCategoryDto): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     remove(id: string): Promise<{
         id: string;
-        description: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
+        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
