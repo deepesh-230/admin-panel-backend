@@ -6,9 +6,9 @@ export declare class EnquiriesController {
     constructor(enquiriesService: EnquiriesService);
     findAll(user: AuthUser, query: ListEnquiriesQueryDto): Promise<({
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
         provider: {
             id: string;
@@ -16,32 +16,32 @@ export declare class EnquiriesController {
             stateId: string;
         } | null;
     } & {
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     })[]>;
     findOne(id: string, user: AuthUser): Promise<{
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
         provider: {
             id: string;
@@ -49,32 +49,32 @@ export declare class EnquiriesController {
             stateId: string;
         } | null;
     } & {
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     create(user: AuthUser, body: CreateEnquiryDto): Promise<{
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
         provider: {
             id: string;
@@ -82,32 +82,32 @@ export declare class EnquiriesController {
             stateId: string;
         } | null;
     } & {
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     update(id: string, user: AuthUser, body: UpdateEnquiryDto): Promise<{
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
         provider: {
             id: string;
@@ -115,47 +115,47 @@ export declare class EnquiriesController {
             stateId: string;
         } | null;
     } & {
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     remove(id: string, user: AuthUser): Promise<{
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
 }

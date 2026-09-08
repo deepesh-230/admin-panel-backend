@@ -160,9 +160,9 @@ export declare class DashboardService {
                 phone: string | null;
                 isActive: boolean;
                 state: {
+                    code: string | null;
                     id: string;
                     name: string;
-                    code: string | null;
                 } | null;
                 sessions: {
                     id: string;
@@ -182,10 +182,10 @@ export declare class DashboardService {
                     isValid: boolean;
                     id: string;
                     status: import("@prisma/client").$Enums.PaymentStatus;
-                    paidAt: Date | null;
                     payerName: string | null;
                     payerEmail: string | null;
                     planId: string | null;
+                    paidAt: Date | null;
                     validUntil: Date | null;
                 }[];
             };

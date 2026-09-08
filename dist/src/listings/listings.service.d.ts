@@ -3,32 +3,32 @@ export declare class ListingsService {
     private prisma;
     constructor(prisma: PrismaService);
     findAll(searchQuery?: string): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }[]>;
     findOne(id: string): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }>;
     create(data: {
         category: string;
@@ -40,18 +40,18 @@ export declare class ListingsService {
         date: string;
         status?: boolean;
     }): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }>;
     update(id: string, data: {
         category?: string;
@@ -63,45 +63,45 @@ export declare class ListingsService {
         date?: string;
         status?: boolean;
     }): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }>;
     updateStatus(id: string, status: boolean): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }>;
     remove(id: string): Promise<{
-        category: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         email: string;
-        image: string;
-        status: boolean;
-        createdBy: string;
-        product: string;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        status: boolean;
+        image: string;
     }>;
 }

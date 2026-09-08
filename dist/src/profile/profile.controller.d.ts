@@ -27,15 +27,17 @@ export declare class ProfileController {
         };
     }>;
     myMarketplaceProducts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -47,19 +49,19 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
     }[]>;
     createMarketplaceProduct(user: AuthUser, dto: CreateMarketplaceProductDto): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -71,8 +73,6 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
     }>;
     listBroadcasts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;

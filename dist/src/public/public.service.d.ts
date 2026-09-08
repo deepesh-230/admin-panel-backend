@@ -19,33 +19,33 @@ export declare class PublicService {
             subcategories: number;
         };
     } & {
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     })[]>;
     listSubcategories(categoryId: string): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
     }[]>;
     listStates(): Promise<{
-        id: string;
-        name: string;
         code: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[]>;
@@ -58,8 +58,8 @@ export declare class PublicService {
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        title: string;
         slug: string;
+        title: string;
         content: string;
     }>;
     getContact(): {
@@ -69,15 +69,17 @@ export declare class PublicService {
         logo: string;
     };
     listMarketplaceProducts(search?: string): import("@prisma/client").Prisma.PrismaPromise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -89,19 +91,19 @@ export declare class PublicService {
         color: string | null;
         brand: string | null;
         features: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
     }[]>;
     getMarketplaceProduct(id: string): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         phone: string | null;
         location: string | null;
         stateId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -113,29 +115,27 @@ export declare class PublicService {
         color: string | null;
         brand: string | null;
         features: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
     }>;
     createEnquiry(dto: CreatePublicEnquiryDto): Promise<{
-        category: string;
         id: string;
-        name: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string | null;
         email: string;
         phone: string | null;
         stateId: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
-        createdBy: string;
-        product: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        message: string | null;
-        kind: string;
-        providerId: string | null;
+        category: string;
         sNo: number;
         subCategory: string;
+        product: string;
         date: string;
+        createdBy: string;
+        kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
+        providerId: string | null;
+        message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
 }

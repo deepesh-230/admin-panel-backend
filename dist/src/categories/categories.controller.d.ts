@@ -9,12 +9,12 @@ export declare class CategoriesController {
             subcategories: number;
         };
     } & {
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
@@ -32,12 +32,12 @@ export declare class CategoriesController {
             subcategoryId: string;
         }[];
     } & {
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         sortOrder: number;
         categoryId: string;
@@ -53,56 +53,56 @@ export declare class CategoriesController {
                 subcategoryId: string;
             }[];
         } & {
+            description: string | null;
             id: string;
-            name: string;
             createdAt: Date;
             updatedAt: Date;
+            name: string;
             isActive: boolean;
-            description: string | null;
             slug: string | null;
             sortOrder: number;
             categoryId: string;
         })[];
     } & {
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     create(dto: CreateCategoryDto): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     update(id: string, dto: UpdateCategoryDto): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
     }>;
     remove(id: string): Promise<{
+        description: string | null;
         id: string;
-        name: string;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         isActive: boolean;
-        description: string | null;
         slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
