@@ -11,8 +11,11 @@ const common_1 = require("@nestjs/common");
 const categories_module_1 = require("../categories/categories.module");
 const cms_module_1 = require("../cms/cms.module");
 const marketplace_module_1 = require("../marketplace/marketplace.module");
+const payments_module_1 = require("../payments/payments.module");
+const become_module_1 = require("../become/become.module");
 const prisma_module_1 = require("../prisma/prisma.module");
 const states_module_1 = require("../states/states.module");
+const system_settings_module_1 = require("../system-settings/system-settings.module");
 const public_controller_1 = require("./public.controller");
 const public_service_1 = require("./public.service");
 let PublicModule = class PublicModule {
@@ -20,7 +23,16 @@ let PublicModule = class PublicModule {
 exports.PublicModule = PublicModule;
 exports.PublicModule = PublicModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, categories_module_1.CategoriesModule, states_module_1.StatesModule, cms_module_1.CmsModule, marketplace_module_1.MarketplaceModule],
+        imports: [
+            prisma_module_1.PrismaModule,
+            categories_module_1.CategoriesModule,
+            states_module_1.StatesModule,
+            cms_module_1.CmsModule,
+            marketplace_module_1.MarketplaceModule,
+            system_settings_module_1.SystemSettingsModule,
+            payments_module_1.PaymentsModule,
+            become_module_1.BecomeModule,
+        ],
         controllers: [public_controller_1.PublicController],
         providers: [public_service_1.PublicService],
     })

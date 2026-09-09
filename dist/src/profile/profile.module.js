@@ -11,13 +11,14 @@ const common_1 = require("@nestjs/common");
 const cms_module_1 = require("../cms/cms.module");
 const marketplace_module_1 = require("../marketplace/marketplace.module");
 const prisma_module_1 = require("../prisma/prisma.module");
+const service_providers_module_1 = require("../service-providers/service-providers.module");
 const profile_controller_1 = require("./profile.controller");
 let ProfileModule = class ProfileModule {
 };
 exports.ProfileModule = ProfileModule;
 exports.ProfileModule = ProfileModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, marketplace_module_1.MarketplaceModule, cms_module_1.CmsModule],
+        imports: [prisma_module_1.PrismaModule, marketplace_module_1.MarketplaceModule, cms_module_1.CmsModule, service_providers_module_1.ServiceProvidersModule],
         controllers: [profile_controller_1.ProfileController],
     })
 ], ProfileModule);

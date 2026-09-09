@@ -13,11 +13,14 @@ exports.PublicService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const client_1 = require("@prisma/client");
+const become_service_1 = require("../become/become.service");
 const categories_service_1 = require("../categories/categories.service");
 const cms_service_1 = require("../cms/cms.service");
 const marketplace_service_1 = require("../marketplace/marketplace.service");
+const payment_plans_service_1 = require("../payments/payment-plans.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const states_service_1 = require("../states/states.service");
+const system_settings_service_1 = require("../system-settings/system-settings.service");
 let PublicService = class PublicService {
     categories;
     states;
@@ -25,13 +28,19 @@ let PublicService = class PublicService {
     marketplace;
     prisma;
     config;
-    constructor(categories, states, cms, marketplace, prisma, config) {
+    systemSettings;
+    paymentPlans;
+    become;
+    constructor(categories, states, cms, marketplace, prisma, config, systemSettings, paymentPlans, become) {
         this.categories = categories;
         this.states = states;
         this.cms = cms;
         this.marketplace = marketplace;
         this.prisma = prisma;
         this.config = config;
+        this.systemSettings = systemSettings;
+        this.paymentPlans = paymentPlans;
+        this.become = become;
     }
     listCategories(type) {
         return this.categories.findAll(undefined, true, type);
@@ -59,7 +68,10 @@ let PublicService = class PublicService {
         });
     }
     listJobAlerts() {
-        return this.cms.findAll('jobAlert', undefined, ['title', 'description'], { isActive: true });
+        return this.systemSettings.listPublicJobAlerts();
+    }
+    listPaymentPlans() {
+        return this.paymentPlans.listPublic();
     }
     listUsefulLinks() {
         return this.cms.findAll('usefulLink', undefined, ['title', 'url'], { isActive: true });
@@ -68,12 +80,23 @@ let PublicService = class PublicService {
         return this.cms.findAll('socialSetting', undefined, ['name', 'code'], { isActive: true });
     }
     async getPageBySlug(slug) {
-        const page = await this.prisma.cmsPage.findFirst({
-            where: { slug, isActive: true },
-        });
-        if (!page)
-            throw new common_1.NotFoundException('Page not found');
-        return page;
+        const aliases = {
+            privacy: ['privacy', 'privacy-policy'],
+            'privacy-policy': ['privacy-policy', 'privacy'],
+            terms: ['terms', 'terms-and-conditions'],
+            'terms-and-conditions': ['terms-and-conditions', 'terms'],
+            about: ['about', 'about-us'],
+            'about-us': ['about-us', 'about'],
+        };
+        const candidates = aliases[slug] || [slug];
+        for (const candidate of candidates) {
+            const page = await this.prisma.cmsPage.findFirst({
+                where: { slug: candidate, isActive: true },
+            });
+            if (page)
+                return page;
+        }
+        throw new common_1.NotFoundException('Page not found');
     }
     getContact() {
         return {
@@ -116,6 +139,26 @@ let PublicService = class PublicService {
             },
         });
     }
+    createHelpTicket(dto) {
+        return this.prisma.helpTicket.create({
+            data: {
+                name: dto.name.trim(),
+                email: dto.email.trim().toLowerCase(),
+                phone: dto.phone?.trim() || null,
+                message: dto.message.trim(),
+                status: 'OPEN',
+            },
+        });
+    }
+    listBecomeQuestions(target) {
+        return this.become.listQuestionsPublic(target);
+    }
+    submitBecomeApplication(dto) {
+        return this.become.submitApplication(dto);
+    }
+    listMyBecomeApplications(params) {
+        return this.become.listMine(params);
+    }
 };
 exports.PublicService = PublicService;
 exports.PublicService = PublicService = __decorate([
@@ -125,6 +168,9 @@ exports.PublicService = PublicService = __decorate([
         cms_service_1.CmsService,
         marketplace_service_1.MarketplaceService,
         prisma_service_1.PrismaService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        system_settings_service_1.SystemSettingsService,
+        payment_plans_service_1.PaymentPlansService,
+        become_service_1.BecomeService])
 ], PublicService);
 //# sourceMappingURL=public.service.js.map

@@ -47,6 +47,44 @@ export class CmsService {
     });
   }
 
+  async findJobAlerts(filters: {
+    search?: string;
+    isActive?: boolean;
+    postFrom?: string;
+    postTo?: string;
+    closeFrom?: string;
+    closeTo?: string;
+  }) {
+    const where: Prisma.JobAlertWhereInput = {};
+
+    if (filters.search?.trim()) {
+      const q = filters.search.trim();
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    if (typeof filters.isActive === 'boolean') {
+      where.isActive = filters.isActive;
+    }
+
+    const startsAt: Prisma.DateTimeFilter = {};
+    if (filters.postFrom) startsAt.gte = new Date(`${filters.postFrom}T00:00:00.000Z`);
+    if (filters.postTo) startsAt.lte = new Date(`${filters.postTo}T23:59:59.999Z`);
+    if (Object.keys(startsAt).length) where.startsAt = startsAt;
+
+    const endsAt: Prisma.DateTimeFilter = {};
+    if (filters.closeFrom) endsAt.gte = new Date(`${filters.closeFrom}T00:00:00.000Z`);
+    if (filters.closeTo) endsAt.lte = new Date(`${filters.closeTo}T23:59:59.999Z`);
+    if (Object.keys(endsAt).length) where.endsAt = endsAt;
+
+    return this.prisma.jobAlert.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findOne(model: CmsModel, id: string) {
     const row = await this.client(model).findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Record not found');

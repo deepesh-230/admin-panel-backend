@@ -15,8 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PublicController = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const become_dto_1 = require("../become/dto/become.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const create_public_enquiry_dto_1 = require("./dto/create-public-enquiry.dto");
+const create_public_help_ticket_dto_1 = require("./dto/create-public-help-ticket.dto");
 const public_service_1 = require("./public.service");
 let PublicController = class PublicController {
     publicService;
@@ -42,11 +44,26 @@ let PublicController = class PublicController {
     listJobAlerts() {
         return this.publicService.listJobAlerts();
     }
+    listPaymentPlans() {
+        return this.publicService.listPaymentPlans();
+    }
     listUsefulLinks() {
         return this.publicService.listUsefulLinks();
     }
     listSocialSettings() {
         return this.publicService.listSocialSettings();
+    }
+    listBecomeQuestions(target) {
+        if (!target || !Object.values(client_1.BecomeTarget).includes(target)) {
+            throw new common_1.BadRequestException('Query target is required (STATE_ADMIN, VOLUNTEER, or PROVIDER_ADMIN)');
+        }
+        return this.publicService.listBecomeQuestions(target);
+    }
+    listMyBecomeApplications(userId, email) {
+        return this.publicService.listMyBecomeApplications({ userId, email });
+    }
+    submitBecomeApplication(dto) {
+        return this.publicService.submitBecomeApplication(dto);
     }
     getPage(slug) {
         return this.publicService.getPageBySlug(slug);
@@ -62,6 +79,9 @@ let PublicController = class PublicController {
     }
     createEnquiry(dto) {
         return this.publicService.createEnquiry(dto);
+    }
+    createHelpTicket(dto) {
+        return this.publicService.createHelpTicket(dto);
     }
 };
 exports.PublicController = PublicController;
@@ -104,6 +124,12 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "listJobAlerts", null);
 __decorate([
+    (0, common_1.Get)('payment-plans'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "listPaymentPlans", null);
+__decorate([
     (0, common_1.Get)('useful-links'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -115,6 +141,28 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "listSocialSettings", null);
+__decorate([
+    (0, common_1.Get)('become-questions'),
+    __param(0, (0, common_1.Query)('target')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "listBecomeQuestions", null);
+__decorate([
+    (0, common_1.Get)('become-applications/mine'),
+    __param(0, (0, common_1.Query)('userId')),
+    __param(1, (0, common_1.Query)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "listMyBecomeApplications", null);
+__decorate([
+    (0, common_1.Post)('become-applications'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [become_dto_1.CreateBecomeApplicationDto]),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "submitBecomeApplication", null);
 __decorate([
     (0, common_1.Get)('pages/:slug'),
     __param(0, (0, common_1.Param)('slug')),
@@ -149,6 +197,13 @@ __decorate([
     __metadata("design:paramtypes", [create_public_enquiry_dto_1.CreatePublicEnquiryDto]),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "createEnquiry", null);
+__decorate([
+    (0, common_1.Post)('help-tickets'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_public_help_ticket_dto_1.CreatePublicHelpTicketDto]),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "createHelpTicket", null);
 exports.PublicController = PublicController = __decorate([
     (0, common_1.Controller)('public'),
     (0, public_decorator_1.Public)(),

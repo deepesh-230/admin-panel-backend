@@ -1,11 +1,16 @@
 import { ConfigService } from '@nestjs/config';
-import { CategoryType } from '@prisma/client';
+import { BecomeTarget, CategoryType } from '@prisma/client';
+import { BecomeService } from '../become/become.service';
+import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { CmsService } from '../cms/cms.service';
 import { MarketplaceService } from '../marketplace/marketplace.service';
+import { PaymentPlansService } from '../payments/payment-plans.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatesService } from '../states/states.service';
+import { SystemSettingsService } from '../system-settings/system-settings.service';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
+import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 export declare class PublicService {
     private categories;
     private states;
@@ -13,7 +18,10 @@ export declare class PublicService {
     private marketplace;
     private prisma;
     private config;
-    constructor(categories: CategoriesService, states: StatesService, cms: CmsService, marketplace: MarketplaceService, prisma: PrismaService, config: ConfigService);
+    private systemSettings;
+    private paymentPlans;
+    private become;
+    constructor(categories: CategoriesService, states: StatesService, cms: CmsService, marketplace: MarketplaceService, prisma: PrismaService, config: ConfigService, systemSettings: SystemSettingsService, paymentPlans: PaymentPlansService, become: BecomeService);
     listCategories(type?: CategoryType): Promise<({
         _count: {
             subcategories: number;
@@ -50,7 +58,33 @@ export declare class PublicService {
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[]>;
     listBlogs(): Promise<Record<string, unknown>[]>;
-    listJobAlerts(): Promise<Record<string, unknown>[]>;
+    listJobAlerts(): Promise<{
+        description: string | null;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
+        title: string;
+        postDate: string | null;
+        lastDate: string | null;
+        startsAt: Date | null;
+        endsAt: Date | null;
+        broadcastAt: Date | null;
+    }[]>;
+    listPaymentPlans(): Promise<{
+        amount: number;
+        id: string;
+        code: string;
+        name: string;
+        currency: string;
+        description: string | null;
+        sortOrder: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
     listUsefulLinks(): Promise<Record<string, unknown>[]>;
     listSocialSettings(): Promise<Record<string, unknown>[]>;
     getPageBySlug(slug: string): Promise<{
@@ -137,5 +171,76 @@ export declare class PublicService {
         marketplaceProductId: string | null;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
+    }>;
+    createHelpTicket(dto: CreatePublicHelpTicketDto): import("@prisma/client").Prisma.Prisma__HelpTicketClient<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        email: string;
+        phone: string | null;
+        status: string;
+        message: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    listBecomeQuestions(target: BecomeTarget): Promise<{
+        options: string[];
+        id: string;
+        target: BecomeTarget;
+        prompt: string;
+        type: import("@prisma/client").BecomeQuestionType;
+        sortOrder: number;
+        isRequired: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    submitBecomeApplication(dto: CreateBecomeApplicationDto): Promise<{
+        answers: {
+            id: string;
+            createdAt: Date;
+            questionId: string | null;
+            answerText: string;
+            questionPrompt: string;
+            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            selectedOption: string | null;
+            applicationId: string;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        email: string;
+        phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
+        adminNote: string | null;
+    }>;
+    listMyBecomeApplications(params: {
+        userId?: string;
+        email?: string;
+    }): Promise<{
+        applications: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+        }[];
+        pending: {
+            id: string;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        } | null;
+        latest: {
+            id: string;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        } | null;
+        approvedTargets: import("@prisma/client").$Enums.BecomeTarget[];
+        isVolunteer: boolean;
+        menuDisabled: boolean;
+        allowedTargets: import("@prisma/client").$Enums.BecomeTarget[];
     }>;
 }

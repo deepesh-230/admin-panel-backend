@@ -57,7 +57,7 @@ __decorate([
 ], UploadsController.prototype, "upload", null);
 exports.UploadsController = UploadsController = __decorate([
     (0, common_1.Controller)('uploads'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN, client_1.RoleName.END_USER, client_1.RoleName.SERVICE_PROVIDER_ADMIN, client_1.RoleName.VOLUNTEER),
     __metadata("design:paramtypes", [uploads_service_1.UploadsService])
 ], UploadsController);
 //# sourceMappingURL=uploads.controller.js.map

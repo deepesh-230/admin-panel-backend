@@ -5,5 +5,9 @@ export declare class PrismaService extends PrismaClient implements OnModuleInit,
     onModuleInit(): Promise<void>;
     private ensureSocialSettingTable;
     private ensureIndiaStates;
+    private ensureCmsPages;
+    private ensureSystemSettingTable;
+    private ensurePaymentPlanTable;
+    private ensureBecomeTables;
     onModuleDestroy(): Promise<void>;
 }

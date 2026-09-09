@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { CategoryType } from '@prisma/client';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { BecomeTarget, CategoryType } from '@prisma/client';
+import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
+import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 import { PublicService } from './public.service';
 
 @Controller('public')
@@ -41,6 +43,11 @@ export class PublicController {
     return this.publicService.listJobAlerts();
   }
 
+  @Get('payment-plans')
+  listPaymentPlans() {
+    return this.publicService.listPaymentPlans();
+  }
+
   @Get('useful-links')
   listUsefulLinks() {
     return this.publicService.listUsefulLinks();
@@ -49,6 +56,29 @@ export class PublicController {
   @Get('social-settings')
   listSocialSettings() {
     return this.publicService.listSocialSettings();
+  }
+
+  @Get('become-questions')
+  listBecomeQuestions(@Query('target') target?: string) {
+    if (!target || !Object.values(BecomeTarget).includes(target as BecomeTarget)) {
+      throw new BadRequestException(
+        'Query target is required (STATE_ADMIN, VOLUNTEER, or PROVIDER_ADMIN)',
+      );
+    }
+    return this.publicService.listBecomeQuestions(target as BecomeTarget);
+  }
+
+  @Get('become-applications/mine')
+  listMyBecomeApplications(
+    @Query('userId') userId?: string,
+    @Query('email') email?: string,
+  ) {
+    return this.publicService.listMyBecomeApplications({ userId, email });
+  }
+
+  @Post('become-applications')
+  submitBecomeApplication(@Body() dto: CreateBecomeApplicationDto) {
+    return this.publicService.submitBecomeApplication(dto);
   }
 
   @Get('pages/:slug')
@@ -74,5 +104,10 @@ export class PublicController {
   @Post('enquiries')
   createEnquiry(@Body() dto: CreatePublicEnquiryDto) {
     return this.publicService.createEnquiry(dto);
+  }
+
+  @Post('help-tickets')
+  createHelpTicket(@Body() dto: CreatePublicHelpTicketDto) {
+    return this.publicService.createHelpTicket(dto);
   }
 }

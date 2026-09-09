@@ -1,12 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CategoryType, EnquiryStatus } from '@prisma/client';
+import { BecomeTarget, CategoryType, EnquiryStatus } from '@prisma/client';
+import { BecomeService } from '../become/become.service';
+import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { CmsService } from '../cms/cms.service';
 import { MarketplaceService } from '../marketplace/marketplace.service';
+import { PaymentPlansService } from '../payments/payment-plans.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatesService } from '../states/states.service';
+import { SystemSettingsService } from '../system-settings/system-settings.service';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
+import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 
 @Injectable()
 export class PublicService {
@@ -17,6 +22,9 @@ export class PublicService {
     private marketplace: MarketplaceService,
     private prisma: PrismaService,
     private config: ConfigService,
+    private systemSettings: SystemSettingsService,
+    private paymentPlans: PaymentPlansService,
+    private become: BecomeService,
   ) {}
 
   listCategories(type?: CategoryType) {
@@ -50,7 +58,11 @@ export class PublicService {
   }
 
   listJobAlerts() {
-    return this.cms.findAll('jobAlert', undefined, ['title', 'description'], { isActive: true });
+    return this.systemSettings.listPublicJobAlerts();
+  }
+
+  listPaymentPlans() {
+    return this.paymentPlans.listPublic();
   }
 
   listUsefulLinks() {
@@ -62,11 +74,24 @@ export class PublicService {
   }
 
   async getPageBySlug(slug: string) {
-    const page = await this.prisma.cmsPage.findFirst({
-      where: { slug, isActive: true },
-    });
-    if (!page) throw new NotFoundException('Page not found');
-    return page;
+    const aliases: Record<string, string[]> = {
+      privacy: ['privacy', 'privacy-policy'],
+      'privacy-policy': ['privacy-policy', 'privacy'],
+      terms: ['terms', 'terms-and-conditions'],
+      'terms-and-conditions': ['terms-and-conditions', 'terms'],
+      about: ['about', 'about-us'],
+      'about-us': ['about-us', 'about'],
+    };
+    const candidates = aliases[slug] || [slug];
+
+    for (const candidate of candidates) {
+      const page = await this.prisma.cmsPage.findFirst({
+        where: { slug: candidate, isActive: true },
+      });
+      if (page) return page;
+    }
+
+    throw new NotFoundException('Page not found');
   }
 
   getContact() {
@@ -113,5 +138,29 @@ export class PublicService {
         marketplaceProductId: dto.marketplaceProductId,
       },
     });
+  }
+
+  createHelpTicket(dto: CreatePublicHelpTicketDto) {
+    return this.prisma.helpTicket.create({
+      data: {
+        name: dto.name.trim(),
+        email: dto.email.trim().toLowerCase(),
+        phone: dto.phone?.trim() || null,
+        message: dto.message.trim(),
+        status: 'OPEN',
+      },
+    });
+  }
+
+  listBecomeQuestions(target: BecomeTarget) {
+    return this.become.listQuestionsPublic(target);
+  }
+
+  submitBecomeApplication(dto: CreateBecomeApplicationDto) {
+    return this.become.submitApplication(dto);
+  }
+
+  listMyBecomeApplications(params: { userId?: string; email?: string }) {
+    return this.become.listMine(params);
   }
 }

@@ -184,8 +184,24 @@ export class JobAlertsController {
 
   @Get()
   @Permissions('cms.read')
-  findAll(@Query('search') search?: string) {
-    return this.cms.findAll('jobAlert', search, ['title', 'description']);
+  findAll(
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('postFrom') postFrom?: string,
+    @Query('postTo') postTo?: string,
+    @Query('closeFrom') closeFrom?: string,
+    @Query('closeTo') closeTo?: string,
+  ) {
+    const active =
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    return this.cms.findJobAlerts({
+      search,
+      isActive: active,
+      postFrom,
+      postTo,
+      closeFrom,
+      closeTo,
+    });
   }
 
   @Get(':id')

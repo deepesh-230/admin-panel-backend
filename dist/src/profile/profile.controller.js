@@ -19,16 +19,20 @@ const current_user_decorator_1 = require("../common/decorators/current-user.deco
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const broadcasts_service_1 = require("../cms/broadcasts.service");
 const create_marketplace_product_dto_1 = require("./dto/create-marketplace-product.dto");
+const my_service_provider_dto_1 = require("./dto/my-service-provider.dto");
 const update_profile_dto_1 = require("./dto/update-profile.dto");
 const marketplace_service_1 = require("../marketplace/marketplace.service");
+const service_providers_service_1 = require("../service-providers/service-providers.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const digipin_util_1 = require("../common/digipin.util");
 let ProfileController = class ProfileController {
     marketplace;
+    serviceProviders;
     prisma;
     broadcasts;
-    constructor(marketplace, prisma, broadcasts) {
+    constructor(marketplace, serviceProviders, prisma, broadcasts) {
         this.marketplace = marketplace;
+        this.serviceProviders = serviceProviders;
         this.prisma = prisma;
         this.broadcasts = broadcasts;
     }
@@ -81,6 +85,21 @@ let ProfileController = class ProfileController {
         });
         return this.marketplace.createForUser(user.id, dbUser?.name, dto);
     }
+    myServiceProviders(user) {
+        return this.serviceProviders.listForUser(user.id);
+    }
+    myServiceProvider(user, id) {
+        return this.serviceProviders.findOneForUser(user.id, id);
+    }
+    createMyServiceProvider(user, dto) {
+        return this.serviceProviders.createForUser(user.id, dto);
+    }
+    updateMyServiceProvider(user, id, dto) {
+        return this.serviceProviders.updateForUser(user.id, id, dto);
+    }
+    removeMyServiceProvider(user, id) {
+        return this.serviceProviders.removeForUser(user.id, id);
+    }
     listBroadcasts(user) {
         return this.broadcasts.listForUser(user.id);
     }
@@ -91,7 +110,7 @@ let ProfileController = class ProfileController {
 exports.ProfileController = ProfileController;
 __decorate([
     (0, common_1.Patch)(),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.VOLUNTEER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -114,8 +133,48 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ProfileController.prototype, "createMarketplaceProduct", null);
 __decorate([
+    (0, common_1.Get)('service-providers'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "myServiceProviders", null);
+__decorate([
+    (0, common_1.Get)('service-providers/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "myServiceProvider", null);
+__decorate([
+    (0, common_1.Post)('service-providers'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, my_service_provider_dto_1.CreateMyServiceProviderDto]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "createMyServiceProvider", null);
+__decorate([
+    (0, common_1.Patch)('service-providers/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, my_service_provider_dto_1.UpdateMyServiceProviderDto]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "updateMyServiceProvider", null);
+__decorate([
+    (0, common_1.Delete)('service-providers/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "removeMyServiceProvider", null);
+__decorate([
     (0, common_1.Get)('broadcasts'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.VOLUNTEER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -123,7 +182,7 @@ __decorate([
 ], ProfileController.prototype, "listBroadcasts", null);
 __decorate([
     (0, common_1.Patch)('broadcasts/:id/read'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.VOLUNTEER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -132,8 +191,9 @@ __decorate([
 ], ProfileController.prototype, "markBroadcastRead", null);
 exports.ProfileController = ProfileController = __decorate([
     (0, common_1.Controller)('profile'),
-    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.ADMIN),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.ADMIN, client_1.RoleName.VOLUNTEER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),
     __metadata("design:paramtypes", [marketplace_service_1.MarketplaceService,
+        service_providers_service_1.ServiceProvidersService,
         prisma_service_1.PrismaService,
         broadcasts_service_1.BroadcastsService])
 ], ProfileController);

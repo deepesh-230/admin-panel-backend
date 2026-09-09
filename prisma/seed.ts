@@ -1,5 +1,6 @@
-import { PaymentPurpose, PaymentStatus, PrismaClient, RoleName } from '@prisma/client';
+import { PaymentPurpose, PaymentStatus, Prisma, PrismaClient, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { DEFAULT_PAYMENT_PLANS } from '../src/payments/payment-plan.defaults';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   PERMISSION_CATALOG,
@@ -555,6 +556,27 @@ async function main() {
       isActive: true,
     },
   });
+
+  for (const plan of DEFAULT_PAYMENT_PLANS) {
+    await prisma.paymentPlan.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        amount: new Prisma.Decimal(plan.amount),
+        description: plan.description,
+        sortOrder: plan.sortOrder,
+        isActive: true,
+      },
+      create: {
+        code: plan.code,
+        name: plan.name,
+        amount: new Prisma.Decimal(plan.amount),
+        description: plan.description,
+        sortOrder: plan.sortOrder,
+        isActive: true,
+      },
+    });
+  }
 
   await prisma.payment.upsert({
     where: { id: 'seed-pay-1' },

@@ -154,13 +154,22 @@ export class BulkImportService {
           isActive: parseBool(pick(r, 'isactive', 'active'), true),
         }));
       case 'job-alerts':
-        return this.importCms('jobAlert', row, dryRun, ['title'], (r) => ({
-          title: pick(r, 'title'),
-          description: pick(r, 'description') || undefined,
-          postDate: pick(r, 'postdate', 'post_date') || undefined,
-          lastDate: pick(r, 'lastdate', 'last_date') || undefined,
-          isActive: parseBool(pick(r, 'isactive', 'active'), true),
-        }));
+        return this.importCms('jobAlert', row, dryRun, ['title'], (r) => {
+          const postDate = pick(r, 'postdate', 'post_date') || undefined;
+          const lastDate = pick(r, 'lastdate', 'last_date') || undefined;
+          const startsAt = postDate ? new Date(postDate) : undefined;
+          const endsAt = lastDate ? new Date(lastDate) : undefined;
+          return {
+            title: pick(r, 'title'),
+            description: pick(r, 'description') || undefined,
+            postDate,
+            lastDate,
+            startsAt:
+              startsAt && !Number.isNaN(startsAt.getTime()) ? startsAt : undefined,
+            endsAt: endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : undefined,
+            isActive: parseBool(pick(r, 'isactive', 'active'), true),
+          };
+        });
       case 'useful-links':
         return this.importCms('usefulLink', row, dryRun, ['title', 'url'], (r) => ({
           title: pick(r, 'title'),

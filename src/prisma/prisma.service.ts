@@ -18,6 +18,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         }
         await this.ensureSocialSettingTable();
         await this.ensureIndiaStates();
+        await this.ensureCmsPages();
+        await this.ensureSystemSettingTable();
+        await this.ensurePaymentPlanTable();
+        await this.ensureBecomeTables();
         return;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -127,6 +131,238 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (error) {
       this.logger.warn(
         `Could not ensure Indian states: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /** Ensures About / Privacy / Terms pages exist for the mobile Settings tab. */
+  private async ensureCmsPages() {
+    const defaults = [
+      {
+        slug: 'about',
+        title: 'About Us',
+        content:
+          'Divyaang Disha connects persons with disabilities to verified service providers, resources, and community support across India.',
+      },
+      {
+        slug: 'privacy-policy',
+        title: 'Privacy Policy',
+        content:
+          'We collect only the information needed to operate your account and improve our services. We do not sell your personal data.',
+      },
+      {
+        slug: 'terms',
+        title: 'Terms and Conditions',
+        content:
+          'By using Divyaang Disha you agree to use the platform respectfully and to provide accurate information in listings and enquiries.',
+      },
+    ];
+
+    try {
+      let added = 0;
+      for (const page of defaults) {
+        const existing = await this.cmsPage.findUnique({ where: { slug: page.slug } });
+        if (existing) continue;
+        await this.cmsPage.create({ data: { ...page, isActive: true } });
+        added += 1;
+      }
+      if (added > 0) this.logger.log(`Ensured CMS pages (${added} added)`);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure CMS pages: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureSystemSettingTable() {
+    try {
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "SystemSetting" (
+          "id" TEXT NOT NULL,
+          "key" TEXT NOT NULL,
+          "value" TEXT NOT NULL,
+          "label" TEXT,
+          "description" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "SystemSetting_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "SystemSetting_key_key" ON "SystemSetting"("key")`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure SystemSetting table: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensurePaymentPlanTable() {
+    try {
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "PaymentPlan" (
+          "id" TEXT NOT NULL,
+          "code" TEXT NOT NULL,
+          "name" TEXT NOT NULL,
+          "amount" DECIMAL(12,2) NOT NULL,
+          "currency" TEXT NOT NULL DEFAULT 'INR',
+          "description" TEXT,
+          "sortOrder" INTEGER NOT NULL DEFAULT 0,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "PaymentPlan_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "PaymentPlan_code_key" ON "PaymentPlan"("code")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "PaymentPlan_isActive_idx" ON "PaymentPlan"("isActive")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "PaymentPlan_sortOrder_idx" ON "PaymentPlan"("sortOrder")`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure PaymentPlan table: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureBecomeTables() {
+    try {
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "BecomeTarget" AS ENUM ('STATE_ADMIN', 'VOLUNTEER', 'PROVIDER_ADMIN');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      // Migrate legacy enum value if the type already existed with SERVICE_PROVIDER
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          IF EXISTS (
+            SELECT 1 FROM pg_enum e
+            JOIN pg_type t ON e.enumtypid = t.oid
+            WHERE t.typname = 'BecomeTarget' AND e.enumlabel = 'SERVICE_PROVIDER'
+          ) AND NOT EXISTS (
+            SELECT 1 FROM pg_enum e
+            JOIN pg_type t ON e.enumtypid = t.oid
+            WHERE t.typname = 'BecomeTarget' AND e.enumlabel = 'PROVIDER_ADMIN'
+          ) THEN
+            ALTER TYPE "BecomeTarget" RENAME VALUE 'SERVICE_PROVIDER' TO 'PROVIDER_ADMIN';
+          END IF;
+        EXCEPTION WHEN others THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "BecomeQuestionType" AS ENUM ('TEXT', 'SINGLE_CHOICE');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "BecomeApplicationStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "BecomeQuestion" (
+          "id" TEXT NOT NULL,
+          "target" "BecomeTarget" NOT NULL,
+          "prompt" TEXT NOT NULL,
+          "type" "BecomeQuestionType" NOT NULL DEFAULT 'TEXT',
+          "options" JSONB,
+          "sortOrder" INTEGER NOT NULL DEFAULT 0,
+          "isRequired" BOOLEAN NOT NULL DEFAULT true,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "BecomeQuestion_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeQuestion_target_isActive_idx" ON "BecomeQuestion"("target", "isActive")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeQuestion_sortOrder_idx" ON "BecomeQuestion"("sortOrder")`,
+      );
+
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "BecomeApplication" (
+          "id" TEXT NOT NULL,
+          "userId" TEXT,
+          "target" "BecomeTarget" NOT NULL,
+          "status" "BecomeApplicationStatus" NOT NULL DEFAULT 'PENDING',
+          "name" TEXT NOT NULL,
+          "email" TEXT NOT NULL,
+          "phone" TEXT,
+          "adminNote" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "BecomeApplication_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeApplication_target_idx" ON "BecomeApplication"("target")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeApplication_status_idx" ON "BecomeApplication"("status")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeApplication_email_idx" ON "BecomeApplication"("email")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeApplication_userId_idx" ON "BecomeApplication"("userId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeApplication_createdAt_idx" ON "BecomeApplication"("createdAt")`,
+      );
+
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "BecomeAnswer" (
+          "id" TEXT NOT NULL,
+          "applicationId" TEXT NOT NULL,
+          "questionId" TEXT,
+          "questionPrompt" TEXT NOT NULL,
+          "questionType" "BecomeQuestionType" NOT NULL,
+          "answerText" TEXT NOT NULL,
+          "selectedOption" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "BecomeAnswer_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeAnswer_applicationId_idx" ON "BecomeAnswer"("applicationId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "BecomeAnswer_questionId_idx" ON "BecomeAnswer"("questionId")`,
+      );
+
+      // FKs (ignore if already exist)
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "BecomeApplication"
+            ADD CONSTRAINT "BecomeApplication_userId_fkey"
+            FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "BecomeAnswer"
+            ADD CONSTRAINT "BecomeAnswer_applicationId_fkey"
+            FOREIGN KEY ("applicationId") REFERENCES "BecomeApplication"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "BecomeAnswer"
+            ADD CONSTRAINT "BecomeAnswer_questionId_fkey"
+            FOREIGN KEY ("questionId") REFERENCES "BecomeQuestion"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure Become tables: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

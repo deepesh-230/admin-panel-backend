@@ -542,6 +542,151 @@ let ServiceProvidersService = class ServiceProvidersService {
         await this.prisma.serviceProviderAdmin.delete({ where: { id: assignment.id } });
         return { serviceProviderId: id, userId, deleted: true };
     }
+    listForUser(userId) {
+        return this.prisma.serviceProvider
+            .findMany({
+            where: {
+                OR: [
+                    { createdById: userId },
+                    { admins: { some: { userId } } },
+                ],
+            },
+            include: providerInclude,
+            orderBy: { createdAt: 'desc' },
+        })
+            .then((rows) => rows.map((row) => this.sanitize(row)));
+    }
+    async assertUserOwnsProvider(userId, providerId) {
+        const provider = await this.prisma.serviceProvider.findFirst({
+            where: {
+                id: providerId,
+                OR: [
+                    { createdById: userId },
+                    { admins: { some: { userId } } },
+                ],
+            },
+            include: providerInclude,
+        });
+        if (!provider)
+            throw new common_1.NotFoundException('Service provider not found');
+        return provider;
+    }
+    async findOneForUser(userId, id) {
+        const provider = await this.assertUserOwnsProvider(userId, id);
+        return this.sanitize(provider);
+    }
+    async resolveStateIdForUser(userId, stateId, locationLabel, city) {
+        if (stateId) {
+            const state = await this.prisma.state.findFirst({
+                where: { id: stateId, isActive: true },
+            });
+            if (!state)
+                throw new common_1.BadRequestException('State not found');
+            return state.id;
+        }
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { stateId: true },
+        });
+        if (user?.stateId)
+            return user.stateId;
+        const haystack = `${locationLabel || ''} ${city || ''}`.toLowerCase();
+        if (haystack.trim()) {
+            const states = await this.prisma.state.findMany({
+                where: { isActive: true },
+                select: { id: true, name: true, code: true },
+            });
+            const match = states.find((s) => haystack.includes(s.name.toLowerCase()) ||
+                (s.code && haystack.includes(s.code.toLowerCase())));
+            if (match)
+                return match.id;
+        }
+        throw new common_1.BadRequestException('Could not determine state. Update your profile state or include a clear state in the location.');
+    }
+    async createForUser(userId, data) {
+        await this.assertCategoryLinks(data.categoryId, data.subcategoryId);
+        const resolvedStateId = await this.resolveStateIdForUser(userId, data.stateId, data.locationLabel, data.city);
+        const provider = await this.prisma.serviceProvider.create({
+            data: {
+                name: data.name.trim(),
+                categoryId: data.categoryId,
+                subcategoryId: data.subcategoryId,
+                description: data.description?.trim() || null,
+                phone: data.phone?.trim() || null,
+                landline: data.landline?.trim() || null,
+                email: data.email?.trim().toLowerCase() || null,
+                address: data.address?.trim() || null,
+                city: data.city?.trim() || null,
+                stateId: resolvedStateId,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                googlePlaceId: data.googlePlaceId?.trim() || null,
+                about: data.about?.trim() || null,
+                services: data.services?.trim() || null,
+                coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
+                gallery: data.gallery || [],
+                isActive: true,
+                approvalStatus: client_1.ProviderApprovalStatus.PENDING_APPROVAL,
+                createdById: userId,
+            },
+            include: providerInclude,
+        });
+        return this.sanitize(provider);
+    }
+    async updateForUser(userId, id, data) {
+        const existing = await this.assertUserOwnsProvider(userId, id);
+        const nextCategoryId = data.categoryId ?? existing.categoryId;
+        const nextSubcategoryId = data.subcategoryId === undefined ? existing.subcategoryId : data.subcategoryId;
+        await this.assertCategoryLinks(nextCategoryId, nextSubcategoryId);
+        let nextStateId = existing.stateId;
+        if (data.stateId !== undefined ||
+            data.locationLabel !== undefined ||
+            data.city !== undefined) {
+            nextStateId = await this.resolveStateIdForUser(userId, data.stateId || existing.stateId, data.locationLabel, data.city);
+        }
+        const provider = await this.prisma.serviceProvider.update({
+            where: { id },
+            data: {
+                ...(data.name !== undefined && { name: data.name.trim() }),
+                ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
+                ...(data.subcategoryId !== undefined && { subcategoryId: data.subcategoryId }),
+                ...(data.description !== undefined && {
+                    description: data.description?.trim() || null,
+                }),
+                ...(data.phone !== undefined && { phone: data.phone?.trim() || null }),
+                ...(data.landline !== undefined && { landline: data.landline?.trim() || null }),
+                ...(data.email !== undefined && {
+                    email: data.email?.trim().toLowerCase() || null,
+                }),
+                ...(data.address !== undefined && { address: data.address?.trim() || null }),
+                ...(data.city !== undefined && { city: data.city?.trim() || null }),
+                stateId: nextStateId,
+                ...(data.latitude !== undefined && { latitude: data.latitude }),
+                ...(data.longitude !== undefined && { longitude: data.longitude }),
+                ...(data.googlePlaceId !== undefined && {
+                    googlePlaceId: data.googlePlaceId?.trim() || null,
+                }),
+                ...(data.about !== undefined && { about: data.about?.trim() || null }),
+                ...(data.services !== undefined && { services: data.services?.trim() || null }),
+                ...(data.coverPhotoUrl !== undefined && {
+                    coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
+                }),
+                ...(data.gallery !== undefined && { gallery: data.gallery }),
+                approvalStatus: client_1.ProviderApprovalStatus.PENDING_APPROVAL,
+                approvedById: null,
+                approvedAt: null,
+                rejectedReason: null,
+                isActive: true,
+            },
+            include: providerInclude,
+        });
+        return this.sanitize(provider);
+    }
+    async removeForUser(userId, id) {
+        await this.assertUserOwnsProvider(userId, id);
+        await this.prisma.serviceProvider.delete({ where: { id } });
+        return { id, deleted: true };
+    }
 };
 exports.ServiceProvidersService = ServiceProvidersService;
 exports.ServiceProvidersService = ServiceProvidersService = __decorate([

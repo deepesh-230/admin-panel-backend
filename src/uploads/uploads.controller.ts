@@ -26,6 +26,7 @@ const ALLOWED_MIME = new Set([
   RoleName.STATE_ADMIN,
   RoleName.END_USER,
   RoleName.SERVICE_PROVIDER_ADMIN,
+  RoleName.VOLUNTEER,
 )
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}

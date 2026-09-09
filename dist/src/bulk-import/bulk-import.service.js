@@ -109,13 +109,21 @@ let BulkImportService = class BulkImportService {
                     isActive: (0, bulk_import_utils_1.parseBool)((0, bulk_import_utils_1.pick)(r, 'isactive', 'active'), true),
                 }));
             case 'job-alerts':
-                return this.importCms('jobAlert', row, dryRun, ['title'], (r) => ({
-                    title: (0, bulk_import_utils_1.pick)(r, 'title'),
-                    description: (0, bulk_import_utils_1.pick)(r, 'description') || undefined,
-                    postDate: (0, bulk_import_utils_1.pick)(r, 'postdate', 'post_date') || undefined,
-                    lastDate: (0, bulk_import_utils_1.pick)(r, 'lastdate', 'last_date') || undefined,
-                    isActive: (0, bulk_import_utils_1.parseBool)((0, bulk_import_utils_1.pick)(r, 'isactive', 'active'), true),
-                }));
+                return this.importCms('jobAlert', row, dryRun, ['title'], (r) => {
+                    const postDate = (0, bulk_import_utils_1.pick)(r, 'postdate', 'post_date') || undefined;
+                    const lastDate = (0, bulk_import_utils_1.pick)(r, 'lastdate', 'last_date') || undefined;
+                    const startsAt = postDate ? new Date(postDate) : undefined;
+                    const endsAt = lastDate ? new Date(lastDate) : undefined;
+                    return {
+                        title: (0, bulk_import_utils_1.pick)(r, 'title'),
+                        description: (0, bulk_import_utils_1.pick)(r, 'description') || undefined,
+                        postDate,
+                        lastDate,
+                        startsAt: startsAt && !Number.isNaN(startsAt.getTime()) ? startsAt : undefined,
+                        endsAt: endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : undefined,
+                        isActive: (0, bulk_import_utils_1.parseBool)((0, bulk_import_utils_1.pick)(r, 'isactive', 'active'), true),
+                    };
+                });
             case 'useful-links':
                 return this.importCms('usefulLink', row, dryRun, ['title', 'url'], (r) => ({
                     title: (0, bulk_import_utils_1.pick)(r, 'title'),

@@ -48,9 +48,9 @@ export declare class ServiceProvidersService {
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
                 id: string;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -125,9 +125,9 @@ export declare class ServiceProvidersService {
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
                 id: string;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -201,9 +201,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -270,9 +270,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -339,9 +339,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -408,9 +408,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -481,9 +481,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -550,9 +550,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -614,6 +614,326 @@ export declare class ServiceProvidersService {
     removeAdmin(id: string, userId: string, currentUser: AuthUser): Promise<{
         serviceProviderId: string;
         userId: string;
+        deleted: boolean;
+    }>;
+    listForUser(userId: string): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+        subcategoryId: string | null;
+        description: string | null;
+        phone: string | null;
+        landline: string | null;
+        email: string | null;
+        website: string | null;
+        address: string | null;
+        city: string | null;
+        stateId: string;
+        latitude: number | null;
+        longitude: number | null;
+        googlePlaceId: string | null;
+        about: string | null;
+        services: string | null;
+        coverPhotoUrl: string | null;
+        gallery: string[];
+        isActive: boolean;
+        approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
+        rejectedReason: string | null;
+        createdById: string | null;
+        approvedById: string | null;
+        approvedAt: Date | null;
+        category: {
+            id: string;
+            name: string;
+        };
+        subcategory: {
+            id: string;
+            name: string;
+            categoryId: string;
+        } | null;
+        state: {
+            id: string;
+            name: string;
+            code: string | null;
+        };
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        approvedBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        admins: {
+            id: string;
+            userId: string;
+            isPrimary: boolean;
+            user: {
+                id: string;
+                name: string | null;
+                email: string;
+                phone: string | null;
+                isActive: boolean;
+                role: import("@prisma/client").$Enums.RoleName;
+            };
+            createdAt: Date;
+        }[];
+        adminCount: number;
+        distanceKm: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    private assertUserOwnsProvider;
+    findOneForUser(userId: string, id: string): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+        subcategoryId: string | null;
+        description: string | null;
+        phone: string | null;
+        landline: string | null;
+        email: string | null;
+        website: string | null;
+        address: string | null;
+        city: string | null;
+        stateId: string;
+        latitude: number | null;
+        longitude: number | null;
+        googlePlaceId: string | null;
+        about: string | null;
+        services: string | null;
+        coverPhotoUrl: string | null;
+        gallery: string[];
+        isActive: boolean;
+        approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
+        rejectedReason: string | null;
+        createdById: string | null;
+        approvedById: string | null;
+        approvedAt: Date | null;
+        category: {
+            id: string;
+            name: string;
+        };
+        subcategory: {
+            id: string;
+            name: string;
+            categoryId: string;
+        } | null;
+        state: {
+            id: string;
+            name: string;
+            code: string | null;
+        };
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        approvedBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        admins: {
+            id: string;
+            userId: string;
+            isPrimary: boolean;
+            user: {
+                id: string;
+                name: string | null;
+                email: string;
+                phone: string | null;
+                isActive: boolean;
+                role: import("@prisma/client").$Enums.RoleName;
+            };
+            createdAt: Date;
+        }[];
+        adminCount: number;
+        distanceKm: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    private resolveStateIdForUser;
+    createForUser(userId: string, data: {
+        name: string;
+        categoryId: string;
+        subcategoryId?: string;
+        description?: string;
+        phone?: string;
+        landline?: string;
+        email?: string;
+        address?: string;
+        city?: string;
+        stateId?: string;
+        latitude?: number;
+        longitude?: number;
+        googlePlaceId?: string;
+        about?: string;
+        services?: string;
+        coverPhotoUrl?: string;
+        gallery?: string[];
+        locationLabel?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+        subcategoryId: string | null;
+        description: string | null;
+        phone: string | null;
+        landline: string | null;
+        email: string | null;
+        website: string | null;
+        address: string | null;
+        city: string | null;
+        stateId: string;
+        latitude: number | null;
+        longitude: number | null;
+        googlePlaceId: string | null;
+        about: string | null;
+        services: string | null;
+        coverPhotoUrl: string | null;
+        gallery: string[];
+        isActive: boolean;
+        approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
+        rejectedReason: string | null;
+        createdById: string | null;
+        approvedById: string | null;
+        approvedAt: Date | null;
+        category: {
+            id: string;
+            name: string;
+        };
+        subcategory: {
+            id: string;
+            name: string;
+            categoryId: string;
+        } | null;
+        state: {
+            id: string;
+            name: string;
+            code: string | null;
+        };
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        approvedBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        admins: {
+            id: string;
+            userId: string;
+            isPrimary: boolean;
+            user: {
+                id: string;
+                name: string | null;
+                email: string;
+                phone: string | null;
+                isActive: boolean;
+                role: import("@prisma/client").$Enums.RoleName;
+            };
+            createdAt: Date;
+        }[];
+        adminCount: number;
+        distanceKm: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    updateForUser(userId: string, id: string, data: {
+        name?: string;
+        categoryId?: string;
+        subcategoryId?: string | null;
+        description?: string;
+        phone?: string;
+        landline?: string;
+        email?: string;
+        address?: string;
+        city?: string;
+        stateId?: string;
+        latitude?: number;
+        longitude?: number;
+        googlePlaceId?: string;
+        about?: string;
+        services?: string;
+        coverPhotoUrl?: string | null;
+        gallery?: string[];
+        locationLabel?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+        subcategoryId: string | null;
+        description: string | null;
+        phone: string | null;
+        landline: string | null;
+        email: string | null;
+        website: string | null;
+        address: string | null;
+        city: string | null;
+        stateId: string;
+        latitude: number | null;
+        longitude: number | null;
+        googlePlaceId: string | null;
+        about: string | null;
+        services: string | null;
+        coverPhotoUrl: string | null;
+        gallery: string[];
+        isActive: boolean;
+        approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
+        rejectedReason: string | null;
+        createdById: string | null;
+        approvedById: string | null;
+        approvedAt: Date | null;
+        category: {
+            id: string;
+            name: string;
+        };
+        subcategory: {
+            id: string;
+            name: string;
+            categoryId: string;
+        } | null;
+        state: {
+            id: string;
+            name: string;
+            code: string | null;
+        };
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        approvedBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        admins: {
+            id: string;
+            userId: string;
+            isPrimary: boolean;
+            user: {
+                id: string;
+                name: string | null;
+                email: string;
+                phone: string | null;
+                isActive: boolean;
+                role: import("@prisma/client").$Enums.RoleName;
+            };
+            createdAt: Date;
+        }[];
+        adminCount: number;
+        distanceKm: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    removeForUser(userId: string, id: string): Promise<{
+        id: string;
         deleted: boolean;
     }>;
 }

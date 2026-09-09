@@ -1,5 +1,7 @@
-import { CategoryType } from '@prisma/client';
+import { BecomeTarget, CategoryType } from '@prisma/client';
+import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
+import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 import { PublicService } from './public.service';
 export declare class PublicController {
     private readonly publicService;
@@ -40,9 +42,93 @@ export declare class PublicController {
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[]>;
     listBlogs(): Promise<Record<string, unknown>[]>;
-    listJobAlerts(): Promise<Record<string, unknown>[]>;
+    listJobAlerts(): Promise<{
+        description: string | null;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
+        title: string;
+        postDate: string | null;
+        lastDate: string | null;
+        startsAt: Date | null;
+        endsAt: Date | null;
+        broadcastAt: Date | null;
+    }[]>;
+    listPaymentPlans(): Promise<{
+        amount: number;
+        id: string;
+        code: string;
+        name: string;
+        currency: string;
+        description: string | null;
+        sortOrder: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
     listUsefulLinks(): Promise<Record<string, unknown>[]>;
     listSocialSettings(): Promise<Record<string, unknown>[]>;
+    listBecomeQuestions(target?: string): Promise<{
+        options: string[];
+        id: string;
+        target: BecomeTarget;
+        prompt: string;
+        type: import("@prisma/client").BecomeQuestionType;
+        sortOrder: number;
+        isRequired: boolean;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    }[]>;
+    listMyBecomeApplications(userId?: string, email?: string): Promise<{
+        applications: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+        }[];
+        pending: {
+            id: string;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        } | null;
+        latest: {
+            id: string;
+            target: import("@prisma/client").$Enums.BecomeTarget;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        } | null;
+        approvedTargets: import("@prisma/client").$Enums.BecomeTarget[];
+        isVolunteer: boolean;
+        menuDisabled: boolean;
+        allowedTargets: import("@prisma/client").$Enums.BecomeTarget[];
+    }>;
+    submitBecomeApplication(dto: CreateBecomeApplicationDto): Promise<{
+        answers: {
+            id: string;
+            createdAt: Date;
+            questionId: string | null;
+            answerText: string;
+            questionPrompt: string;
+            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            selectedOption: string | null;
+            applicationId: string;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        email: string;
+        phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
+        adminNote: string | null;
+    }>;
     getPage(slug: string): Promise<{
         id: string;
         createdAt: Date;
@@ -128,4 +214,14 @@ export declare class PublicController {
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
     }>;
+    createHelpTicket(dto: CreatePublicHelpTicketDto): import("@prisma/client").Prisma.Prisma__HelpTicketClient<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        email: string;
+        phone: string | null;
+        status: string;
+        message: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
 }

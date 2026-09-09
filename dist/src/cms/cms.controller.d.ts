@@ -83,7 +83,21 @@ export declare class JobAlertsController {
     private readonly cms;
     private readonly broadcasts;
     constructor(cms: CmsService, broadcasts: BroadcastsService);
-    findAll(search?: string): Promise<Record<string, unknown>[]>;
+    findAll(search?: string, isActive?: string, postFrom?: string, postTo?: string, closeFrom?: string, closeTo?: string): Promise<{
+        description: string | null;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
+        title: string;
+        postDate: string | null;
+        lastDate: string | null;
+        startsAt: Date | null;
+        endsAt: Date | null;
+        broadcastAt: Date | null;
+    }[]>;
     findOne(id: string): Promise<Record<string, unknown>>;
     create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     broadcast(id: string): Promise<{

@@ -41,9 +41,9 @@ export declare class ServiceProvidersController {
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
                 id: string;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -117,9 +117,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -187,9 +187,9 @@ export declare class ServiceProvidersController {
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
                 id: string;
                 name: string;
+                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -263,9 +263,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -332,9 +332,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -401,9 +401,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -474,9 +474,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;
@@ -543,9 +543,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
             id: string;
             name: string;
+            code: string | null;
         };
         createdBy: {
             id: string;

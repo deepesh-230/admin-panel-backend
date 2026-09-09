@@ -13,6 +13,7 @@ const core_1 = require("@nestjs/core");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
+const become_module_1 = require("./become/become.module");
 const bulk_import_module_1 = require("./bulk-import/bulk-import.module");
 const categories_module_1 = require("./categories/categories.module");
 const cms_module_1 = require("./cms/cms.module");
@@ -37,6 +38,7 @@ const service_providers_module_1 = require("./service-providers/service-provider
 const state_admins_module_1 = require("./state-admins/state-admins.module");
 const states_module_1 = require("./states/states.module");
 const subcategories_module_1 = require("./subcategories/subcategories.module");
+const system_settings_module_1 = require("./system-settings/system-settings.module");
 const uploads_module_1 = require("./uploads/uploads.module");
 const volunteer_admins_module_1 = require("./volunteer-admins/volunteer-admins.module");
 const users_module_1 = require("./users/users.module");
@@ -50,6 +52,7 @@ exports.AppModule = AppModule = __decorate([
             prisma_module_1.PrismaModule,
             mail_module_1.MailModule,
             auth_module_1.AuthModule,
+            become_module_1.BecomeModule,
             bulk_import_module_1.BulkImportModule,
             dashboard_module_1.DashboardModule,
             enquiries_module_1.EnquiriesModule,
@@ -70,6 +73,7 @@ exports.AppModule = AppModule = __decorate([
             payments_module_1.PaymentsModule,
             permissions_module_1.PermissionsModule,
             places_module_1.PlacesModule,
+            system_settings_module_1.SystemSettingsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

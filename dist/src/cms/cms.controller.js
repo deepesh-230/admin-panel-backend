@@ -270,8 +270,16 @@ let JobAlertsController = class JobAlertsController {
         this.cms = cms;
         this.broadcasts = broadcasts;
     }
-    findAll(search) {
-        return this.cms.findAll('jobAlert', search, ['title', 'description']);
+    findAll(search, isActive, postFrom, postTo, closeFrom, closeTo) {
+        const active = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+        return this.cms.findJobAlerts({
+            search,
+            isActive: active,
+            postFrom,
+            postTo,
+            closeFrom,
+            closeTo,
+        });
     }
     findOne(id) {
         return this.cms.findOne('jobAlert', id);
@@ -294,8 +302,13 @@ __decorate([
     (0, common_1.Get)(),
     (0, permissions_decorator_1.Permissions)('cms.read'),
     __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('isActive')),
+    __param(2, (0, common_1.Query)('postFrom')),
+    __param(3, (0, common_1.Query)('postTo')),
+    __param(4, (0, common_1.Query)('closeFrom')),
+    __param(5, (0, common_1.Query)('closeTo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], JobAlertsController.prototype, "findAll", null);
 __decorate([

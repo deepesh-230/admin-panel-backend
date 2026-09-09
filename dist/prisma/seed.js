@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
+const payment_plan_defaults_1 = require("../src/payments/payment-plan.defaults");
 const permission_registry_1 = require("../src/permissions/permission-registry");
 const india_states_1 = require("../src/states/india-states");
 const prisma = new client_1.PrismaClient();
@@ -541,6 +542,26 @@ async function main() {
             isActive: true,
         },
     });
+    for (const plan of payment_plan_defaults_1.DEFAULT_PAYMENT_PLANS) {
+        await prisma.paymentPlan.upsert({
+            where: { code: plan.code },
+            update: {
+                name: plan.name,
+                amount: new client_1.Prisma.Decimal(plan.amount),
+                description: plan.description,
+                sortOrder: plan.sortOrder,
+                isActive: true,
+            },
+            create: {
+                code: plan.code,
+                name: plan.name,
+                amount: new client_1.Prisma.Decimal(plan.amount),
+                description: plan.description,
+                sortOrder: plan.sortOrder,
+                isActive: true,
+            },
+        });
+    }
     await prisma.payment.upsert({
         where: { id: 'seed-pay-1' },
         update: {
