@@ -3,3 +3,5 @@ node_modules
 # Uploaded file storage at project root (not src/uploads source)
 /uploads
 
+.vercel
+.env*
