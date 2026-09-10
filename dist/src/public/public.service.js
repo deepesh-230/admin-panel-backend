@@ -22,6 +22,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const states_service_1 = require("../states/states.service");
 const system_settings_service_1 = require("../system-settings/system-settings.service");
 const system_setting_defaults_1 = require("../system-settings/system-setting.defaults");
+const coverage_1 = require("../common/coverage");
 let PublicService = class PublicService {
     categories;
     states;
@@ -68,10 +69,23 @@ let PublicService = class PublicService {
             isActive: true,
         });
     }
-    listHomeBanners() {
+    listHomeBanners(viewer) {
         return this.prisma.homeBanner.findMany({
-            where: { isActive: true },
+            where: {
+                isActive: true,
+                ...(0, coverage_1.coverageVisibilityWhere)(viewer),
+            },
             orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+            select: {
+                id: true,
+                title: true,
+                image: true,
+                url: true,
+                sortOrder: true,
+                coverageFlag: true,
+                coverageStateId: true,
+                coverageCity: true,
+            },
         });
     }
     listJobAlerts() {

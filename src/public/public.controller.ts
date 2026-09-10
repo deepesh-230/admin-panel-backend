@@ -39,8 +39,11 @@ export class PublicController {
   }
 
   @Get('home-banners')
-  listHomeBanners() {
-    return this.publicService.listHomeBanners();
+  listHomeBanners(
+    @Query('stateId') stateId?: string,
+    @Query('city') city?: string,
+  ) {
+    return this.publicService.listHomeBanners({ stateId, city });
   }
 
   @Get('job-alerts')

@@ -41,8 +41,8 @@ let PublicController = class PublicController {
     listBlogs() {
         return this.publicService.listBlogs();
     }
-    listHomeBanners() {
-        return this.publicService.listHomeBanners();
+    listHomeBanners(stateId, city) {
+        return this.publicService.listHomeBanners({ stateId, city });
     }
     listJobAlerts() {
         return this.publicService.listJobAlerts();
@@ -122,8 +122,10 @@ __decorate([
 ], PublicController.prototype, "listBlogs", null);
 __decorate([
     (0, common_1.Get)('home-banners'),
+    __param(0, (0, common_1.Query)('stateId')),
+    __param(1, (0, common_1.Query)('city')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "listHomeBanners", null);
 __decorate([

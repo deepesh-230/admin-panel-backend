@@ -24,11 +24,20 @@ function sanitizeCoverage(data) {
         };
     }
     if (coverageFlag === client_1.CoverageFlag.STATE) {
+        if (!stateId) {
+            throw new Error('State is required for statewide (orange) coverage');
+        }
         return {
             coverageFlag,
             coverageStateId: stateId,
             coverageCity: null,
         };
+    }
+    if (!stateId) {
+        throw new Error('State is required for local (green) coverage');
+    }
+    if (!city) {
+        throw new Error('City / local area is required for local (green) coverage');
     }
     return {
         coverageFlag,

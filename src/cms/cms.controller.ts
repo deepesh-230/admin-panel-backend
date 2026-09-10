@@ -174,12 +174,49 @@ export class BlogsController extends resourceController('blogs', 'blog', 'cms', 
   'description',
 ]) {}
 
-export class HomeBannersController extends resourceController(
-  'home-banners',
-  'homeBanner',
-  'cms',
-  ['title', 'url'],
-) {}
+@Controller('home-banners')
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+export class HomeBannersController {
+  constructor(private readonly cms: CmsService) {}
+
+  @Get()
+  @Permissions('cms.read')
+  findAll(
+    @Query('search') search?: string,
+    @Query('coverageFlag') coverageFlag?: string,
+  ) {
+    const where: Record<string, unknown> = {};
+    const flag = String(coverageFlag || '').trim().toUpperCase();
+    if (flag === 'NATIONAL' || flag === 'STATE' || flag === 'LOCAL') {
+      where.coverageFlag = flag;
+    }
+    return this.cms.findAll('homeBanner', search, ['title', 'url', 'coverageCity'], where);
+  }
+
+  @Get(':id')
+  @Permissions('cms.read')
+  findOne(@Param('id') id: string) {
+    return this.cms.findOne('homeBanner', id);
+  }
+
+  @Post()
+  @Permissions('cms.write')
+  create(@Body() body: Record<string, unknown>) {
+    return this.cms.createHomeBanner(body);
+  }
+
+  @Patch(':id')
+  @Permissions('cms.write')
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.cms.updateHomeBanner(id, body);
+  }
+
+  @Delete(':id')
+  @Permissions('cms.write')
+  remove(@Param('id') id: string) {
+    return this.cms.remove('homeBanner', id);
+  }
+}
 
 @Controller('job-alerts')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)

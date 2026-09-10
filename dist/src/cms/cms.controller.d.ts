@@ -4,7 +4,25 @@ import { MarketplaceService } from '../marketplace/marketplace.service';
 export declare class FaqsController {
     private readonly cms;
     constructor(cms: CmsService);
-    findAll(search?: string): Promise<Record<string, unknown>[]>;
+    findAll(search?: string): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
     findOne(id: string): Promise<Record<string, unknown>>;
     create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -14,7 +32,25 @@ export declare class UsefulLinksController {
     private readonly cms;
     private readonly broadcasts;
     constructor(cms: CmsService, broadcasts: BroadcastsService);
-    findAll(search?: string): Promise<Record<string, unknown>[]>;
+    findAll(search?: string): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
     findOne(id: string): Promise<Record<string, unknown>>;
     create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     broadcast(id: string): Promise<{
@@ -34,7 +70,25 @@ export declare class UsefulLinksController {
 declare const SocialSettingsController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -46,7 +100,25 @@ export declare class SocialSettingsController extends SocialSettingsController_b
 declare const HelpTicketsController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -58,7 +130,25 @@ export declare class HelpTicketsController extends HelpTicketsController_base {
 declare const CmsPagesController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -70,7 +160,25 @@ export declare class CmsPagesController extends CmsPagesController_base {
 declare const BlogsController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -79,17 +187,68 @@ declare const BlogsController_base: {
 };
 export declare class BlogsController extends BlogsController_base {
 }
-declare const HomeBannersController_base: {
-    new (cms: CmsService): {
-        readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
-        findOne(id: string): Promise<Record<string, unknown>>;
-        create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
-        update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
-        remove(id: string): Promise<Record<string, unknown>>;
-    };
-};
-export declare class HomeBannersController extends HomeBannersController_base {
+export declare class HomeBannersController {
+    private readonly cms;
+    constructor(cms: CmsService);
+    findAll(search?: string, coverageFlag?: string): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
+    findOne(id: string): Promise<Record<string, unknown>>;
+    create(body: Record<string, unknown>): Promise<{
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    }>;
+    update(id: string, body: Record<string, unknown>): Promise<{
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    }>;
+    remove(id: string): Promise<Record<string, unknown>>;
 }
 export declare class JobAlertsController {
     private readonly cms;
@@ -135,7 +294,25 @@ export declare class JobAlertsController {
 declare const SuggestionsController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -147,7 +324,25 @@ export declare class SuggestionsController extends SuggestionsController_base {
 declare const VolunteersController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -307,7 +502,25 @@ export declare class MarketplaceProductsController {
 declare const MarketplacePartiesController_base: {
     new (cms: CmsService): {
         readonly cms: CmsService;
-        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
+            coverageState: {
+                code: string | null;
+                id: string;
+                name: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            isActive: boolean;
+            sortOrder: number;
+            image: string;
+            title: string | null;
+            url: string | null;
+            coverageStateId: string | null;
+            coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+            coverageCity: string | null;
+        })[]>;
         findOne(id: string): Promise<Record<string, unknown>>;
         create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
         update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;

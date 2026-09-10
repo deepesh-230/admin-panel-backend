@@ -16,6 +16,7 @@ import {
 } from '../system-settings/system-setting.defaults';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
+import { coverageVisibilityWhere } from '../common/coverage';
 
 @Injectable()
 export class PublicService {
@@ -61,10 +62,23 @@ export class PublicService {
     });
   }
 
-  listHomeBanners() {
+  listHomeBanners(viewer?: { stateId?: string; city?: string }) {
     return this.prisma.homeBanner.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...coverageVisibilityWhere(viewer),
+      },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      select: {
+        id: true,
+        title: true,
+        image: true,
+        url: true,
+        sortOrder: true,
+        coverageFlag: true,
+        coverageStateId: true,
+        coverageCity: true,
+      },
     });
   }
 

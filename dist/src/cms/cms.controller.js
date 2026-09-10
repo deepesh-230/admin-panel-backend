@@ -263,9 +263,80 @@ class BlogsController extends resourceController('blogs', 'blog', 'cms', [
 ]) {
 }
 exports.BlogsController = BlogsController;
-class HomeBannersController extends resourceController('home-banners', 'homeBanner', 'cms', ['title', 'url']) {
-}
+let HomeBannersController = class HomeBannersController {
+    cms;
+    constructor(cms) {
+        this.cms = cms;
+    }
+    findAll(search, coverageFlag) {
+        const where = {};
+        const flag = String(coverageFlag || '').trim().toUpperCase();
+        if (flag === 'NATIONAL' || flag === 'STATE' || flag === 'LOCAL') {
+            where.coverageFlag = flag;
+        }
+        return this.cms.findAll('homeBanner', search, ['title', 'url', 'coverageCity'], where);
+    }
+    findOne(id) {
+        return this.cms.findOne('homeBanner', id);
+    }
+    create(body) {
+        return this.cms.createHomeBanner(body);
+    }
+    update(id, body) {
+        return this.cms.updateHomeBanner(id, body);
+    }
+    remove(id) {
+        return this.cms.remove('homeBanner', id);
+    }
+};
 exports.HomeBannersController = HomeBannersController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('coverageFlag')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], HomeBannersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.read'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], HomeBannersController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], HomeBannersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], HomeBannersController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, permissions_decorator_1.Permissions)('cms.write'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], HomeBannersController.prototype, "remove", null);
+exports.HomeBannersController = HomeBannersController = __decorate([
+    (0, common_1.Controller)('home-banners'),
+    (0, roles_decorator_1.Roles)(client_1.RoleName.ADMIN, client_1.RoleName.STATE_ADMIN),
+    __metadata("design:paramtypes", [cms_service_1.CmsService])
+], HomeBannersController);
 let JobAlertsController = class JobAlertsController {
     cms;
     broadcasts;

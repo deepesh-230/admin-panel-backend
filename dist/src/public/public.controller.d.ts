@@ -40,9 +40,13 @@ export declare class PublicController {
         name: string;
         isActive: boolean;
     }[]>;
-    listFaqs(): Promise<Record<string, unknown>[]>;
-    listBlogs(): Promise<Record<string, unknown>[]>;
-    listHomeBanners(): import("@prisma/client").Prisma.PrismaPromise<{
+    listFaqs(): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -51,6 +55,38 @@ export declare class PublicController {
         image: string;
         title: string | null;
         url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
+    listBlogs(): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
+    listHomeBanners(stateId?: string, city?: string): import("@prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
     }[]>;
     listJobAlerts(): Promise<{
         description: string | null;
@@ -84,8 +120,44 @@ export declare class PublicController {
             updatedAt: Date;
         }[];
     }>;
-    listUsefulLinks(): Promise<Record<string, unknown>[]>;
-    listSocialSettings(): Promise<Record<string, unknown>[]>;
+    listUsefulLinks(): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
+    listSocialSettings(): Promise<Record<string, unknown>[] | ({
+        coverageState: {
+            code: string | null;
+            id: string;
+            name: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+        coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
+        coverageCity: string | null;
+    })[]>;
     listBecomeQuestions(target?: string): Promise<{
         options: string[];
         id: string;

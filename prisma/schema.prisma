@@ -47,6 +47,7 @@ model State {
   users            User[]               @relation("UserPrimaryState")
   userStates       UserState[]
   enquiries        Enquiry[]
+  homeBanners      HomeBanner[]
 }
 
 model User {
@@ -308,17 +309,24 @@ model Blog {
 
 /** Home screen carousel banners (shown after Get Featured promo). */
 model HomeBanner {
-  id        String   @id @default(uuid())
-  title     String?
-  image     String
-  url       String?
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String       @id @default(uuid())
+  title           String?
+  image           String
+  url             String?
+  sortOrder       Int          @default(0)
+  isActive        Boolean      @default(true)
+  /// Red = NATIONAL, Orange = STATE, Green = LOCAL
+  coverageFlag    CoverageFlag @default(NATIONAL)
+  coverageStateId String?
+  coverageCity    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  coverageState   State?       @relation(fields: [coverageStateId], references: [id], onDelete: SetNull)
 
   @@index([isActive])
   @@index([sortOrder])
+  @@index([coverageFlag])
+  @@index([coverageStateId])
 }
 
 model JobAlert {
@@ -665,6 +673,13 @@ enum ProviderApprovalStatus {
 enum PaymentPlanDurationUnit {
   MONTH
   YEAR
+}
+
+/// Red = NATIONAL, Orange = STATE, Green = LOCAL
+enum CoverageFlag {
+  NATIONAL
+  STATE
+  LOCAL
 }
 
 enum BusinessVerificationStatus {

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CmsService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
+const coverage_1 = require("../common/coverage");
 const prisma_service_1 = require("../prisma/prisma.service");
 let CmsService = class CmsService {
     prisma;
@@ -27,6 +28,15 @@ let CmsService = class CmsService {
             where.OR = searchFields.map((field) => ({
                 [field]: { contains: search.trim(), mode: client_1.Prisma.QueryMode.insensitive },
             }));
+        }
+        if (model === 'homeBanner') {
+            return this.prisma.homeBanner.findMany({
+                where,
+                include: {
+                    coverageState: { select: { id: true, name: true, code: true } },
+                },
+                orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+            });
         }
         return this.client(model).findMany({
             where,
@@ -80,6 +90,73 @@ let CmsService = class CmsService {
     async remove(model, id) {
         await this.findOne(model, id);
         return this.client(model).delete({ where: { id } });
+    }
+    bannerInclude = {
+        coverageState: { select: { id: true, name: true, code: true } },
+    };
+    async buildBannerData(body) {
+        let coverage;
+        try {
+            coverage = (0, coverage_1.sanitizeCoverage)({
+                coverageFlag: body.coverageFlag,
+                coverageStateId: body.coverageStateId,
+                coverageCity: body.coverageCity,
+            });
+        }
+        catch (e) {
+            throw new common_1.BadRequestException(e instanceof Error ? e.message : 'Invalid coverage');
+        }
+        if (coverage.coverageStateId) {
+            const state = await this.prisma.state.findUnique({
+                where: { id: coverage.coverageStateId },
+            });
+            if (!state)
+                throw new common_1.BadRequestException('Coverage state not found');
+        }
+        const image = String(body.image || '').trim();
+        if (!image)
+            throw new common_1.BadRequestException('Banner image is required');
+        const sortOrder = Number(body.sortOrder ?? 0);
+        if (!Number.isInteger(sortOrder)) {
+            throw new common_1.BadRequestException('Sort order must be an integer');
+        }
+        return {
+            title: body.title != null ? String(body.title).trim() || null : null,
+            image,
+            url: body.url != null ? String(body.url).trim() || null : null,
+            sortOrder,
+            isActive: body.isActive !== false && body.isActive !== 'false',
+            ...coverage,
+        };
+    }
+    async createHomeBanner(body) {
+        const data = await this.buildBannerData(body);
+        return this.prisma.homeBanner.create({
+            data,
+            include: this.bannerInclude,
+        });
+    }
+    async updateHomeBanner(id, body) {
+        const existing = await this.prisma.homeBanner.findUnique({ where: { id } });
+        if (!existing)
+            throw new common_1.NotFoundException('Record not found');
+        const data = await this.buildBannerData({
+            title: body.title !== undefined ? body.title : existing.title,
+            image: body.image !== undefined ? body.image : existing.image,
+            url: body.url !== undefined ? body.url : existing.url,
+            sortOrder: body.sortOrder !== undefined ? body.sortOrder : existing.sortOrder,
+            isActive: body.isActive !== undefined ? body.isActive : existing.isActive,
+            coverageFlag: body.coverageFlag !== undefined ? body.coverageFlag : existing.coverageFlag,
+            coverageStateId: body.coverageStateId !== undefined
+                ? body.coverageStateId
+                : existing.coverageStateId,
+            coverageCity: body.coverageCity !== undefined ? body.coverageCity : existing.coverageCity,
+        });
+        return this.prisma.homeBanner.update({
+            where: { id },
+            data,
+            include: this.bannerInclude,
+        });
     }
 };
 exports.CmsService = CmsService;

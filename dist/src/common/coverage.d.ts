@@ -10,8 +10,16 @@ export type ViewerLocation = {
 };
 export declare function parseCoverageFlag(value?: string | null): CoverageFlag;
 export declare function sanitizeCoverage(data: CoverageInput): {
-    coverageFlag: CoverageFlag;
+    coverageFlag: "NATIONAL";
     coverageStateId: string | null;
     coverageCity: string | null;
+} | {
+    coverageFlag: "STATE";
+    coverageStateId: string;
+    coverageCity: string | null;
+} | {
+    coverageFlag: "LOCAL";
+    coverageStateId: string;
+    coverageCity: string;
 };
 export declare function coverageVisibilityWhere(viewer?: ViewerLocation | null): Prisma.HomeBannerWhereInput;

@@ -463,6 +463,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private async ensureHomeBannerTable() {
     try {
       await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "CoverageFlag" AS ENUM ('NATIONAL', 'STATE', 'LOCAL');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS "HomeBanner" (
           "id" TEXT NOT NULL,
           "title" TEXT,
@@ -470,16 +475,43 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           "url" TEXT,
           "sortOrder" INTEGER NOT NULL DEFAULT 0,
           "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "coverageFlag" "CoverageFlag" NOT NULL DEFAULT 'NATIONAL',
+          "coverageStateId" TEXT,
+          "coverageCity" TEXT,
           "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
           "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
           CONSTRAINT "HomeBanner_pkey" PRIMARY KEY ("id")
         )
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "HomeBanner"
+          ADD COLUMN IF NOT EXISTS "coverageFlag" "CoverageFlag" NOT NULL DEFAULT 'NATIONAL'
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "HomeBanner" ADD COLUMN IF NOT EXISTS "coverageStateId" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "HomeBanner" ADD COLUMN IF NOT EXISTS "coverageCity" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "HomeBanner"
+            ADD CONSTRAINT "HomeBanner_coverageStateId_fkey"
+            FOREIGN KEY ("coverageStateId") REFERENCES "State"("id")
+            ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
       `);
       await this.$executeRawUnsafe(
         `CREATE INDEX IF NOT EXISTS "HomeBanner_isActive_idx" ON "HomeBanner"("isActive")`,
       );
       await this.$executeRawUnsafe(
         `CREATE INDEX IF NOT EXISTS "HomeBanner_sortOrder_idx" ON "HomeBanner"("sortOrder")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "HomeBanner_coverageFlag_idx" ON "HomeBanner"("coverageFlag")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "HomeBanner_coverageStateId_idx" ON "HomeBanner"("coverageStateId")`,
       );
     } catch (error) {
       this.logger.warn(
