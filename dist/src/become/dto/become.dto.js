@@ -166,6 +166,7 @@ __decorate([
 class UpdateBecomeApplicationDto {
     status;
     adminNote;
+    stateId;
 }
 exports.UpdateBecomeApplicationDto = UpdateBecomeApplicationDto;
 __decorate([
@@ -179,4 +180,9 @@ __decorate([
     (0, class_validator_1.MaxLength)(2000),
     __metadata("design:type", Object)
 ], UpdateBecomeApplicationDto.prototype, "adminNote", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], UpdateBecomeApplicationDto.prototype, "stateId", void 0);
 //# sourceMappingURL=become.dto.js.map

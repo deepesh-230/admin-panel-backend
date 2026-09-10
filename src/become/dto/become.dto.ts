@@ -130,4 +130,9 @@ export class UpdateBecomeApplicationDto {
   @IsString()
   @MaxLength(2000)
   adminNote?: string | null;
+
+  /** Required when approving a STATE_ADMIN application if the user has no state yet. */
+  @IsOptional()
+  @IsUUID()
+  stateId?: string;
 }

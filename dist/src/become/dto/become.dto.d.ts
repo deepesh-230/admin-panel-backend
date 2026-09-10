@@ -32,4 +32,5 @@ export declare class CreateBecomeApplicationDto {
 export declare class UpdateBecomeApplicationDto {
     status?: BecomeApplicationStatus;
     adminNote?: string | null;
+    stateId?: string;
 }

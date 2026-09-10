@@ -175,15 +175,127 @@ export class BecomeService {
       where: { id },
       include: {
         answers: { orderBy: { createdAt: 'asc' } },
-        user: { select: { id: true, name: true, email: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            stateId: true,
+            role: { select: { name: true } },
+          },
+        },
       },
     });
     if (!row) throw new NotFoundException('Application not found');
     return row;
   }
 
+  private roleForTarget(target: BecomeTarget): RoleName | null {
+    if (target === BecomeTarget.STATE_ADMIN) return RoleName.STATE_ADMIN;
+    if (target === BecomeTarget.VOLUNTEER) return RoleName.VOLUNTEER;
+    if (target === BecomeTarget.PROVIDER_ADMIN) {
+      return RoleName.SERVICE_PROVIDER_ADMIN;
+    }
+    return null;
+  }
+
+  private async promoteApplicantOnApproval(
+    application: {
+      target: BecomeTarget;
+      userId: string | null;
+      email: string;
+      name: string;
+      phone: string | null;
+    },
+    stateId?: string | null,
+  ) {
+    const roleName = this.roleForTarget(application.target);
+    if (!roleName) return;
+
+    const user =
+      (application.userId
+        ? await this.prisma.user.findUnique({
+            where: { id: application.userId },
+            include: { role: true },
+          })
+        : null) ??
+      (await this.prisma.user.findUnique({
+        where: { email: application.email.trim().toLowerCase() },
+        include: { role: true },
+      }));
+
+    if (!user) {
+      throw new BadRequestException(
+        'No user account found for this application. The applicant must register first.',
+      );
+    }
+
+    if (user.role.name === RoleName.ADMIN) {
+      throw new BadRequestException('Cannot change role of a Central Admin account');
+    }
+
+    const role = await this.prisma.role.findUniqueOrThrow({
+      where: { name: roleName },
+    });
+
+    let nextStateId = user.stateId;
+    if (roleName === RoleName.STATE_ADMIN) {
+      nextStateId = stateId?.trim() || user.stateId;
+      if (!nextStateId) {
+        throw new BadRequestException(
+          'State is required when approving a state admin application',
+        );
+      }
+      const state = await this.prisma.state.findUnique({ where: { id: nextStateId } });
+      if (!state) throw new BadRequestException('Selected state was not found');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          roleId: role.id,
+          isActive: true,
+          ...(roleName === RoleName.STATE_ADMIN && nextStateId
+            ? { stateId: nextStateId }
+            : {}),
+          ...(application.name && !user.name ? { name: application.name } : {}),
+          ...(application.phone && !user.phone
+            ? { phone: application.phone }
+            : {}),
+        },
+      });
+
+      if (roleName === RoleName.STATE_ADMIN && nextStateId) {
+        if (user.stateId && user.stateId !== nextStateId) {
+          await tx.userState.updateMany({
+            where: { userId: user.id, isPrimary: true },
+            data: { isPrimary: false },
+          });
+        }
+        await tx.userState.upsert({
+          where: {
+            userId_stateId: { userId: user.id, stateId: nextStateId },
+          },
+          update: { isPrimary: true },
+          create: {
+            userId: user.id,
+            stateId: nextStateId,
+            isPrimary: true,
+          },
+        });
+      }
+    });
+  }
+
   async updateApplication(id: string, dto: UpdateBecomeApplicationDto) {
-    await this.getApplication(id);
+    const existing = await this.getApplication(id);
+
+    if (dto.status === BecomeApplicationStatus.APPROVED) {
+      await this.promoteApplicantOnApproval(existing, dto.stateId);
+    }
+
     return this.prisma.becomeApplication.update({
       where: { id },
       data: {
@@ -194,6 +306,16 @@ export class BecomeService {
       },
       include: {
         answers: { orderBy: { createdAt: 'asc' } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            stateId: true,
+            role: { select: { name: true } },
+          },
+        },
       },
     });
   }

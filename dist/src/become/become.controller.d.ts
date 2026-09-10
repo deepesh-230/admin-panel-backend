@@ -54,66 +54,80 @@ export declare class BecomeApplicationsController {
         };
     } & {
         id: string;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        email: string;
-        phone: string | null;
         userId: string | null;
         status: import("@prisma/client").$Enums.BecomeApplicationStatus;
-        target: import("@prisma/client").$Enums.BecomeTarget;
+        email: string;
+        phone: string | null;
         adminNote: string | null;
     })[]>;
     findOne(id: string): Promise<{
+        answers: {
+            id: string;
+            createdAt: Date;
+            applicationId: string;
+            questionId: string | null;
+            questionPrompt: string;
+            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            answerText: string;
+            selectedOption: string | null;
+        }[];
         user: {
             id: string;
             name: string | null;
             email: string;
             phone: string | null;
+            stateId: string | null;
+            role: {
+                name: import("@prisma/client").$Enums.RoleName;
+            };
         } | null;
-        answers: {
-            id: string;
-            createdAt: Date;
-            questionId: string | null;
-            answerText: string;
-            questionPrompt: string;
-            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
-            selectedOption: string | null;
-            applicationId: string;
-        }[];
     } & {
         id: string;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        email: string;
-        phone: string | null;
         userId: string | null;
         status: import("@prisma/client").$Enums.BecomeApplicationStatus;
-        target: import("@prisma/client").$Enums.BecomeTarget;
+        email: string;
+        phone: string | null;
         adminNote: string | null;
     }>;
     update(id: string, dto: UpdateBecomeApplicationDto): Promise<{
         answers: {
             id: string;
             createdAt: Date;
+            applicationId: string;
             questionId: string | null;
-            answerText: string;
             questionPrompt: string;
             questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            answerText: string;
             selectedOption: string | null;
-            applicationId: string;
         }[];
+        user: {
+            id: string;
+            name: string | null;
+            email: string;
+            phone: string | null;
+            stateId: string | null;
+            role: {
+                name: import("@prisma/client").$Enums.RoleName;
+            };
+        } | null;
     } & {
         id: string;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        email: string;
-        phone: string | null;
         userId: string | null;
         status: import("@prisma/client").$Enums.BecomeApplicationStatus;
-        target: import("@prisma/client").$Enums.BecomeTarget;
+        email: string;
+        phone: string | null;
         adminNote: string | null;
     }>;
 }

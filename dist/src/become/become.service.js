@@ -140,15 +140,106 @@ let BecomeService = class BecomeService {
             where: { id },
             include: {
                 answers: { orderBy: { createdAt: 'asc' } },
-                user: { select: { id: true, name: true, email: true, phone: true } },
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        stateId: true,
+                        role: { select: { name: true } },
+                    },
+                },
             },
         });
         if (!row)
             throw new common_1.NotFoundException('Application not found');
         return row;
     }
+    roleForTarget(target) {
+        if (target === client_1.BecomeTarget.STATE_ADMIN)
+            return client_1.RoleName.STATE_ADMIN;
+        if (target === client_1.BecomeTarget.VOLUNTEER)
+            return client_1.RoleName.VOLUNTEER;
+        if (target === client_1.BecomeTarget.PROVIDER_ADMIN) {
+            return client_1.RoleName.SERVICE_PROVIDER_ADMIN;
+        }
+        return null;
+    }
+    async promoteApplicantOnApproval(application, stateId) {
+        const roleName = this.roleForTarget(application.target);
+        if (!roleName)
+            return;
+        const user = (application.userId
+            ? await this.prisma.user.findUnique({
+                where: { id: application.userId },
+                include: { role: true },
+            })
+            : null) ??
+            (await this.prisma.user.findUnique({
+                where: { email: application.email.trim().toLowerCase() },
+                include: { role: true },
+            }));
+        if (!user) {
+            throw new common_1.BadRequestException('No user account found for this application. The applicant must register first.');
+        }
+        if (user.role.name === client_1.RoleName.ADMIN) {
+            throw new common_1.BadRequestException('Cannot change role of a Central Admin account');
+        }
+        const role = await this.prisma.role.findUniqueOrThrow({
+            where: { name: roleName },
+        });
+        let nextStateId = user.stateId;
+        if (roleName === client_1.RoleName.STATE_ADMIN) {
+            nextStateId = stateId?.trim() || user.stateId;
+            if (!nextStateId) {
+                throw new common_1.BadRequestException('State is required when approving a state admin application');
+            }
+            const state = await this.prisma.state.findUnique({ where: { id: nextStateId } });
+            if (!state)
+                throw new common_1.BadRequestException('Selected state was not found');
+        }
+        await this.prisma.$transaction(async (tx) => {
+            await tx.user.update({
+                where: { id: user.id },
+                data: {
+                    roleId: role.id,
+                    isActive: true,
+                    ...(roleName === client_1.RoleName.STATE_ADMIN && nextStateId
+                        ? { stateId: nextStateId }
+                        : {}),
+                    ...(application.name && !user.name ? { name: application.name } : {}),
+                    ...(application.phone && !user.phone
+                        ? { phone: application.phone }
+                        : {}),
+                },
+            });
+            if (roleName === client_1.RoleName.STATE_ADMIN && nextStateId) {
+                if (user.stateId && user.stateId !== nextStateId) {
+                    await tx.userState.updateMany({
+                        where: { userId: user.id, isPrimary: true },
+                        data: { isPrimary: false },
+                    });
+                }
+                await tx.userState.upsert({
+                    where: {
+                        userId_stateId: { userId: user.id, stateId: nextStateId },
+                    },
+                    update: { isPrimary: true },
+                    create: {
+                        userId: user.id,
+                        stateId: nextStateId,
+                        isPrimary: true,
+                    },
+                });
+            }
+        });
+    }
     async updateApplication(id, dto) {
-        await this.getApplication(id);
+        const existing = await this.getApplication(id);
+        if (dto.status === client_1.BecomeApplicationStatus.APPROVED) {
+            await this.promoteApplicantOnApproval(existing, dto.stateId);
+        }
         return this.prisma.becomeApplication.update({
             where: { id },
             data: {
@@ -159,6 +250,16 @@ let BecomeService = class BecomeService {
             },
             include: {
                 answers: { orderBy: { createdAt: 'asc' } },
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        stateId: true,
+                        role: { select: { name: true } },
+                    },
+                },
             },
         });
     }
