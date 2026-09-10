@@ -23,6 +23,9 @@ class CreateMarketplaceProductDto {
     brand;
     features;
     location;
+    coverageFlag;
+    coverageStateId;
+    coverageCity;
     gallery;
 }
 exports.CreateMarketplaceProductDto = CreateMarketplaceProductDto;
@@ -92,6 +95,23 @@ __decorate([
     (0, class_validator_1.MaxLength)(200),
     __metadata("design:type", String)
 ], CreateMarketplaceProductDto.prototype, "location", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(['NATIONAL', 'STATE', 'LOCAL']),
+    __metadata("design:type", String)
+], CreateMarketplaceProductDto.prototype, "coverageFlag", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateMarketplaceProductDto.prototype, "coverageStateId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], CreateMarketplaceProductDto.prototype, "coverageCity", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),

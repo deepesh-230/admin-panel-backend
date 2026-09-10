@@ -52,6 +52,12 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
   }
 
+  async getValue(key: string, fallback = '') {
+    const row = await this.prisma.systemSetting.findUnique({ where: { key } });
+    const value = row?.value?.trim();
+    return value || fallback;
+  }
+
   async updateMany(updates: { key: string; value: string }[]) {
     if (!updates?.length) throw new BadRequestException('No settings provided');
 
@@ -68,15 +74,31 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
           );
         }
       }
+      if (item.key === SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER) {
+        const text = String(item.value ?? '').trim();
+        if (!text) {
+          throw new BadRequestException('Sponsorship plans header text is required');
+        }
+        if (text.length > 1000) {
+          throw new BadRequestException('Sponsorship plans header must be at most 1000 characters');
+        }
+      }
     }
 
     await this.prisma.$transaction(
-      updates.map((item) =>
-        this.prisma.systemSetting.update({
+      updates.map((item) => {
+        const meta = DEFAULT_SYSTEM_SETTINGS.find((s) => s.key === item.key);
+        return this.prisma.systemSetting.upsert({
           where: { key: item.key },
-          data: { value: String(item.value).trim() },
-        }),
-      ),
+          create: {
+            key: item.key,
+            value: String(item.value).trim(),
+            label: meta?.label,
+            description: meta?.description,
+          },
+          update: { value: String(item.value).trim() },
+        });
+      }),
     );
 
     return this.list();

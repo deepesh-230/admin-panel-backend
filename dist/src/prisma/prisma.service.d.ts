@@ -9,5 +9,7 @@ export declare class PrismaService extends PrismaClient implements OnModuleInit,
     private ensureSystemSettingTable;
     private ensurePaymentPlanTable;
     private ensureBecomeTables;
+    private ensureBusinessVerificationColumns;
+    private ensureHomeBannerTable;
     onModuleDestroy(): Promise<void>;
 }

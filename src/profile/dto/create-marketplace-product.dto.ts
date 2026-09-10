@@ -64,6 +64,20 @@ export class CreateMarketplaceProductDto {
   location?: string;
 
   @IsOptional()
+  @IsString()
+  @IsIn(['NATIONAL', 'STATE', 'LOCAL'])
+  coverageFlag?: string;
+
+  @IsOptional()
+  @IsString()
+  coverageStateId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  coverageCity?: string;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   gallery?: string[];

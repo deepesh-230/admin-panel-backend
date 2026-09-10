@@ -10,6 +10,7 @@ import {
   ListPaymentsQueryDto,
   UpdatePaymentDto,
 } from './dto/payment.dto';
+import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
 
 const paymentInclude = {
   user: { select: { id: true, name: true, email: true, phone: true } },
@@ -20,6 +21,21 @@ type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
 @Injectable()
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
+
+  private async sponsorshipValidUntil(planId: string | null | undefined, paidAt: Date) {
+    let value = 1;
+    let unit: PaymentPlanDurationUnit = 'YEAR';
+    if (planId?.trim()) {
+      const code =
+        planId.trim().toLowerCase() === 'diamond' ? 'platinum' : planId.trim().toLowerCase();
+      const plan = await this.prisma.paymentPlan.findUnique({ where: { code } });
+      if (plan) {
+        value = plan.durationValue > 0 ? plan.durationValue : 1;
+        unit = plan.durationUnit === 'MONTH' ? 'MONTH' : 'YEAR';
+      }
+    }
+    return addPlanDuration(paidAt, value, unit);
+  }
 
   private sanitize(row: PaymentRow) {
     return {
@@ -135,7 +151,7 @@ export class PaymentsService {
     const purpose = dto.purpose ?? PaymentPurpose.OTHER;
     const validUntil =
       status === PaymentStatus.SUCCESS && purpose === PaymentPurpose.SPONSORSHIP && paidAt
-        ? new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000)
+        ? await this.sponsorshipValidUntil(dto.planId, paidAt)
         : undefined;
 
     try {
@@ -201,13 +217,14 @@ export class PaymentsService {
 
     const effectivePurpose = dto.purpose ?? current?.purpose;
     const effectivePaidAt = paidAt === undefined ? current?.paidAt : paidAt;
+    const effectivePlanId = dto.planId !== undefined ? dto.planId : current?.planId;
     if (
       (nextStatus === PaymentStatus.SUCCESS || current?.status === PaymentStatus.SUCCESS) &&
       effectivePurpose === PaymentPurpose.SPONSORSHIP &&
       effectivePaidAt &&
       !current?.validUntil
     ) {
-      validUntil = new Date(new Date(effectivePaidAt).getTime() + 365 * 24 * 60 * 60 * 1000);
+      validUntil = await this.sponsorshipValidUntil(effectivePlanId, new Date(effectivePaidAt));
     }
 
     try {

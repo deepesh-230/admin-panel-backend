@@ -79,6 +79,18 @@ declare const BlogsController_base: {
 };
 export declare class BlogsController extends BlogsController_base {
 }
+declare const HomeBannersController_base: {
+    new (cms: CmsService): {
+        readonly cms: CmsService;
+        findAll(search?: string, kind?: string): Promise<Record<string, unknown>[]>;
+        findOne(id: string): Promise<Record<string, unknown>>;
+        create(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+        update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
+        remove(id: string): Promise<Record<string, unknown>>;
+    };
+};
+export declare class HomeBannersController extends HomeBannersController_base {
+}
 export declare class JobAlertsController {
     private readonly cms;
     private readonly broadcasts;

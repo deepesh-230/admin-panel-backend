@@ -58,6 +58,16 @@ export declare class PublicService {
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[]>;
     listBlogs(): Promise<Record<string, unknown>[]>;
+    listHomeBanners(): import("@prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        sortOrder: number;
+        image: string;
+        title: string | null;
+        url: string | null;
+    }[]>;
     listJobAlerts(): Promise<{
         description: string | null;
         id: string;
@@ -74,17 +84,22 @@ export declare class PublicService {
         broadcastAt: Date | null;
     }[]>;
     listPaymentPlans(): Promise<{
-        amount: number;
-        id: string;
-        code: string;
-        name: string;
-        currency: string;
-        description: string | null;
-        sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-    }[]>;
+        headerText: string;
+        plans: {
+            amount: number;
+            id: string;
+            code: string;
+            name: string;
+            currency: string;
+            description: string | null;
+            durationValue: number;
+            durationUnit: import("@prisma/client").PaymentPlanDurationUnit;
+            sortOrder: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }[];
+    }>;
     listUsefulLinks(): Promise<Record<string, unknown>[]>;
     listSocialSettings(): Promise<Record<string, unknown>[]>;
     getPageBySlug(slug: string): Promise<{

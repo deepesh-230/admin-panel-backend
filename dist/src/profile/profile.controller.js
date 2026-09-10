@@ -20,6 +20,7 @@ const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const broadcasts_service_1 = require("../cms/broadcasts.service");
 const create_marketplace_product_dto_1 = require("./dto/create-marketplace-product.dto");
 const my_service_provider_dto_1 = require("./dto/my-service-provider.dto");
+const submit_business_verification_dto_1 = require("./dto/submit-business-verification.dto");
 const update_profile_dto_1 = require("./dto/update-profile.dto");
 const marketplace_service_1 = require("../marketplace/marketplace.service");
 const service_providers_service_1 = require("../service-providers/service-providers.service");
@@ -100,6 +101,9 @@ let ProfileController = class ProfileController {
     removeMyServiceProvider(user, id) {
         return this.serviceProviders.removeForUser(user.id, id);
     }
+    submitBusinessVerification(user, id, dto) {
+        return this.serviceProviders.submitBusinessVerificationForUser(user.id, id, dto);
+    }
     listBroadcasts(user) {
         return this.broadcasts.listForUser(user.id);
     }
@@ -172,6 +176,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], ProfileController.prototype, "removeMyServiceProvider", null);
+__decorate([
+    (0, common_1.Post)('service-providers/:id/business-verification'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, submit_business_verification_dto_1.SubmitBusinessVerificationDto]),
+    __metadata("design:returntype", void 0)
+], ProfileController.prototype, "submitBusinessVerification", null);
 __decorate([
     (0, common_1.Get)('broadcasts'),
     (0, roles_decorator_1.Roles)(client_1.RoleName.END_USER, client_1.RoleName.VOLUNTEER, client_1.RoleName.SERVICE_PROVIDER_ADMIN),

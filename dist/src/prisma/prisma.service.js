@@ -28,6 +28,8 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
                 await this.ensureSystemSettingTable();
                 await this.ensurePaymentPlanTable();
                 await this.ensureBecomeTables();
+                await this.ensureBusinessVerificationColumns();
+                await this.ensureHomeBannerTable();
                 return;
             }
             catch (error) {
@@ -181,6 +183,13 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
     async ensurePaymentPlanTable() {
         try {
             await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "PaymentPlanDurationUnit" AS ENUM ('MONTH', 'YEAR');
+        EXCEPTION
+          WHEN duplicate_object THEN NULL;
+        END $$;
+      `);
+            await this.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS "PaymentPlan" (
           "id" TEXT NOT NULL,
           "code" TEXT NOT NULL,
@@ -188,12 +197,47 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
           "amount" DECIMAL(12,2) NOT NULL,
           "currency" TEXT NOT NULL DEFAULT 'INR',
           "description" TEXT,
+          "durationValue" INTEGER NOT NULL DEFAULT 1,
+          "durationUnit" "PaymentPlanDurationUnit" NOT NULL DEFAULT 'YEAR',
           "sortOrder" INTEGER NOT NULL DEFAULT 0,
           "isActive" BOOLEAN NOT NULL DEFAULT true,
           "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
           "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
           CONSTRAINT "PaymentPlan_pkey" PRIMARY KEY ("id")
         )
+      `);
+            await this.$executeRawUnsafe(`ALTER TABLE "PaymentPlan" ADD COLUMN IF NOT EXISTS "durationValue" INTEGER NOT NULL DEFAULT 1`);
+            await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "PaymentPlan"
+            ADD COLUMN "durationUnit" "PaymentPlanDurationUnit" NOT NULL DEFAULT 'YEAR';
+        EXCEPTION
+          WHEN duplicate_column THEN NULL;
+        END $$;
+      `);
+            await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'PaymentPlan' AND column_name = 'durationDays'
+          ) THEN
+            UPDATE "PaymentPlan"
+            SET
+              "durationValue" = CASE
+                WHEN "durationDays" >= 365 AND MOD("durationDays", 365) = 0
+                  THEN GREATEST(1, "durationDays" / 365)
+                WHEN "durationDays" >= 30
+                  THEN GREATEST(1, ROUND("durationDays" / 30.0)::int)
+                ELSE 1
+              END,
+              "durationUnit" = CASE
+                WHEN "durationDays" >= 365 AND MOD("durationDays", 365) = 0
+                  THEN 'YEAR'::"PaymentPlanDurationUnit"
+                ELSE 'MONTH'::"PaymentPlanDurationUnit"
+              END;
+            ALTER TABLE "PaymentPlan" DROP COLUMN "durationDays";
+          END IF;
+        END $$;
       `);
             await this.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "PaymentPlan_code_key" ON "PaymentPlan"("code")`);
             await this.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PaymentPlan_isActive_idx" ON "PaymentPlan"("isActive")`);
@@ -311,6 +355,72 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
         }
         catch (error) {
             this.logger.warn(`Could not ensure Become tables: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async ensureBusinessVerificationColumns() {
+        try {
+            await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "BusinessVerificationStatus" AS ENUM (
+            'NOT_INITIATED', 'IN_PROGRESS', 'VERIFIED', 'REJECTED'
+          );
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider"
+          ADD COLUMN IF NOT EXISTS "businessVerificationStatus" "BusinessVerificationStatus"
+          NOT NULL DEFAULT 'NOT_INITIATED'
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "mcaId" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "din" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "gstin" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "nmcId" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "panId" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "verificationSubmittedAt" TIMESTAMP(3)
+      `);
+            await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "verificationNote" TEXT
+      `);
+            await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProvider_businessVerificationStatus_idx"
+        ON "ServiceProvider"("businessVerificationStatus")
+      `);
+        }
+        catch (error) {
+            this.logger.warn(`Could not ensure business verification columns: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async ensureHomeBannerTable() {
+        try {
+            await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "HomeBanner" (
+          "id" TEXT NOT NULL,
+          "title" TEXT,
+          "image" TEXT NOT NULL,
+          "url" TEXT,
+          "sortOrder" INTEGER NOT NULL DEFAULT 0,
+          "isActive" BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "HomeBanner_pkey" PRIMARY KEY ("id")
+        )
+      `);
+            await this.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "HomeBanner_isActive_idx" ON "HomeBanner"("isActive")`);
+            await this.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "HomeBanner_sortOrder_idx" ON "HomeBanner"("sortOrder")`);
+        }
+        catch (error) {
+            this.logger.warn(`Could not ensure HomeBanner table: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async onModuleDestroy() {

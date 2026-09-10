@@ -1,5 +1,5 @@
 import { PrismaService } from '../prisma/prisma.service';
-export type CmsModel = 'faq' | 'usefulLink' | 'socialSetting' | 'helpTicket' | 'cmsPage' | 'blog' | 'jobAlert' | 'suggestion' | 'volunteer' | 'marketplaceProduct' | 'marketplaceParty';
+export type CmsModel = 'faq' | 'usefulLink' | 'socialSetting' | 'helpTicket' | 'cmsPage' | 'blog' | 'homeBanner' | 'jobAlert' | 'suggestion' | 'volunteer' | 'marketplaceProduct' | 'marketplaceParty';
 export declare class CmsService {
     private prisma;
     constructor(prisma: PrismaService);

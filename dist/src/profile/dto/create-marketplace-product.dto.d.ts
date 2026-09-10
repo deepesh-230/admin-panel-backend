@@ -10,5 +10,8 @@ export declare class CreateMarketplaceProductDto {
     brand?: string;
     features?: string;
     location?: string;
+    coverageFlag?: string;
+    coverageStateId?: string;
+    coverageCity?: string;
     gallery?: string[];
 }

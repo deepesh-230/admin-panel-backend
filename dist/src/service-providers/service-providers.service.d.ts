@@ -35,6 +35,14 @@ export declare class ServiceProvidersService {
             isActive: boolean;
             approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
             rejectedReason: string | null;
+            businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+            mcaId: string | null;
+            din: string | null;
+            gstin: string | null;
+            nmcId: string | null;
+            panId: string | null;
+            verificationSubmittedAt: Date | null;
+            verificationNote: string | null;
             createdById: string | null;
             approvedById: string | null;
             approvedAt: Date | null;
@@ -48,9 +56,9 @@ export declare class ServiceProvidersService {
                 categoryId: string;
             } | null;
             state: {
+                code: string | null;
                 id: string;
                 name: string;
-                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -112,6 +120,14 @@ export declare class ServiceProvidersService {
             isActive: boolean;
             approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
             rejectedReason: string | null;
+            businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+            mcaId: string | null;
+            din: string | null;
+            gstin: string | null;
+            nmcId: string | null;
+            panId: string | null;
+            verificationSubmittedAt: Date | null;
+            verificationNote: string | null;
             createdById: string | null;
             approvedById: string | null;
             approvedAt: Date | null;
@@ -125,9 +141,9 @@ export declare class ServiceProvidersService {
                 categoryId: string;
             } | null;
             state: {
+                code: string | null;
                 id: string;
                 name: string;
-                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -188,6 +204,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -201,9 +225,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -257,6 +281,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -270,9 +302,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -326,6 +358,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -339,9 +379,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -395,6 +435,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -408,9 +456,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -468,6 +516,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -481,9 +537,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -537,6 +593,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -550,9 +614,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -639,6 +703,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -652,9 +724,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -709,6 +781,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -722,9 +802,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -798,6 +878,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -811,9 +899,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -886,6 +974,14 @@ export declare class ServiceProvidersService {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -899,9 +995,9 @@ export declare class ServiceProvidersService {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -935,5 +1031,88 @@ export declare class ServiceProvidersService {
     removeForUser(userId: string, id: string): Promise<{
         id: string;
         deleted: boolean;
+    }>;
+    submitBusinessVerificationForUser(userId: string, id: string, data: {
+        mcaId?: string;
+        din?: string;
+        gstin?: string;
+        nmcId?: string;
+        panId?: string;
+    }): Promise<{
+        id: string;
+        name: string;
+        categoryId: string;
+        subcategoryId: string | null;
+        description: string | null;
+        phone: string | null;
+        landline: string | null;
+        email: string | null;
+        website: string | null;
+        address: string | null;
+        city: string | null;
+        stateId: string;
+        latitude: number | null;
+        longitude: number | null;
+        googlePlaceId: string | null;
+        about: string | null;
+        services: string | null;
+        coverPhotoUrl: string | null;
+        gallery: string[];
+        isActive: boolean;
+        approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
+        rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
+        createdById: string | null;
+        approvedById: string | null;
+        approvedAt: Date | null;
+        category: {
+            id: string;
+            name: string;
+        };
+        subcategory: {
+            id: string;
+            name: string;
+            categoryId: string;
+        } | null;
+        state: {
+            code: string | null;
+            id: string;
+            name: string;
+        };
+        createdBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        approvedBy: {
+            id: string;
+            name: string | null;
+            email: string;
+        } | null;
+        admins: {
+            id: string;
+            userId: string;
+            isPrimary: boolean;
+            user: {
+                id: string;
+                name: string | null;
+                email: string;
+                phone: string | null;
+                isActive: boolean;
+                role: import("@prisma/client").$Enums.RoleName;
+            };
+            createdAt: Date;
+        }[];
+        adminCount: number;
+        distanceKm: number | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }

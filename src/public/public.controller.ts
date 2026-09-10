@@ -38,6 +38,11 @@ export class PublicController {
     return this.publicService.listBlogs();
   }
 
+  @Get('home-banners')
+  listHomeBanners() {
+    return this.publicService.listHomeBanners();
+  }
+
   @Get('job-alerts')
   listJobAlerts() {
     return this.publicService.listJobAlerts();

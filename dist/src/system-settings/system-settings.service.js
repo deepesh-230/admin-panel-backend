@@ -52,6 +52,11 @@ let SystemSettingsService = class SystemSettingsService {
         const parsed = Number(row?.value);
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
     }
+    async getValue(key, fallback = '') {
+        const row = await this.prisma.systemSetting.findUnique({ where: { key } });
+        const value = row?.value?.trim();
+        return value || fallback;
+    }
     async updateMany(updates) {
         if (!updates?.length)
             throw new common_1.BadRequestException('No settings provided');
@@ -66,11 +71,29 @@ let SystemSettingsService = class SystemSettingsService {
                     throw new common_1.BadRequestException('Job alert retention months must be an integer between 0 and 60');
                 }
             }
+            if (item.key === system_setting_defaults_1.SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER) {
+                const text = String(item.value ?? '').trim();
+                if (!text) {
+                    throw new common_1.BadRequestException('Sponsorship plans header text is required');
+                }
+                if (text.length > 1000) {
+                    throw new common_1.BadRequestException('Sponsorship plans header must be at most 1000 characters');
+                }
+            }
         }
-        await this.prisma.$transaction(updates.map((item) => this.prisma.systemSetting.update({
-            where: { key: item.key },
-            data: { value: String(item.value).trim() },
-        })));
+        await this.prisma.$transaction(updates.map((item) => {
+            const meta = system_setting_defaults_1.DEFAULT_SYSTEM_SETTINGS.find((s) => s.key === item.key);
+            return this.prisma.systemSetting.upsert({
+                where: { key: item.key },
+                create: {
+                    key: item.key,
+                    value: String(item.value).trim(),
+                    label: meta?.label,
+                    description: meta?.description,
+                },
+                update: { value: String(item.value).trim() },
+            });
+        }));
         return this.list();
     }
     async runJobAlertLifecycle() {

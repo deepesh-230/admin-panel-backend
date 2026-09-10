@@ -21,6 +21,7 @@ const payment_plans_service_1 = require("../payments/payment-plans.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const states_service_1 = require("../states/states.service");
 const system_settings_service_1 = require("../system-settings/system-settings.service");
+const system_setting_defaults_1 = require("../system-settings/system-setting.defaults");
 let PublicService = class PublicService {
     categories;
     states;
@@ -67,11 +68,21 @@ let PublicService = class PublicService {
             isActive: true,
         });
     }
+    listHomeBanners() {
+        return this.prisma.homeBanner.findMany({
+            where: { isActive: true },
+            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        });
+    }
     listJobAlerts() {
         return this.systemSettings.listPublicJobAlerts();
     }
-    listPaymentPlans() {
-        return this.paymentPlans.listPublic();
+    async listPaymentPlans() {
+        const [plans, headerText] = await Promise.all([
+            this.paymentPlans.listPublic(),
+            this.systemSettings.getValue(system_setting_defaults_1.SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER, system_setting_defaults_1.DEFAULT_SPONSORSHIP_PLANS_HEADER),
+        ]);
+        return { headerText, plans };
     }
     listUsefulLinks() {
         return this.cms.findAll('usefulLink', undefined, ['title', 'url'], { isActive: true });

@@ -174,6 +174,13 @@ export class BlogsController extends resourceController('blogs', 'blog', 'cms', 
   'description',
 ]) {}
 
+export class HomeBannersController extends resourceController(
+  'home-banners',
+  'homeBanner',
+  'cms',
+  ['title', 'url'],
+) {}
+
 @Controller('job-alerts')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
 export class JobAlertsController {

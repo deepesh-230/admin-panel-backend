@@ -67,6 +67,14 @@ let ServiceProvidersService = class ServiceProvidersService {
             isActive: provider.isActive,
             approvalStatus: provider.approvalStatus,
             rejectedReason: provider.rejectedReason,
+            businessVerificationStatus: provider.businessVerificationStatus,
+            mcaId: provider.mcaId,
+            din: provider.din,
+            gstin: provider.gstin,
+            nmcId: provider.nmcId,
+            panId: provider.panId,
+            verificationSubmittedAt: provider.verificationSubmittedAt,
+            verificationNote: provider.verificationNote,
             createdById: provider.createdById,
             approvedById: provider.approvedById,
             approvedAt: provider.approvedAt,
@@ -450,7 +458,11 @@ let ServiceProvidersService = class ServiceProvidersService {
         return { id, deleted: true };
     }
     async approve(id, currentUser) {
-        await this.getScopedOrThrow(id, currentUser);
+        const existing = await this.getScopedOrThrow(id, currentUser);
+        if (existing.businessVerificationStatus !== client_1.BusinessVerificationStatus.IN_PROGRESS &&
+            existing.businessVerificationStatus !== client_1.BusinessVerificationStatus.VERIFIED) {
+            throw new common_1.BadRequestException('User has not submitted business verification yet. Wait for MCA/DIN/GSTIN/NMC/PAN details.');
+        }
         const provider = await this.prisma.serviceProvider.update({
             where: { id },
             data: {
@@ -459,6 +471,8 @@ let ServiceProvidersService = class ServiceProvidersService {
                 approvedAt: new Date(),
                 rejectedReason: null,
                 isActive: true,
+                businessVerificationStatus: client_1.BusinessVerificationStatus.VERIFIED,
+                verificationNote: null,
             },
             include: providerInclude,
         });
@@ -474,6 +488,8 @@ let ServiceProvidersService = class ServiceProvidersService {
                 approvedById: null,
                 approvedAt: null,
                 isActive: false,
+                businessVerificationStatus: client_1.BusinessVerificationStatus.REJECTED,
+                verificationNote: reason.trim(),
             },
             include: providerInclude,
         });
@@ -686,6 +702,44 @@ let ServiceProvidersService = class ServiceProvidersService {
         await this.assertUserOwnsProvider(userId, id);
         await this.prisma.serviceProvider.delete({ where: { id } });
         return { id, deleted: true };
+    }
+    async submitBusinessVerificationForUser(userId, id, data) {
+        const existing = await this.assertUserOwnsProvider(userId, id);
+        if (existing.businessVerificationStatus === client_1.BusinessVerificationStatus.VERIFIED) {
+            throw new common_1.BadRequestException('Business is already verified');
+        }
+        const mcaId = data.mcaId?.trim().toUpperCase() || null;
+        const din = data.din?.trim().toUpperCase() || null;
+        const gstin = data.gstin?.trim().toUpperCase() || null;
+        const nmcId = data.nmcId?.trim().toUpperCase() || null;
+        const panId = data.panId?.trim().toUpperCase() || null;
+        if (!mcaId && !din && !gstin && !nmcId && !panId) {
+            throw new common_1.BadRequestException('Provide at least one of MCA ID, DIN, GSTIN, NMC ID, or PAN');
+        }
+        if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
+            throw new common_1.BadRequestException('Invalid GSTIN format');
+        }
+        if (panId && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panId)) {
+            throw new common_1.BadRequestException('Invalid PAN format');
+        }
+        const provider = await this.prisma.serviceProvider.update({
+            where: { id },
+            data: {
+                mcaId,
+                din,
+                gstin,
+                nmcId,
+                panId,
+                businessVerificationStatus: client_1.BusinessVerificationStatus.IN_PROGRESS,
+                verificationSubmittedAt: new Date(),
+                verificationNote: null,
+                approvalStatus: client_1.ProviderApprovalStatus.PENDING_APPROVAL,
+                rejectedReason: null,
+                isActive: true,
+            },
+            include: providerInclude,
+        });
+        return this.sanitize(provider);
     }
 };
 exports.ServiceProvidersService = ServiceProvidersService;

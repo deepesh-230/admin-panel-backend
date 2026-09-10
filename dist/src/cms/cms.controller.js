@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MarketplacePartiesController = exports.MarketplaceProductsController = exports.VolunteersController = exports.SuggestionsController = exports.JobAlertsController = exports.BlogsController = exports.CmsPagesController = exports.HelpTicketsController = exports.SocialSettingsController = exports.UsefulLinksController = exports.FaqsController = void 0;
+exports.MarketplacePartiesController = exports.MarketplaceProductsController = exports.VolunteersController = exports.SuggestionsController = exports.JobAlertsController = exports.HomeBannersController = exports.BlogsController = exports.CmsPagesController = exports.HelpTicketsController = exports.SocialSettingsController = exports.UsefulLinksController = exports.FaqsController = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const permissions_decorator_1 = require("../common/decorators/permissions.decorator");
@@ -263,6 +263,9 @@ class BlogsController extends resourceController('blogs', 'blog', 'cms', [
 ]) {
 }
 exports.BlogsController = BlogsController;
+class HomeBannersController extends resourceController('home-banners', 'homeBanner', 'cms', ['title', 'url']) {
+}
+exports.HomeBannersController = HomeBannersController;
 let JobAlertsController = class JobAlertsController {
     cms;
     broadcasts;

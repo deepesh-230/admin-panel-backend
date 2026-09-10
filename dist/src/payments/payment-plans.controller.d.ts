@@ -10,6 +10,8 @@ export declare class PaymentPlansController {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: import("@prisma/client").PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -22,6 +24,8 @@ export declare class PaymentPlansController {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: import("@prisma/client").PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -34,6 +38,8 @@ export declare class PaymentPlansController {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: import("@prisma/client").PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -46,6 +52,8 @@ export declare class PaymentPlansController {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: import("@prisma/client").PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;

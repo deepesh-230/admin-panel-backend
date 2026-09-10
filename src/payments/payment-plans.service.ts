@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PaymentPlanDurationUnit, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_PAYMENT_PLANS } from './payment-plan.defaults';
 import { CreatePaymentPlanDto, UpdatePaymentPlanDto } from './dto/payment-plan.dto';
@@ -39,6 +39,8 @@ export class PaymentPlansService {
           name: plan.name,
           amount: new Prisma.Decimal(plan.amount),
           description: plan.description,
+          durationValue: plan.durationValue,
+          durationUnit: plan.durationUnit,
           sortOrder: plan.sortOrder,
           isActive: true,
         },
@@ -53,6 +55,8 @@ export class PaymentPlansService {
     amount: Prisma.Decimal;
     currency: string;
     description: string | null;
+    durationValue: number;
+    durationUnit: PaymentPlanDurationUnit;
     sortOrder: number;
     isActive: boolean;
     createdAt: Date;
@@ -98,6 +102,8 @@ export class PaymentPlansService {
           amount: new Prisma.Decimal(dto.amount),
           currency: dto.currency?.trim() || 'INR',
           description: dto.description?.trim() || null,
+          durationValue: dto.durationValue ?? 1,
+          durationUnit: dto.durationUnit ?? PaymentPlanDurationUnit.YEAR,
           sortOrder: dto.sortOrder ?? 0,
           isActive: dto.isActive ?? true,
         },
@@ -127,6 +133,8 @@ export class PaymentPlansService {
           ...(dto.description !== undefined && {
             description: dto.description?.trim() || null,
           }),
+          ...(dto.durationValue !== undefined && { durationValue: dto.durationValue }),
+          ...(dto.durationUnit !== undefined && { durationUnit: dto.durationUnit }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         },

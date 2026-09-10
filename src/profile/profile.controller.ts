@@ -8,6 +8,7 @@ import {
   CreateMyServiceProviderDto,
   UpdateMyServiceProviderDto,
 } from './dto/my-service-provider.dto';
+import { SubmitBusinessVerificationDto } from './dto/submit-business-verification.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { ServiceProvidersService } from '../service-providers/service-providers.service';
@@ -120,6 +121,15 @@ export class ProfileController {
   @Delete('service-providers/:id')
   removeMyServiceProvider(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.serviceProviders.removeForUser(user.id, id);
+  }
+
+  @Post('service-providers/:id/business-verification')
+  submitBusinessVerification(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SubmitBusinessVerificationDto,
+  ) {
+    return this.serviceProviders.submitBusinessVerificationForUser(user.id, id, dto);
   }
 
   @Get('broadcasts')

@@ -1,6 +1,8 @@
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,6 +10,8 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+
+const DURATION_UNITS = ['MONTH', 'YEAR'] as const;
 
 export class CreatePaymentPlanDto {
   @IsString()
@@ -34,6 +38,16 @@ export class CreatePaymentPlanDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  durationValue?: number;
+
+  @IsOptional()
+  @IsIn(DURATION_UNITS)
+  durationUnit?: (typeof DURATION_UNITS)[number];
 
   @IsOptional()
   @Type(() => Number)
@@ -73,6 +87,16 @@ export class UpdatePaymentPlanDto {
   @IsString()
   @MaxLength(500)
   description?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  durationValue?: number;
+
+  @IsOptional()
+  @IsIn(DURATION_UNITS)
+  durationUnit?: (typeof DURATION_UNITS)[number];
 
   @IsOptional()
   @Type(() => Number)

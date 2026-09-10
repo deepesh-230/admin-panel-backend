@@ -13,6 +13,7 @@ exports.PaymentsService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
+const payment_plan_defaults_1 = require("./payment-plan.defaults");
 const paymentInclude = {
     user: { select: { id: true, name: true, email: true, phone: true } },
 };
@@ -20,6 +21,19 @@ let PaymentsService = class PaymentsService {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
+    }
+    async sponsorshipValidUntil(planId, paidAt) {
+        let value = 1;
+        let unit = 'YEAR';
+        if (planId?.trim()) {
+            const code = planId.trim().toLowerCase() === 'diamond' ? 'platinum' : planId.trim().toLowerCase();
+            const plan = await this.prisma.paymentPlan.findUnique({ where: { code } });
+            if (plan) {
+                value = plan.durationValue > 0 ? plan.durationValue : 1;
+                unit = plan.durationUnit === 'MONTH' ? 'MONTH' : 'YEAR';
+            }
+        }
+        return (0, payment_plan_defaults_1.addPlanDuration)(paidAt, value, unit);
     }
     sanitize(row) {
         return {
@@ -126,7 +140,7 @@ let PaymentsService = class PaymentsService {
                 : undefined;
         const purpose = dto.purpose ?? client_1.PaymentPurpose.OTHER;
         const validUntil = status === client_1.PaymentStatus.SUCCESS && purpose === client_1.PaymentPurpose.SPONSORSHIP && paidAt
-            ? new Date(paidAt.getTime() + 365 * 24 * 60 * 60 * 1000)
+            ? await this.sponsorshipValidUntil(dto.planId, paidAt)
             : undefined;
         try {
             const row = await this.prisma.payment.create({
@@ -188,11 +202,12 @@ let PaymentsService = class PaymentsService {
         }
         const effectivePurpose = dto.purpose ?? current?.purpose;
         const effectivePaidAt = paidAt === undefined ? current?.paidAt : paidAt;
+        const effectivePlanId = dto.planId !== undefined ? dto.planId : current?.planId;
         if ((nextStatus === client_1.PaymentStatus.SUCCESS || current?.status === client_1.PaymentStatus.SUCCESS) &&
             effectivePurpose === client_1.PaymentPurpose.SPONSORSHIP &&
             effectivePaidAt &&
             !current?.validUntil) {
-            validUntil = new Date(new Date(effectivePaidAt).getTime() + 365 * 24 * 60 * 60 * 1000);
+            validUntil = await this.sponsorshipValidUntil(effectivePlanId, new Date(effectivePaidAt));
         }
         try {
             const row = await this.prisma.payment.update({

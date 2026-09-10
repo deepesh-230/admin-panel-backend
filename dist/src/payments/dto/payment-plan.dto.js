@@ -12,12 +12,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdatePaymentPlanDto = exports.CreatePaymentPlanDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
+const DURATION_UNITS = ['MONTH', 'YEAR'];
 class CreatePaymentPlanDto {
     code;
     name;
     amount;
     currency;
     description;
+    durationValue;
+    durationUnit;
     sortOrder;
     isActive;
 }
@@ -55,6 +58,18 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreatePaymentPlanDto.prototype, "durationValue", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(DURATION_UNITS),
+    __metadata("design:type", Object)
+], CreatePaymentPlanDto.prototype, "durationUnit", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreatePaymentPlanDto.prototype, "sortOrder", void 0);
@@ -69,6 +84,8 @@ class UpdatePaymentPlanDto {
     amount;
     currency;
     description;
+    durationValue;
+    durationUnit;
     sortOrder;
     isActive;
 }
@@ -106,6 +123,18 @@ __decorate([
     (0, class_validator_1.MaxLength)(500),
     __metadata("design:type", Object)
 ], UpdatePaymentPlanDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], UpdatePaymentPlanDto.prototype, "durationValue", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(DURATION_UNITS),
+    __metadata("design:type", Object)
+], UpdatePaymentPlanDto.prototype, "durationUnit", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),

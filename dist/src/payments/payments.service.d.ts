@@ -3,6 +3,7 @@ import { CreatePaymentDto, ListPaymentsQueryDto, UpdatePaymentDto } from './dto/
 export declare class PaymentsService {
     private prisma;
     constructor(prisma: PrismaService);
+    private sponsorshipValidUntil;
     private sanitize;
     findAll(query: ListPaymentsQueryDto): Promise<{
         id: string;

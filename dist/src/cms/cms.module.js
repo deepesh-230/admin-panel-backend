@@ -25,6 +25,7 @@ exports.CmsModule = CmsModule = __decorate([
             cms_controller_1.HelpTicketsController,
             cms_controller_1.CmsPagesController,
             cms_controller_1.BlogsController,
+            cms_controller_1.HomeBannersController,
             cms_controller_1.JobAlertsController,
             cms_controller_1.SuggestionsController,
             cms_controller_1.VolunteersController,

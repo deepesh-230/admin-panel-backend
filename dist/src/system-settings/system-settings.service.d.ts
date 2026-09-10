@@ -17,6 +17,7 @@ export declare class SystemSettingsService implements OnModuleInit, OnModuleDest
         label: string | null;
     }[]>;
     getNumber(key: string, fallback: number): Promise<number>;
+    getValue(key: string, fallback?: string): Promise<string>;
     updateMany(updates: {
         key: string;
         value: string;

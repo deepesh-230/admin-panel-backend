@@ -41,6 +41,9 @@ let PublicController = class PublicController {
     listBlogs() {
         return this.publicService.listBlogs();
     }
+    listHomeBanners() {
+        return this.publicService.listHomeBanners();
+    }
     listJobAlerts() {
         return this.publicService.listJobAlerts();
     }
@@ -117,6 +120,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "listBlogs", null);
+__decorate([
+    (0, common_1.Get)('home-banners'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "listHomeBanners", null);
 __decorate([
     (0, common_1.Get)('job-alerts'),
     __metadata("design:type", Function),

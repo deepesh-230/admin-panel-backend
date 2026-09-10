@@ -1,3 +1,4 @@
+import { PaymentPlanDurationUnit } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentPlanDto, UpdatePaymentPlanDto } from './dto/payment-plan.dto';
 export declare class PaymentPlansService {
@@ -12,6 +13,8 @@ export declare class PaymentPlansService {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -24,6 +27,8 @@ export declare class PaymentPlansService {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -36,6 +41,8 @@ export declare class PaymentPlansService {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -48,6 +55,8 @@ export declare class PaymentPlansService {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;
@@ -60,6 +69,8 @@ export declare class PaymentPlansService {
         name: string;
         currency: string;
         description: string | null;
+        durationValue: number;
+        durationUnit: PaymentPlanDurationUnit;
         sortOrder: number;
         isActive: boolean;
         createdAt: Date;

@@ -28,6 +28,14 @@ export declare class ServiceProvidersController {
             isActive: boolean;
             approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
             rejectedReason: string | null;
+            businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+            mcaId: string | null;
+            din: string | null;
+            gstin: string | null;
+            nmcId: string | null;
+            panId: string | null;
+            verificationSubmittedAt: Date | null;
+            verificationNote: string | null;
             createdById: string | null;
             approvedById: string | null;
             approvedAt: Date | null;
@@ -41,9 +49,9 @@ export declare class ServiceProvidersController {
                 categoryId: string;
             } | null;
             state: {
+                code: string | null;
                 id: string;
                 name: string;
-                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -104,6 +112,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -117,9 +133,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -174,6 +190,14 @@ export declare class ServiceProvidersController {
             isActive: boolean;
             approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
             rejectedReason: string | null;
+            businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+            mcaId: string | null;
+            din: string | null;
+            gstin: string | null;
+            nmcId: string | null;
+            panId: string | null;
+            verificationSubmittedAt: Date | null;
+            verificationNote: string | null;
             createdById: string | null;
             approvedById: string | null;
             approvedAt: Date | null;
@@ -187,9 +211,9 @@ export declare class ServiceProvidersController {
                 categoryId: string;
             } | null;
             state: {
+                code: string | null;
                 id: string;
                 name: string;
-                code: string | null;
             };
             createdBy: {
                 id: string;
@@ -250,6 +274,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -263,9 +295,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -319,6 +351,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -332,9 +372,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -388,6 +428,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -401,9 +449,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -461,6 +509,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -474,9 +530,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;
@@ -530,6 +586,14 @@ export declare class ServiceProvidersController {
         isActive: boolean;
         approvalStatus: import("@prisma/client").$Enums.ProviderApprovalStatus;
         rejectedReason: string | null;
+        businessVerificationStatus: import("@prisma/client").$Enums.BusinessVerificationStatus;
+        mcaId: string | null;
+        din: string | null;
+        gstin: string | null;
+        nmcId: string | null;
+        panId: string | null;
+        verificationSubmittedAt: Date | null;
+        verificationNote: string | null;
         createdById: string | null;
         approvedById: string | null;
         approvedAt: Date | null;
@@ -543,9 +607,9 @@ export declare class ServiceProvidersController {
             categoryId: string;
         } | null;
         state: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         };
         createdBy: {
             id: string;

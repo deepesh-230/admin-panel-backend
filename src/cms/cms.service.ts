@@ -9,6 +9,7 @@ export type CmsModel =
   | 'helpTicket'
   | 'cmsPage'
   | 'blog'
+  | 'homeBanner'
   | 'jobAlert'
   | 'suggestion'
   | 'volunteer'

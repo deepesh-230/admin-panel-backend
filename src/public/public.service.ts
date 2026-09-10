@@ -10,6 +10,10 @@ import { PaymentPlansService } from '../payments/payment-plans.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatesService } from '../states/states.service';
 import { SystemSettingsService } from '../system-settings/system-settings.service';
+import {
+  DEFAULT_SPONSORSHIP_PLANS_HEADER,
+  SYSTEM_SETTING_KEYS,
+} from '../system-settings/system-setting.defaults';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 
@@ -57,12 +61,26 @@ export class PublicService {
     });
   }
 
+  listHomeBanners() {
+    return this.prisma.homeBanner.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+  }
+
   listJobAlerts() {
     return this.systemSettings.listPublicJobAlerts();
   }
 
-  listPaymentPlans() {
-    return this.paymentPlans.listPublic();
+  async listPaymentPlans() {
+    const [plans, headerText] = await Promise.all([
+      this.paymentPlans.listPublic(),
+      this.systemSettings.getValue(
+        SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER,
+        DEFAULT_SPONSORSHIP_PLANS_HEADER,
+      ),
+    ]);
+    return { headerText, plans };
   }
 
   listUsefulLinks() {
