@@ -67,28 +67,28 @@ export declare class BecomeService {
             answers: number;
         };
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     })[]>;
     getApplication(id: string): Promise<{
         user: {
-            id: string;
             name: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
             state: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
+            id: string;
             email: string;
             phone: string | null;
             stateId: string | null;
@@ -104,30 +104,30 @@ export declare class BecomeService {
             applicationId: string;
         }[];
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     }>;
     private roleForTarget;
     private promoteApplicantOnApproval;
     updateApplication(id: string, dto: UpdateBecomeApplicationDto): Promise<{
         user: {
-            id: string;
             name: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
             state: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
+            id: string;
             email: string;
             phone: string | null;
             stateId: string | null;
@@ -143,15 +143,15 @@ export declare class BecomeService {
             applicationId: string;
         }[];
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     }>;
     listMine(params: {
@@ -162,8 +162,8 @@ export declare class BecomeService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
             target: import("@prisma/client").$Enums.BecomeTarget;
+            status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         }[];
         pending: {
             id: string;
@@ -192,15 +192,15 @@ export declare class BecomeService {
             applicationId: string;
         }[];
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     }>;
 }

@@ -6,19 +6,19 @@ export declare class FaqsController {
     constructor(cms: CmsService);
     findAll(search?: string): Promise<Record<string, unknown>[] | ({
         coverageState: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         } | null;
     } & {
+        url: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        title: string | null;
         sortOrder: number;
         image: string;
-        title: string | null;
-        url: string | null;
         coverageStateId: string | null;
         coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
@@ -34,19 +34,19 @@ export declare class UsefulLinksController {
     constructor(cms: CmsService, broadcasts: BroadcastsService);
     findAll(search?: string): Promise<Record<string, unknown>[] | ({
         coverageState: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         } | null;
     } & {
+        url: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        title: string | null;
         sortOrder: number;
         image: string;
-        title: string | null;
-        url: string | null;
         coverageStateId: string | null;
         coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
@@ -57,12 +57,12 @@ export declare class UsefulLinksController {
         recipientCount: number;
         broadcastAt: Date;
         message: string;
+        url: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         title: string;
-        url: string;
     }>;
     update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
     remove(id: string): Promise<Record<string, unknown>>;
@@ -72,19 +72,19 @@ declare const SocialSettingsController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -102,19 +102,19 @@ declare const HelpTicketsController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -132,19 +132,19 @@ declare const CmsPagesController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -162,19 +162,19 @@ declare const BlogsController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -192,19 +192,19 @@ export declare class HomeBannersController {
     constructor(cms: CmsService);
     findAll(search?: string, coverageFlag?: string): Promise<Record<string, unknown>[] | ({
         coverageState: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         } | null;
     } & {
+        url: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        title: string | null;
         sortOrder: number;
         image: string;
-        title: string | null;
-        url: string | null;
         coverageStateId: string | null;
         coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
@@ -212,38 +212,38 @@ export declare class HomeBannersController {
     findOne(id: string): Promise<Record<string, unknown>>;
     create(body: Record<string, unknown>): Promise<{
         coverageState: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         } | null;
     } & {
+        url: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        title: string | null;
         sortOrder: number;
         image: string;
-        title: string | null;
-        url: string | null;
         coverageStateId: string | null;
         coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     }>;
     update(id: string, body: Record<string, unknown>): Promise<{
         coverageState: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         } | null;
     } & {
+        url: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
+        title: string | null;
         sortOrder: number;
         image: string;
-        title: string | null;
-        url: string | null;
         coverageStateId: string | null;
         coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
@@ -255,18 +255,18 @@ export declare class JobAlertsController {
     private readonly broadcasts;
     constructor(cms: CmsService, broadcasts: BroadcastsService);
     findAll(search?: string, isActive?: string, postFrom?: string, postTo?: string, closeFrom?: string, closeTo?: string): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         title: string;
+        description: string | null;
         postDate: string | null;
         lastDate: string | null;
         startsAt: Date | null;
         endsAt: Date | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         broadcastAt: Date | null;
     }[]>;
     findOne(id: string): Promise<Record<string, unknown>>;
@@ -275,18 +275,18 @@ export declare class JobAlertsController {
         recipientCount: number;
         broadcastAt: Date;
         message: string;
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         title: string;
+        description: string | null;
         postDate: string | null;
         lastDate: string | null;
         startsAt: Date | null;
         endsAt: Date | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     update(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>>;
     remove(id: string): Promise<Record<string, unknown>>;
@@ -296,19 +296,19 @@ declare const SuggestionsController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -326,19 +326,19 @@ declare const VolunteersController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;
@@ -356,22 +356,20 @@ export declare class MarketplaceProductsController {
     constructor(marketplace: MarketplaceService);
     findAll(search?: string, listingIntent?: string): import("@prisma/client").Prisma.PrismaPromise<({
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -383,25 +381,25 @@ export declare class MarketplaceProductsController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     })[]>;
     findOne(id: string): Promise<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -413,25 +411,25 @@ export declare class MarketplaceProductsController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     create(body: Record<string, unknown>): import("@prisma/client").Prisma.Prisma__MarketplaceProductClient<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -443,25 +441,25 @@ export declare class MarketplaceProductsController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     update(id: string, body: Record<string, unknown>): Promise<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -473,19 +471,19 @@ export declare class MarketplaceProductsController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     remove(id: string): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -497,6 +495,8 @@ export declare class MarketplaceProductsController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
 }
 declare const MarketplacePartiesController_base: {
@@ -504,19 +504,19 @@ declare const MarketplacePartiesController_base: {
         readonly cms: CmsService;
         findAll(search?: string, kind?: string): Promise<Record<string, unknown>[] | ({
             coverageState: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             } | null;
         } & {
+            url: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             isActive: boolean;
+            title: string | null;
             sortOrder: number;
             image: string;
-            title: string | null;
-            url: string | null;
             coverageStateId: string | null;
             coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
             coverageCity: string | null;

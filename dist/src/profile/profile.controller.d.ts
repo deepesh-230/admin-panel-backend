@@ -17,31 +17,29 @@ export declare class ProfileController {
         success: boolean;
         message: string;
         data: {
-            id: string;
             name: string | null;
+            id: string;
             isActive: boolean;
             email: string;
             phone: string | null;
             location: string | null;
             latitude: number | null;
             longitude: number | null;
-            digipin: string | null;
             pincode: string | null;
             km: number | null;
+            digipin: string | null;
         };
     }>;
     myMarketplaceProducts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -53,19 +51,19 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }[]>;
     createMarketplaceProduct(user: AuthUser, dto: CreateMarketplaceProductDto): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -77,6 +75,8 @@ export declare class ProfileController {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     myServiceProviders(user: AuthUser): Promise<{
         id: string;
@@ -113,27 +113,27 @@ export declare class ProfileController {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -190,27 +190,27 @@ export declare class ProfileController {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -267,27 +267,27 @@ export declare class ProfileController {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -344,27 +344,27 @@ export declare class ProfileController {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -425,27 +425,27 @@ export declare class ProfileController {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -468,11 +468,11 @@ export declare class ProfileController {
         updatedAt: Date;
     }>;
     listBroadcasts(user: AuthUser): import("@prisma/client").Prisma.PrismaPromise<{
+        url: string | null;
         id: string;
         createdAt: Date;
-        userId: string;
         title: string;
-        url: string | null;
+        userId: string;
         contentType: import("@prisma/client").$Enums.BroadcastContentType;
         body: string | null;
         readAt: Date | null;
@@ -480,11 +480,11 @@ export declare class ProfileController {
         jobAlertId: string | null;
     }[]>;
     markBroadcastRead(user: AuthUser, id: string): Promise<{
+        url: string | null;
         id: string;
         createdAt: Date;
-        userId: string;
         title: string;
-        url: string | null;
+        userId: string;
         contentType: import("@prisma/client").$Enums.BroadcastContentType;
         body: string | null;
         readAt: Date | null;

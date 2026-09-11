@@ -9,10 +9,10 @@ export declare class SystemSettingsService implements OnModuleInit, OnModuleDest
     onModuleDestroy(): void;
     ensureDefaults(): Promise<void>;
     list(): import("@prisma/client").Prisma.PrismaPromise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         key: string;
         value: string;
         label: string | null;
@@ -23,10 +23,10 @@ export declare class SystemSettingsService implements OnModuleInit, OnModuleDest
         key: string;
         value: string;
     }[]): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         key: string;
         value: string;
         label: string | null;
@@ -38,18 +38,18 @@ export declare class SystemSettingsService implements OnModuleInit, OnModuleDest
         cutoff: string;
     }>;
     listPublicJobAlerts(): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         title: string;
+        description: string | null;
         postDate: string | null;
         lastDate: string | null;
         startsAt: Date | null;
         endsAt: Date | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         broadcastAt: Date | null;
     }[]>;
 }

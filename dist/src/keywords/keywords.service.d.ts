@@ -5,12 +5,12 @@ export declare class KeywordsService {
     constructor(prisma: PrismaService);
     findAll(search?: string): Promise<({
         subcategory: {
-            id: string;
             name: string;
             category: {
-                id: string;
                 name: string;
+                id: string;
             };
+            id: string;
             categoryId: string;
         };
     } & {
@@ -23,13 +23,13 @@ export declare class KeywordsService {
     })[]>;
     findOne(id: string): Promise<{
         subcategory: {
-            description: string | null;
+            name: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             isActive: boolean;
             slug: string | null;
+            description: string | null;
             sortOrder: number;
             categoryId: string;
         };

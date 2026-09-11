@@ -13,13 +13,13 @@ export declare class SubcategoriesController {
     }[]>;
     findOne(id: string): Promise<{
         category: {
-            description: string | null;
+            name: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             isActive: boolean;
             slug: string | null;
+            description: string | null;
             type: import("@prisma/client").$Enums.CategoryType;
             sortOrder: number;
         };
@@ -32,13 +32,13 @@ export declare class SubcategoriesController {
             subcategoryId: string;
         }[];
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         slug: string | null;
+        description: string | null;
         sortOrder: number;
         categoryId: string;
     }>;
@@ -52,13 +52,13 @@ export declare class SubcategoriesController {
             subcategoryId: string;
         }[];
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         slug: string | null;
+        description: string | null;
         sortOrder: number;
         categoryId: string;
     }>;
@@ -72,24 +72,24 @@ export declare class SubcategoriesController {
             subcategoryId: string;
         }[];
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         slug: string | null;
+        description: string | null;
         sortOrder: number;
         categoryId: string;
     }>;
     remove(id: string): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         slug: string | null;
+        description: string | null;
         sortOrder: number;
         categoryId: string;
     }>;

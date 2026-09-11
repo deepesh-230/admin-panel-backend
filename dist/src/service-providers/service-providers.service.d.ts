@@ -47,27 +47,27 @@ export declare class ServiceProvidersService {
             approvedById: string | null;
             approvedAt: Date | null;
             category: {
-                id: string;
                 name: string;
+                id: string;
             };
             subcategory: {
-                id: string;
                 name: string;
+                id: string;
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             };
             createdBy: {
-                id: string;
                 name: string | null;
+                id: string;
                 email: string;
             } | null;
             approvedBy: {
-                id: string;
                 name: string | null;
+                id: string;
                 email: string;
             } | null;
             admins: {
@@ -132,27 +132,27 @@ export declare class ServiceProvidersService {
             approvedById: string | null;
             approvedAt: Date | null;
             category: {
-                id: string;
                 name: string;
+                id: string;
             };
             subcategory: {
-                id: string;
                 name: string;
+                id: string;
                 categoryId: string;
             } | null;
             state: {
-                code: string | null;
-                id: string;
                 name: string;
+                id: string;
+                code: string | null;
             };
             createdBy: {
-                id: string;
                 name: string | null;
+                id: string;
                 email: string;
             } | null;
             approvedBy: {
-                id: string;
                 name: string | null;
+                id: string;
                 email: string;
             } | null;
             admins: {
@@ -216,27 +216,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -293,27 +293,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -370,27 +370,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -447,27 +447,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -528,27 +528,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -605,27 +605,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -715,27 +715,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -793,27 +793,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -890,27 +890,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -986,27 +986,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {
@@ -1073,27 +1073,27 @@ export declare class ServiceProvidersService {
         approvedById: string | null;
         approvedAt: Date | null;
         category: {
-            id: string;
             name: string;
+            id: string;
         };
         subcategory: {
-            id: string;
             name: string;
+            id: string;
             categoryId: string;
         } | null;
         state: {
-            code: string | null;
-            id: string;
             name: string;
+            id: string;
+            code: string | null;
         };
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         approvedBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
         admins: {

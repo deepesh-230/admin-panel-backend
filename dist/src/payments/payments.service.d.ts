@@ -25,8 +25,8 @@ export declare class PaymentsService {
         createdAt: Date;
         updatedAt: Date;
         user: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
             phone: string | null;
         } | null;
@@ -58,8 +58,8 @@ export declare class PaymentsService {
         createdAt: Date;
         updatedAt: Date;
         user: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
             phone: string | null;
         } | null;
@@ -84,8 +84,8 @@ export declare class PaymentsService {
         createdAt: Date;
         updatedAt: Date;
         user: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
             phone: string | null;
         } | null;
@@ -110,8 +110,8 @@ export declare class PaymentsService {
         createdAt: Date;
         updatedAt: Date;
         user: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
             phone: string | null;
         } | null;

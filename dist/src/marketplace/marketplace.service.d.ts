@@ -5,22 +5,20 @@ export declare class MarketplaceService {
     constructor(prisma: PrismaService);
     listAdmin(search?: string, listingIntent?: string): Prisma.PrismaPromise<({
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -32,25 +30,25 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     })[]>;
     findAdmin(id: string): Promise<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -62,6 +60,8 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     createAdmin(data: {
         name: string;
@@ -83,22 +83,20 @@ export declare class MarketplaceService {
         adminFlag?: 'READ' | 'ACTIVE' | 'DELETE';
     }): Prisma.Prisma__MarketplaceProductClient<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -110,6 +108,8 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
     updateAdmin(id: string, data: Partial<{
         name: string;
@@ -131,22 +131,20 @@ export declare class MarketplaceService {
         adminFlag: 'READ' | 'ACTIVE' | 'DELETE';
     }>): Promise<{
         createdBy: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         } | null;
     } & {
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -158,19 +156,19 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     removeAdmin(id: string): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -182,19 +180,19 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     listPublic(search?: string): Prisma.PrismaPromise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -206,19 +204,19 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }[]>;
     findPublic(id: string): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -230,19 +228,19 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     listForUser(userId: string): Prisma.PrismaPromise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -254,6 +252,8 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }[]>;
     createForUser(userId: string, sellerName: string | null | undefined, data: {
         name: string;
@@ -270,17 +270,15 @@ export declare class MarketplaceService {
         gallery?: string[];
         stateId?: string;
     }): Promise<{
-        description: string | null;
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
         phone: string | null;
         location: string | null;
+        description: string | null;
         stateId: string | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         address: string | null;
         gallery: string[];
         approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
@@ -292,5 +290,7 @@ export declare class MarketplaceService {
         color: string | null;
         brand: string | null;
         features: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
 }

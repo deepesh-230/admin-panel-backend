@@ -4,19 +4,19 @@ export declare class SystemSettingsController {
     private readonly systemSettings;
     constructor(systemSettings: SystemSettingsService);
     list(): import("@prisma/client").Prisma.PrismaPromise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         key: string;
         value: string;
         label: string | null;
     }[]>;
     update(dto: UpdateSystemSettingsDto): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        description: string | null;
         key: string;
         value: string;
         label: string | null;

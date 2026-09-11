@@ -53,28 +53,28 @@ export declare class BecomeApplicationsController {
             answers: number;
         };
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     })[]>;
     findOne(id: string): Promise<{
         user: {
-            id: string;
             name: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
             state: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
+            id: string;
             email: string;
             phone: string | null;
             stateId: string | null;
@@ -90,28 +90,28 @@ export declare class BecomeApplicationsController {
             applicationId: string;
         }[];
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     }>;
     update(id: string, dto: UpdateBecomeApplicationDto): Promise<{
         user: {
-            id: string;
             name: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
             state: {
-                id: string;
                 name: string;
+                id: string;
             } | null;
+            id: string;
             email: string;
             phone: string | null;
             stateId: string | null;
@@ -127,15 +127,15 @@ export declare class BecomeApplicationsController {
             applicationId: string;
         }[];
     } & {
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         email: string;
         phone: string | null;
         userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         target: import("@prisma/client").$Enums.BecomeTarget;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         adminNote: string | null;
     }>;
 }

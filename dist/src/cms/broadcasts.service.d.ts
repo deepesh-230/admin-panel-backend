@@ -12,36 +12,36 @@ export declare class BroadcastsService {
         recipientCount: number;
         broadcastAt: Date;
         message: string;
+        url: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
         title: string;
-        url: string;
     }>;
     broadcastJobAlert(id: string): Promise<{
         recipientCount: number;
         broadcastAt: Date;
         message: string;
-        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         isActive: boolean;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         title: string;
+        description: string | null;
         postDate: string | null;
         lastDate: string | null;
         startsAt: Date | null;
         endsAt: Date | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     listForUser(userId: string): import("@prisma/client").Prisma.PrismaPromise<{
+        url: string | null;
         id: string;
         createdAt: Date;
-        userId: string;
         title: string;
-        url: string | null;
+        userId: string;
         contentType: import("@prisma/client").$Enums.BroadcastContentType;
         body: string | null;
         readAt: Date | null;
@@ -49,11 +49,11 @@ export declare class BroadcastsService {
         jobAlertId: string | null;
     }[]>;
     markRead(userId: string, id: string): Promise<{
+        url: string | null;
         id: string;
         createdAt: Date;
-        userId: string;
         title: string;
-        url: string | null;
+        userId: string;
         contentType: import("@prisma/client").$Enums.BroadcastContentType;
         body: string | null;
         readAt: Date | null;

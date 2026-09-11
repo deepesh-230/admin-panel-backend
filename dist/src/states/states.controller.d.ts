@@ -4,43 +4,43 @@ export declare class StatesController {
     private readonly statesService;
     constructor(statesService: StatesService);
     findAll(search?: string, isActive?: string): Promise<{
-        code: string | null;
+        name: string;
         id: string;
+        code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }[]>;
     findOne(id: string): Promise<{
-        code: string | null;
+        name: string;
         id: string;
+        code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     create(dto: CreateStateDto): Promise<{
-        code: string | null;
+        name: string;
         id: string;
+        code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     update(id: string, dto: UpdateStateDto): Promise<{
-        code: string | null;
+        name: string;
         id: string;
+        code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
     remove(id: string): Promise<{
-        code: string | null;
+        name: string;
         id: string;
+        code: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         isActive: boolean;
     }>;
 }
