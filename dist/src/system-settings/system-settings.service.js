@@ -8,13 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var SystemSettingsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SystemSettingsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const system_setting_defaults_1 = require("./system-setting.defaults");
-let SystemSettingsService = class SystemSettingsService {
+let SystemSettingsService = SystemSettingsService_1 = class SystemSettingsService {
     prisma;
+    logger = new common_1.Logger(SystemSettingsService_1.name);
     lifecycleTimer = null;
     constructor(prisma) {
         this.prisma = prisma;
@@ -22,10 +24,14 @@ let SystemSettingsService = class SystemSettingsService {
     async onModuleInit() {
         await this.ensureDefaults();
         setTimeout(() => {
-            void this.runJobAlertLifecycle();
+            void this.runJobAlertLifecycle().catch((err) => {
+                this.logger.warn(`Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`);
+            });
         }, 15_000);
         this.lifecycleTimer = setInterval(() => {
-            void this.runJobAlertLifecycle();
+            void this.runJobAlertLifecycle().catch((err) => {
+                this.logger.warn(`Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`);
+            });
         }, 60 * 60 * 1000);
     }
     onModuleDestroy() {
@@ -143,7 +149,7 @@ let SystemSettingsService = class SystemSettingsService {
     }
 };
 exports.SystemSettingsService = SystemSettingsService;
-exports.SystemSettingsService = SystemSettingsService = __decorate([
+exports.SystemSettingsService = SystemSettingsService = SystemSettingsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], SystemSettingsService);

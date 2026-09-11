@@ -182,6 +182,7 @@ export class BecomeService {
             email: true,
             phone: true,
             stateId: true,
+            state: { select: { id: true, name: true } },
             role: { select: { name: true } },
           },
         },
@@ -202,6 +203,7 @@ export class BecomeService {
 
   private async promoteApplicantOnApproval(
     application: {
+      id: string;
       target: BecomeTarget;
       userId: string | null;
       email: string;
@@ -249,6 +251,9 @@ export class BecomeService {
       }
       const state = await this.prisma.state.findUnique({ where: { id: nextStateId } });
       if (!state) throw new BadRequestException('Selected state was not found');
+      if (!state.isActive) {
+        throw new BadRequestException('Selected state is inactive');
+      }
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -286,6 +291,14 @@ export class BecomeService {
           },
         });
       }
+
+      // Link application to the resolved user when submit only had email
+      if (!application.userId) {
+        await tx.becomeApplication.update({
+          where: { id: application.id },
+          data: { userId: user.id },
+        });
+      }
     });
   }
 
@@ -313,6 +326,7 @@ export class BecomeService {
             email: true,
             phone: true,
             stateId: true,
+            state: { select: { id: true, name: true } },
             role: { select: { name: true } },
           },
         },
@@ -360,11 +374,25 @@ export class BecomeService {
               select: { id: true },
             }),
           )
+        : false) ||
+      (email
+        ? Boolean(
+            await this.prisma.user.findFirst({
+              where: {
+                email,
+                role: { name: RoleName.VOLUNTEER },
+              },
+              select: { id: true },
+            }),
+          )
         : false);
 
     const allowedTargets = (Object.values(BecomeTarget) as BecomeTarget[]).filter((target) => {
       if (approvedTargets.includes(target)) return false;
       if (pending) return false;
+      // Only volunteers may apply to become state admin
+      if (target === BecomeTarget.STATE_ADMIN && !isVolunteer) return false;
+      // Volunteers cannot apply to become provider admin
       if (isVolunteer && target === BecomeTarget.PROVIDER_ADMIN) return false;
       return true;
     });
@@ -440,6 +468,12 @@ export class BecomeService {
             }),
           )
         : false);
+
+    if (dto.target === BecomeTarget.STATE_ADMIN && !isVolunteer) {
+      throw new BadRequestException(
+        'Only volunteers can apply to become state admin',
+      );
+    }
 
     if (isVolunteer && dto.target === BecomeTarget.PROVIDER_ADMIN) {
       throw new BadRequestException(

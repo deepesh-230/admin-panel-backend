@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DEFAULT_SYSTEM_SETTINGS,
@@ -7,6 +7,7 @@ import {
 
 @Injectable()
 export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(SystemSettingsService.name);
   private lifecycleTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
@@ -15,14 +16,19 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
     await this.ensureDefaults();
     // Run once shortly after boot, then hourly.
     setTimeout(() => {
-      void this.runJobAlertLifecycle();
+      void this.runJobAlertLifecycle().catch((err) => {
+        this.logger.warn(
+          `Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
     }, 15_000);
-    this.lifecycleTimer = setInterval(
-      () => {
-        void this.runJobAlertLifecycle();
-      },
-      60 * 60 * 1000,
-    );
+    this.lifecycleTimer = setInterval(() => {
+      void this.runJobAlertLifecycle().catch((err) => {
+        this.logger.warn(
+          `Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    }, 60 * 60 * 1000);
   }
 
   onModuleDestroy() {

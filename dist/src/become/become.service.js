@@ -147,6 +147,7 @@ let BecomeService = class BecomeService {
                         email: true,
                         phone: true,
                         stateId: true,
+                        state: { select: { id: true, name: true } },
                         role: { select: { name: true } },
                     },
                 },
@@ -198,6 +199,9 @@ let BecomeService = class BecomeService {
             const state = await this.prisma.state.findUnique({ where: { id: nextStateId } });
             if (!state)
                 throw new common_1.BadRequestException('Selected state was not found');
+            if (!state.isActive) {
+                throw new common_1.BadRequestException('Selected state is inactive');
+            }
         }
         await this.prisma.$transaction(async (tx) => {
             await tx.user.update({
@@ -233,6 +237,12 @@ let BecomeService = class BecomeService {
                     },
                 });
             }
+            if (!application.userId) {
+                await tx.becomeApplication.update({
+                    where: { id: application.id },
+                    data: { userId: user.id },
+                });
+            }
         });
     }
     async updateApplication(id, dto) {
@@ -257,6 +267,7 @@ let BecomeService = class BecomeService {
                         email: true,
                         phone: true,
                         stateId: true,
+                        state: { select: { id: true, name: true } },
                         role: { select: { name: true } },
                     },
                 },
@@ -298,11 +309,22 @@ let BecomeService = class BecomeService {
                     },
                     select: { id: true },
                 }))
+                : false) ||
+            (email
+                ? Boolean(await this.prisma.user.findFirst({
+                    where: {
+                        email,
+                        role: { name: client_1.RoleName.VOLUNTEER },
+                    },
+                    select: { id: true },
+                }))
                 : false);
         const allowedTargets = Object.values(client_1.BecomeTarget).filter((target) => {
             if (approvedTargets.includes(target))
                 return false;
             if (pending)
+                return false;
+            if (target === client_1.BecomeTarget.STATE_ADMIN && !isVolunteer)
                 return false;
             if (isVolunteer && target === client_1.BecomeTarget.PROVIDER_ADMIN)
                 return false;
@@ -368,6 +390,9 @@ let BecomeService = class BecomeService {
                     select: { id: true },
                 }))
                 : false);
+        if (dto.target === client_1.BecomeTarget.STATE_ADMIN && !isVolunteer) {
+            throw new common_1.BadRequestException('Only volunteers can apply to become state admin');
+        }
         if (isVolunteer && dto.target === client_1.BecomeTarget.PROVIDER_ADMIN) {
             throw new common_1.BadRequestException('Volunteers can apply to become state admin, but not provider admin');
         }

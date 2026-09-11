@@ -68,82 +68,90 @@ export declare class BecomeService {
         };
     } & {
         id: string;
-        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         email: string;
         phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         adminNote: string | null;
     })[]>;
     getApplication(id: string): Promise<{
-        answers: {
-            id: string;
-            createdAt: Date;
-            applicationId: string;
-            questionId: string | null;
-            questionPrompt: string;
-            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
-            answerText: string;
-            selectedOption: string | null;
-        }[];
         user: {
             id: string;
             name: string | null;
-            email: string;
-            phone: string | null;
-            stateId: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
+            state: {
+                id: string;
+                name: string;
+            } | null;
+            email: string;
+            phone: string | null;
+            stateId: string | null;
         } | null;
+        answers: {
+            id: string;
+            createdAt: Date;
+            questionId: string | null;
+            answerText: string;
+            questionPrompt: string;
+            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            selectedOption: string | null;
+            applicationId: string;
+        }[];
     } & {
         id: string;
-        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         email: string;
         phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         adminNote: string | null;
     }>;
     private roleForTarget;
     private promoteApplicantOnApproval;
     updateApplication(id: string, dto: UpdateBecomeApplicationDto): Promise<{
-        answers: {
-            id: string;
-            createdAt: Date;
-            applicationId: string;
-            questionId: string | null;
-            questionPrompt: string;
-            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
-            answerText: string;
-            selectedOption: string | null;
-        }[];
         user: {
             id: string;
             name: string | null;
-            email: string;
-            phone: string | null;
-            stateId: string | null;
             role: {
                 name: import("@prisma/client").$Enums.RoleName;
             };
+            state: {
+                id: string;
+                name: string;
+            } | null;
+            email: string;
+            phone: string | null;
+            stateId: string | null;
         } | null;
+        answers: {
+            id: string;
+            createdAt: Date;
+            questionId: string | null;
+            answerText: string;
+            questionPrompt: string;
+            questionType: import("@prisma/client").$Enums.BecomeQuestionType;
+            selectedOption: string | null;
+            applicationId: string;
+        }[];
     } & {
         id: string;
-        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         email: string;
         phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         adminNote: string | null;
     }>;
     listMine(params: {
@@ -152,10 +160,10 @@ export declare class BecomeService {
     }): Promise<{
         applications: {
             id: string;
-            target: import("@prisma/client").$Enums.BecomeTarget;
             createdAt: Date;
             updatedAt: Date;
             status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+            target: import("@prisma/client").$Enums.BecomeTarget;
         }[];
         pending: {
             id: string;
@@ -176,23 +184,23 @@ export declare class BecomeService {
         answers: {
             id: string;
             createdAt: Date;
-            applicationId: string;
             questionId: string | null;
+            answerText: string;
             questionPrompt: string;
             questionType: import("@prisma/client").$Enums.BecomeQuestionType;
-            answerText: string;
             selectedOption: string | null;
+            applicationId: string;
         }[];
     } & {
         id: string;
-        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         email: string;
         phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         adminNote: string | null;
     }>;
 }

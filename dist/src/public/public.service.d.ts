@@ -27,71 +27,71 @@ export declare class PublicService {
             subcategories: number;
         };
     } & {
+        description: string | null;
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        slug: string | null;
         type: import("@prisma/client").$Enums.CategoryType;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        name: string;
-        description: string | null;
-        slug: string | null;
     })[]>;
     listSubcategories(categoryId: string): Promise<{
+        description: string | null;
         id: string;
-        sortOrder: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        description: string | null;
+        isActive: boolean;
         slug: string | null;
+        sortOrder: number;
         categoryId: string;
     }[]>;
     listStates(): Promise<{
+        code: string | null;
         id: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        code: string | null;
+        isActive: boolean;
     }[]>;
     listFaqs(): Promise<Record<string, unknown>[] | ({
         coverageState: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
     } & {
         id: string;
-        sortOrder: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        title: string | null;
+        isActive: boolean;
+        sortOrder: number;
         image: string;
+        title: string | null;
         url: string | null;
-        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     })[]>;
     listBlogs(): Promise<Record<string, unknown>[] | ({
         coverageState: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
     } & {
         id: string;
-        sortOrder: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        title: string | null;
+        isActive: boolean;
+        sortOrder: number;
         image: string;
+        title: string | null;
         url: string | null;
-        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     })[]>;
     listHomeBanners(viewer?: {
@@ -100,26 +100,26 @@ export declare class PublicService {
     }): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
         sortOrder: number;
-        title: string | null;
         image: string;
+        title: string | null;
         url: string | null;
-        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     }[]>;
     listJobAlerts(): Promise<{
+        description: string | null;
         id: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        description: string | null;
+        isActive: boolean;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
         title: string;
         postDate: string | null;
         lastDate: string | null;
         startsAt: Date | null;
         endsAt: Date | null;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
         broadcastAt: Date | null;
     }[]>;
     listPaymentPlans(): Promise<{
@@ -141,47 +141,47 @@ export declare class PublicService {
     }>;
     listUsefulLinks(): Promise<Record<string, unknown>[] | ({
         coverageState: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
     } & {
         id: string;
-        sortOrder: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        title: string | null;
+        isActive: boolean;
+        sortOrder: number;
         image: string;
+        title: string | null;
         url: string | null;
-        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     })[]>;
     listSocialSettings(): Promise<Record<string, unknown>[] | ({
         coverageState: {
+            code: string | null;
             id: string;
             name: string;
-            code: string | null;
         } | null;
     } & {
         id: string;
-        sortOrder: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        title: string | null;
+        isActive: boolean;
+        sortOrder: number;
         image: string;
+        title: string | null;
         url: string | null;
-        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageStateId: string | null;
+        coverageFlag: import("@prisma/client").$Enums.CoverageFlag;
         coverageCity: string | null;
     })[]>;
     getPageBySlug(slug: string): Promise<{
         id: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         slug: string;
         title: string;
         content: string;
@@ -193,83 +193,83 @@ export declare class PublicService {
         logo: string;
     };
     listMarketplaceProducts(search?: string): import("@prisma/client").Prisma.PrismaPromise<{
+        description: string | null;
         id: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        isActive: boolean;
         phone: string | null;
         location: string | null;
         stateId: string | null;
-        description: string | null;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
+        address: string | null;
+        gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
+        createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
         listingIntent: string;
         sellerName: string | null;
-        address: string | null;
         color: string | null;
         brand: string | null;
         features: string | null;
-        gallery: string[];
-        createdById: string | null;
-        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
     }[]>;
     getMarketplaceProduct(id: string): Promise<{
+        description: string | null;
         id: string;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
         name: string;
+        isActive: boolean;
         phone: string | null;
         location: string | null;
         stateId: string | null;
-        description: string | null;
         adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
         deletedAt: Date | null;
+        address: string | null;
+        gallery: string[];
+        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
+        createdById: string | null;
         actualPrice: string | null;
         offerPrice: string | null;
         listingIntent: string;
         sellerName: string | null;
-        address: string | null;
         color: string | null;
         brand: string | null;
         features: string | null;
-        gallery: string[];
-        createdById: string | null;
-        approvalStatus: import("@prisma/client").$Enums.MarketplaceApprovalStatus;
     }>;
     createEnquiry(dto: CreatePublicEnquiryDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string | null;
-        status: import("@prisma/client").$Enums.EnquiryStatus;
         email: string;
         phone: string | null;
         stateId: string | null;
         category: string;
-        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
-        deletedAt: Date | null;
-        createdBy: string;
         sNo: number;
         subCategory: string;
         product: string;
         date: string;
+        createdBy: string;
         kind: string;
+        status: import("@prisma/client").$Enums.EnquiryStatus;
         providerId: string | null;
         message: string | null;
         marketplaceProductId: string | null;
+        adminFlag: import("@prisma/client").$Enums.AdminLifecycleFlag;
+        deletedAt: Date | null;
     }>;
     createHelpTicket(dto: CreatePublicHelpTicketDto): import("@prisma/client").Prisma.Prisma__HelpTicketClient<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        status: string;
         email: string;
         phone: string | null;
+        status: string;
         message: string;
     }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     listBecomeQuestions(target: BecomeTarget): Promise<{
@@ -288,23 +288,23 @@ export declare class PublicService {
         answers: {
             id: string;
             createdAt: Date;
-            applicationId: string;
             questionId: string | null;
+            answerText: string;
             questionPrompt: string;
             questionType: import("@prisma/client").$Enums.BecomeQuestionType;
-            answerText: string;
             selectedOption: string | null;
+            applicationId: string;
         }[];
     } & {
         id: string;
-        target: import("@prisma/client").$Enums.BecomeTarget;
         createdAt: Date;
         updatedAt: Date;
         name: string;
-        userId: string | null;
-        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
         email: string;
         phone: string | null;
+        userId: string | null;
+        status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+        target: import("@prisma/client").$Enums.BecomeTarget;
         adminNote: string | null;
     }>;
     listMyBecomeApplications(params: {
@@ -313,10 +313,10 @@ export declare class PublicService {
     }): Promise<{
         applications: {
             id: string;
-            target: import("@prisma/client").$Enums.BecomeTarget;
             createdAt: Date;
             updatedAt: Date;
             status: import("@prisma/client").$Enums.BecomeApplicationStatus;
+            target: import("@prisma/client").$Enums.BecomeTarget;
         }[];
         pending: {
             id: string;
