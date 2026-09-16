@@ -482,6 +482,8 @@ model Listing {
 model Category {
   id               String            @id @default(uuid())
   name             String            @unique
+  /// Client business code (e.g. PHY, AMB). Unique when set.
+  code             String?           @unique
   slug             String?           @unique
   description      String?
   /// CARE = Home tab, SERVICE = Providers tab
@@ -500,6 +502,8 @@ model Subcategory {
   id               String            @id @default(uuid())
   categoryId       String
   name             String
+  /// Client business code (e.g. PHY_NEURO_PHY). Unique when set.
+  code             String?           @unique
   slug             String?
   description      String?
   isActive         Boolean           @default(true)

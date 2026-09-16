@@ -62,6 +62,14 @@ export class PublicService {
     });
   }
 
+  async getBlog(id: string) {
+    const row = await this.prisma.blog.findFirst({
+      where: { id, isActive: true },
+    });
+    if (!row) throw new NotFoundException('Blog not found');
+    return row;
+  }
+
   listHomeBanners(viewer?: { stateId?: string; city?: string }) {
     return this.prisma.homeBanner.findMany({
       where: {

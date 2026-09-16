@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { normalizeBusinessCode } from '../common/utils/business-code';
 import { slugify } from '../common/utils/slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -46,12 +47,14 @@ export class SubcategoriesService {
     }
 
     const slug = dto.slug?.trim() || slugify(dto.name);
+    const code = normalizeBusinessCode(dto.code, { required: true, field: 'code' });
 
     try {
       return await this.prisma.subcategory.create({
         data: {
           categoryId: dto.categoryId,
           name: dto.name,
+          code,
           slug,
           description: dto.description,
           isActive: dto.isActive ?? true,
@@ -65,7 +68,7 @@ export class SubcategoriesService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'Subcategory name already exists in this category',
+          'Subcategory name or code already exists',
         );
       }
       throw error;
@@ -90,6 +93,10 @@ export class SubcategoriesService {
         : dto.name
           ? slugify(dto.name)
           : undefined;
+    const code =
+      dto.code !== undefined
+        ? normalizeBusinessCode(dto.code, { required: true, field: 'code' })
+        : undefined;
 
     try {
       return await this.prisma.subcategory.update({
@@ -97,6 +104,7 @@ export class SubcategoriesService {
         data: {
           ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
           ...(dto.name !== undefined && { name: dto.name }),
+          ...(code !== undefined && { code }),
           ...(slug !== undefined && { slug }),
           ...(dto.description !== undefined && { description: dto.description }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -110,7 +118,7 @@ export class SubcategoriesService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'Subcategory name already exists in this category',
+          'Subcategory name or code already exists',
         );
       }
       throw error;

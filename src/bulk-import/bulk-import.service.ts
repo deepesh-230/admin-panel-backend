@@ -14,6 +14,7 @@ import {
   assertStateAccess,
   resolveScopedStateId,
 } from '../common/utils/state-scope';
+import { normalizeBusinessCode } from '../common/utils/business-code';
 import { slugify } from '../common/utils/slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import type { BulkImportEntity, BulkImportResult } from './bulk-import.types';
@@ -185,14 +186,32 @@ export class BulkImportService {
     row: Record<string, string>,
     dryRun: boolean,
   ): Promise<'created' | 'skipped'> {
-    const name = pick(row, 'name');
+    const name = pick(row, 'name', 'cat_desc', 'category');
     if (!name) throw new BadRequestException('name is required');
 
     const slug = pick(row, 'slug') || slugify(name);
+    const codeRaw = pick(row, 'code', 'category_id', 'cat_custom');
+    const code = codeRaw
+      ? normalizeBusinessCode(codeRaw, { required: false, field: 'code' })
+      : null;
     const existing = await this.prisma.category.findFirst({
-      where: { OR: [{ name: { equals: name, mode: 'insensitive' } }, { slug }] },
+      where: {
+        OR: [
+          { name: { equals: name, mode: 'insensitive' } },
+          { slug },
+          ...(code ? [{ code }] : []),
+        ],
+      },
     });
-    if (existing) return 'skipped';
+    if (existing) {
+      if (!dryRun && code && existing.code !== code) {
+        await this.prisma.category.update({
+          where: { id: existing.id },
+          data: { code },
+        });
+      }
+      return 'skipped';
+    }
 
     const typeRaw = pick(row, 'type').toUpperCase();
     const type =
@@ -205,6 +224,7 @@ export class BulkImportService {
     await this.prisma.category.create({
       data: {
         name,
+        code: code || undefined,
         slug,
         description: pick(row, 'description') || undefined,
         type,
@@ -223,6 +243,7 @@ export class BulkImportService {
     const raw =
       pick(row, 'categoryid', 'category_id') ||
       pick(row, 'category') ||
+      pick(row, 'cat_custom') ||
       contextCategoryId ||
       '';
     if (!raw) throw new BadRequestException('category is required');
@@ -232,7 +253,12 @@ export class BulkImportService {
     if (cache.has(key)) return cache.get(key)!;
 
     const category = await this.prisma.category.findFirst({
-      where: { name: { equals: raw, mode: 'insensitive' } },
+      where: {
+        OR: [
+          { name: { equals: raw, mode: 'insensitive' } },
+          { code: { equals: raw, mode: 'insensitive' } },
+        ],
+      },
     });
     if (!category) throw new BadRequestException(`Category not found: ${raw}`);
     cache.set(key, category.id);
@@ -248,6 +274,7 @@ export class BulkImportService {
     const raw =
       pick(row, 'subcategoryid', 'subcategory_id') ||
       pick(row, 'subcategory') ||
+      pick(row, 'subcat_custom') ||
       contextSubcategoryId ||
       '';
     if (!raw) return undefined;
@@ -259,7 +286,10 @@ export class BulkImportService {
     const subcategory = await this.prisma.subcategory.findFirst({
       where: {
         categoryId,
-        name: { equals: raw, mode: 'insensitive' },
+        OR: [
+          { name: { equals: raw, mode: 'insensitive' } },
+          { code: { equals: raw, mode: 'insensitive' } },
+        ],
       },
     });
     if (!subcategory) {
@@ -314,13 +344,31 @@ export class BulkImportService {
       context?.categoryId,
       categoryCache,
     );
-    const name = pick(row, 'name');
+    const name = pick(row, 'name', 'subcat_desc', 'subcategory');
     if (!name) throw new BadRequestException('name is required');
 
+    const codeRaw = pick(row, 'code', 'subcategory_id', 'subcat_custom');
+    const code = codeRaw
+      ? normalizeBusinessCode(codeRaw, { required: false, field: 'code' })
+      : null;
+
     const existing = await this.prisma.subcategory.findFirst({
-      where: { categoryId, name: { equals: name, mode: 'insensitive' } },
+      where: {
+        OR: [
+          { categoryId, name: { equals: name, mode: 'insensitive' } },
+          ...(code ? [{ code }] : []),
+        ],
+      },
     });
-    if (existing) return 'skipped';
+    if (existing) {
+      if (!dryRun && code && existing.code !== code) {
+        await this.prisma.subcategory.update({
+          where: { id: existing.id },
+          data: { code },
+        });
+      }
+      return 'skipped';
+    }
 
     const slug = pick(row, 'slug') || slugify(name);
     if (dryRun) return 'created';
@@ -329,6 +377,7 @@ export class BulkImportService {
       data: {
         categoryId,
         name,
+        code: code || undefined,
         slug,
         description: pick(row, 'description') || undefined,
         sortOrder: parseIntSafe(pick(row, 'sortorder', 'sort_order')),
@@ -531,12 +580,12 @@ export class BulkImportService {
   getTemplate(entity: BulkImportEntity): { columns: string[]; sample: string[] } {
     const templates: Record<BulkImportEntity, { columns: string[]; sample: string[] }> = {
       categories: {
-        columns: ['name', 'slug', 'description', 'type', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'physiotherapy', 'Rehab services', 'SERVICE', '0', 'true'],
+        columns: ['name', 'code', 'slug', 'description', 'type', 'sortOrder', 'isActive'],
+        sample: ['Physiotherapy', 'PHY', 'physiotherapy', 'Rehab services', 'SERVICE', '0', 'true'],
       },
       subcategories: {
-        columns: ['category', 'name', 'slug', 'description', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'Pediatric PT', 'pediatric-pt', '', '0', 'true'],
+        columns: ['category', 'name', 'code', 'slug', 'description', 'sortOrder', 'isActive'],
+        sample: ['Physiotherapy', 'Pediatric PT', 'PHY_PED_PHY', 'pediatric-pt', '', '0', 'true'],
       },
       keywords: {
         columns: ['category', 'subcategory', 'term', 'isActive'],

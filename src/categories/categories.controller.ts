@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -31,6 +32,14 @@ export class CategoriesController {
     const typeFilter =
       type === CategoryType.CARE || type === CategoryType.SERVICE ? type : undefined;
     return this.categoriesService.findAll(search, activeFilter, typeFilter);
+  }
+
+  @Get('export')
+  @Permissions('categories.read')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="categories-subcategories.csv"')
+  exportCsv() {
+    return this.categoriesService.exportCsv();
   }
 
   @Get(':categoryId/subcategories')

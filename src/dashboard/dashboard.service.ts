@@ -26,6 +26,23 @@ function addDays(d: Date, days: number) {
   return x;
 }
 
+function normalizePlanCode(planId: string | null | undefined) {
+  const code = (planId || '').trim().toLowerCase();
+  if (!code) return 'other';
+  if (code === 'diamond') return 'platinum';
+  if (code === 'platinum' || code === 'gold' || code === 'silver') return code;
+  return 'other';
+}
+
+function isSponsorshipActive(
+  now: Date,
+  validUntil: Date | null,
+  paidAt: Date | null,
+) {
+  if (validUntil) return validUntil >= now;
+  return Boolean(paidAt && paidAt >= addDays(now, -365));
+}
+
 @Injectable()
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
@@ -335,6 +352,8 @@ export class DashboardService {
       ? await this.centralAdminExtras(now)
       : null;
 
+    const subscriptions = await this.subscriptionStats(now, stateId);
+
     return {
       // legacy flat cards
       totalUsers,
@@ -364,6 +383,8 @@ export class DashboardService {
         pushUnread,
         activeJobAlerts,
         latestJobAlerts,
+        subscriptionCount: subscriptions.activeCount,
+        inactiveSubscriptionCount: subscriptions.inactiveCount,
       },
 
       users: {
@@ -424,6 +445,8 @@ export class DashboardService {
         })),
         total: activeEvents.reduce((sum, row) => sum + row._count._all, 0),
       },
+
+      subscriptions,
 
       centralAdmin,
     };
@@ -672,6 +695,79 @@ export class DashboardService {
       _count: { _all: true },
     });
     return rows.map((r) => ({ status: r.status, count: r._count._all }));
+  }
+
+  private async subscriptionStats(now: Date, scopedStateId?: string | null) {
+    type TierCounts = { platinum: number; gold: number; silver: number; other: number };
+    const emptyTiers = (): TierCounts => ({
+      platinum: 0,
+      gold: 0,
+      silver: 0,
+      other: 0,
+    });
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        purpose: 'SPONSORSHIP',
+        status: 'SUCCESS',
+        ...(scopedStateId ? { user: { stateId: scopedStateId } } : {}),
+      },
+      select: {
+        planId: true,
+        validUntil: true,
+        paidAt: true,
+        user: {
+          select: {
+            stateId: true,
+            state: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    let activeCount = 0;
+    let inactiveCount = 0;
+    const byState = new Map<
+      string,
+      {
+        stateId: string | null;
+        stateName: string;
+        active: TierCounts;
+        inactive: TierCounts;
+      }
+    >();
+
+    for (const payment of payments) {
+      const active = isSponsorshipActive(now, payment.validUntil, payment.paidAt);
+      if (active) activeCount += 1;
+      else inactiveCount += 1;
+
+      const stateId = payment.user?.stateId ?? null;
+      const stateName = payment.user?.state?.name || (stateId ? 'Unknown' : 'Unassigned');
+      const key = stateId || '__unassigned__';
+      let row = byState.get(key);
+      if (!row) {
+        row = {
+          stateId,
+          stateName,
+          active: emptyTiers(),
+          inactive: emptyTiers(),
+        };
+        byState.set(key, row);
+      }
+
+      const tier = normalizePlanCode(payment.planId) as keyof TierCounts;
+      const bucket = active ? row.active : row.inactive;
+      bucket[tier] += 1;
+    }
+
+    return {
+      activeCount,
+      inactiveCount,
+      byState: [...byState.values()].sort((a, b) =>
+        a.stateName.localeCompare(b.stateName),
+      ),
+    };
   }
 
   private async centralAdminExtras(now: Date) {

@@ -1,0 +1,111 @@
+cat_custom,cat_desc,subcat_custom,subcat_desc
+PHY,Physiotherapy,PHY_NEURO_PHY,Neurological Physiotherapy
+PHY,Physiotherapy,PHY_SPORT_PHY,Sports Physiotherapy
+PHY,Physiotherapy,PHY_ORTHO_PHY,Orthopedic Physiotherapy
+PHY,Physiotherapy,PHY_PED_PHY,Pediatric Physiotherapy
+TH,Therapy,TH_OCC,Occupational Therapy
+TH,Therapy,TH_SPCH_LNG,Speech & Language Therapy
+TH,Therapy,TH_INT_DIS,Intellectual disability
+AUT,Autism Centers,AUT_CENTER,Autism
+AUT,Autism Centers,AUT_ADHD,ADHD  - Attention Deficit Hyperactivity Disorder
+AUT,Autism Centers,AUT_ASD,ASD  - Autism Spectrum Disorder
+AUT,Autism Centers,AUT_RETT,Rett’s Disorder
+ORTHO,Orthopedic Disability,ORTHO_AMPUTATION,Amputation
+ORTHO,Orthopedic Disability,ORTHO_MSKTL_DISORD,Musculoskeletal Disorder
+ORTHO,Orthopedic Disability,ORTHO_POST_FRACTURE,Post Fracture Management
+ORTHO,Orthopedic Disability,ORTHO_PHY_IMP,Physical Impairment
+NRD,Neurodevelopmental Disorders,NRD_CEREBRAL_PALSY,Cerebral Palsy
+NRD,Neurodevelopmental Disorders,NRD_MNTL_RTRD,Mental Retardation
+NRD,Neurodevelopmental Disorders,NRD_SPN_MYO,Spinal Myotrophic Disorder
+PSY,Psychiatric Disorders,PSY_ANX_DISORD,Anxiety Disorders
+PSY,Psychiatric Disorders,PSY_MOOD_DISORD,Mood Disorders
+PSY,Psychiatric Disorders,PSY_DPRSSN,Depression
+PSY,Psychiatric Disorders,PSY_GEN_ANXIETY_DISORD,GAD  - Generalized Anxiety Disorder
+PSY,Psychiatric Disorders,PSY_OCD,OCD  - Obsessive Compulsive Disorder
+PED,Pediatric Hospitals,PED_NEUR,Pediatric Neurology
+PED,Pediatric Hospitals,PED_PRIVATE,Private Hospitals
+PED,Pediatric Hospitals,PED_GOVT,Government Hospitals
+DEN,Dental Clinics,DEN_ROOT_CNL,Root Canal Treatment
+DEN,Dental Clinics,DEN_ORTHO,Orthodontics
+DEN,Dental Clinics,DEN_EROSION,Tooth Erosion
+DEN,Dental Clinics,DEN_PED_DNTSTRY,Pediatric Dentistry
+SCH,Special Schools for Disabled Children,SCH_SSEPD,Special School (SSEPD)
+SCH,Special Schools for Disabled Children,SCH_VOCA,Vocational Training Institutes for disabled
+SCH,Special Schools for Disabled Children,SCH_VOCA_PRIVATE,Private Vocational Training Institutes
+SCH,Special Schools for Disabled Children,SCH_DEAF_DUMB,Special School for Deaf & Dumb
+SCH,Special Schools for Disabled Children,SCH_BLIND,Special School for Blind
+CGNT,Congenital Deformities,CGNT_SPN_MYO_DIS,Spinal Myotrophic Disorder
+CGNT,Congenital Deformities,CGNT_MUSC_DYS,Muscular Dystrophy
+CGNT,Congenital Deformities,CGNT_SPN_BFD,Spina Bifida
+CGNT,Congenital Deformities,CGNT_CLUB,Club Foot
+CGNT,Congenital Deformities,CGNT_CLEFT,Cleft Lip
+CGNT,Congenital Deformities,CGNT_CLEFT_PLT,Cleft Palate
+CGNT,Congenital Deformities,CGNT_SLE,SLE  - Systemic Lupus Erythematosus
+CGNT,Congenital Deformities,CGNT_CTEV,CTEV  - Congenital Talipes Equino-Varus
+CC,Child Care Centers,CC_DAY_CARE,Day Care Centers for Special Children
+CC,Child Care Centers,CC_EARLY_INT,Early Intervention Centres (0 - 6 Years)
+MOB,Mobility Equipment,MOB_WALK_AID,Walking Aids
+MOB,Mobility Equipment,MOB_WC_SCOOTER,Wheelchairs & Scooters (Transportation)
+MOB,Mobility Equipment,MOB_TRANSFER_SUPP_EQ,Transfer & Support Equipment
+MOB,Mobility Equipment,MOB_SPLTY_AIDS,Specialized Mobility Aids
+MOB,Mobility Equipment,MOB_ECOMM,E-Commerce Sites
+HOS,Hospitals,HOS_GOVT,Government Hospital
+HOS,Hospitals,HOS_PHC,Primary Health Care
+HOS,Hospitals,HOS_DHC,District Health Care
+HOS,Hospitals,HOS_MULTI_SPLTY,Multi speciality hospital
+HOS,Hospitals,HOS_CARDIO_CNTR,Cardiology Centres
+HOS,Hospitals,HOS_LIVER,Liver Centres
+HOS,Hospitals,HOS_CANCER_CNTR,Cancer Centers
+HOS,Hospitals,HOS_NEURO,Neuro Hospitals
+HOS,Hospitals,HOS_DERM,Dermatology & Skin Hospitals
+HOS,Hospitals,HOS_ENT,ENT hospital
+HOS,Hospitals,HOS_ORTHO,Orthopedic Hospitals
+PR,Artificial Limbs (Prosthesis & Orthosis),PR_UPPER,Upper Limb Prosthesis (Arms & Hands)
+PR,Artificial Limbs (Prosthesis & Orthosis),PR_LOWER,Lower Limb Prosthesis (Legs & Feet)
+PR,Artificial Limbs (Prosthesis & Orthosis),PR_FUNC,Functional Technologies
+PR,Artificial Limbs (Prosthesis & Orthosis),PR_ART_LIMBS,Artificial Limbs Mfg Corp India
+HEAR,Hearing Aids,HEAR_AIDS_GOVT,Government Hospitals
+HEAR,Hearing Aids,HEAR_AIDS_PVT,Private Hospitals
+HEAR,Hearing Aids,HEAR_AIDS_SHOP,Hearing Aid Shops
+OR,Orphanage Homes,OR_GOVT,Government Homes
+OR,Orphanage Homes,OR_PVT,Private Homes
+OLD,Old Age Homes,OLD_ASST_LIV,Assisted Living Facilities
+OLD,Old Age Homes,OLD_NURSING,Nursing Homes
+OLD,Old Age Homes,OLD_RETIREMENT_HOME,Retirement Communities
+OLD,Old Age Homes,OLD_CHARITABLE_HOME,Charitable / Free Old Age Homes
+TSC,Thalassemia & Sickle Cell,TSC_TH_ALPHA,Alpha Thalassemia
+TSC,Thalassemia & Sickle Cell,TSC_TH_BETA,Beta Thalassemia
+TSC,Thalassemia & Sickle Cell,TSC_TH_MAJOR,Thalassemia Major
+TSC,Thalassemia & Sickle Cell,TSC_SICKLE_BETA,Sickle Beta Thalassemia
+STEM,Stem Cell Clinics,STEM_INSITUTE,Stem Cell Center / Research
+DIA,Dialysis Centers,DIA_GOVT,Government
+DIA,Dialysis Centers,DIA_PVT,Private
+NGO,NGOs,NGO_GOVT,Government
+NGO,NGOs,NGO_PRV,Private
+NGO,NGOs,NGO_LIFELONG,Lifelong care for Disable Childern
+BB,Blood Banks,BB_GOVT,Government Blood Banks
+BB,Blood Banks,BB_PVT,Private Blood Banks
+BB,Blood Banks,BB_REDCROSS,Red Cross Centres
+AMB,Ambulance Services,AMB_GOVT,Government Ambulance 108/102/104
+AMB,Ambulance Services,AMB_PVT,Private Ambulance Services
+VOL,Volunteers ,VOL_ORG,Voluntary Organizations
+VOL,Volunteers ,VOL_PAID_M,Voluntary Paid services (for men)
+VOL,Volunteers ,VOL_PAID_F,Voluntary Paid services (for women)
+NURSE,Nurse Services,NURSE_MALE,Paid (Male Nurse)
+NURSE,Nurse Services,NURSE_FEMALE,Paid (Female Nurse)
+SHOP,Medical & Pharmacy shop,SHOP_GENERIC,Generic Stores
+SHOP,Medical & Pharmacy shop,SHOP_ALLO,General Medicine (Allopathy)
+SHOP,Medical & Pharmacy shop,SHOP_AYUR,Ayurved Stores
+SHOP,Medical & Pharmacy shop,SHOP_HOMEO,Homeopathy Stores
+CAL,Calipers & shoes,CAL_SPLINT,Splints
+CAL,Calipers & shoes,CAL_CLUTCH,Clutches
+CAL,Calipers & shoes,CAL_HKAFO,Hip-Knee-Ankle-Foot Orthosis (HKAFOs)
+CAL,Calipers & shoes,CAL_GOVT,Government
+CAL,Calipers & shoes,CAL_PVT,Private
+SPLHSP,Special Hospitals,SPLHSP_SVNIRTAR,SV NIRTAR
+SPLHSP,Special Hospitals,SPLHSP_NIEPID,NIEPID
+SPLHSP,Special Hospitals,SPLHSP_NILD,NILD
+SPLHSP,Special Hospitals,SPLHSP_NIMH,NIMH
+SPLHSP,Special Hospitals,SPLHSP_AYJNISHD,AYJNISHD
+SPLHSP,Special Hospitals,SPLHSP_BIRRD,BIRRD
+SPLHSP,Special Hospitals,SPLHSP_VIRRD,VIRRD

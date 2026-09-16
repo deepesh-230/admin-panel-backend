@@ -4,8 +4,11 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Min,
 } from 'class-validator';
+
+const CODE_REGEX = /^[A-Za-z0-9_]+$/;
 
 export class CreateSubcategoryDto {
   @IsUUID()
@@ -13,6 +16,12 @@ export class CreateSubcategoryDto {
 
   @IsString()
   name!: string;
+
+  @IsString()
+  @Matches(CODE_REGEX, {
+    message: 'code must use letters, numbers, and underscores only',
+  })
+  code!: string;
 
   @IsOptional()
   @IsString()
@@ -40,6 +49,13 @@ export class UpdateSubcategoryDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(CODE_REGEX, {
+    message: 'code must use letters, numbers, and underscores only',
+  })
+  code?: string;
 
   @IsOptional()
   @IsString()

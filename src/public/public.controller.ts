@@ -38,6 +38,11 @@ export class PublicController {
     return this.publicService.listBlogs();
   }
 
+  @Get('blogs/:id')
+  getBlog(@Param('id') id: string) {
+    return this.publicService.getBlog(id);
+  }
+
   @Get('home-banners')
   listHomeBanners(
     @Query('stateId') stateId?: string,

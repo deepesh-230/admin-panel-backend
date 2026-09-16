@@ -2,6 +2,7 @@ import {
   IsDateString,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -32,6 +33,20 @@ export class ListPaymentsQueryDto {
   @IsOptional()
   @IsString()
   to?: string;
+
+  /** Plan code: silver | gold | platinum (diamond treated as platinum). */
+  @IsOptional()
+  @IsString()
+  planId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  stateId?: string;
+
+  /** Sponsorship validity: active = not expired; inactive = validUntil in the past. */
+  @IsOptional()
+  @IsIn(['active', 'inactive'])
+  validity?: 'active' | 'inactive';
 }
 
 export class CreatePaymentDto {

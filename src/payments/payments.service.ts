@@ -13,10 +13,31 @@ import {
 import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
 
 const paymentInclude = {
-  user: { select: { id: true, name: true, email: true, phone: true } },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      stateId: true,
+      state: { select: { id: true, name: true, code: true } },
+    },
+  },
 } as const;
 
 type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
+
+function addDays(d: Date, days: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+}
+
+function normalizePlanCode(planId: string | null | undefined) {
+  const code = (planId || '').trim().toLowerCase();
+  if (!code) return '';
+  return code === 'diamond' ? 'platinum' : code;
+}
 
 @Injectable()
 export class PaymentsService {
@@ -55,6 +76,7 @@ export class PaymentsService {
       referenceNo: row.referenceNo,
       notes: row.notes,
       paidAt: row.paidAt,
+      validUntil: row.validUntil,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       user: row.user,
@@ -63,6 +85,8 @@ export class PaymentsService {
 
   async findAll(query: ListPaymentsQueryDto) {
     const where: Prisma.PaymentWhereInput = {};
+    const and: Prisma.PaymentWhereInput[] = [];
+    const now = new Date();
 
     if (query.status) where.status = query.status;
     if (query.purpose) where.purpose = query.purpose;
@@ -80,17 +104,50 @@ export class PaymentsService {
 
     if (query.search?.trim()) {
       const q = query.search.trim();
-      where.OR = [
-        { payerName: { contains: q, mode: 'insensitive' } },
-        { payerEmail: { contains: q, mode: 'insensitive' } },
-        { payerPhone: { contains: q, mode: 'insensitive' } },
-        { orderId: { contains: q, mode: 'insensitive' } },
-        { paymentId: { contains: q, mode: 'insensitive' } },
-        { referenceNo: { contains: q, mode: 'insensitive' } },
-        { planId: { contains: q, mode: 'insensitive' } },
-        { notes: { contains: q, mode: 'insensitive' } },
-      ];
+      and.push({
+        OR: [
+          { payerName: { contains: q, mode: 'insensitive' } },
+          { payerEmail: { contains: q, mode: 'insensitive' } },
+          { payerPhone: { contains: q, mode: 'insensitive' } },
+          { orderId: { contains: q, mode: 'insensitive' } },
+          { paymentId: { contains: q, mode: 'insensitive' } },
+          { referenceNo: { contains: q, mode: 'insensitive' } },
+          { planId: { contains: q, mode: 'insensitive' } },
+          { notes: { contains: q, mode: 'insensitive' } },
+        ],
+      });
     }
+
+    const planCode = normalizePlanCode(query.planId);
+    if (planCode) {
+      if (planCode === 'platinum') {
+        and.push({
+          OR: [
+            { planId: { equals: 'platinum', mode: 'insensitive' } },
+            { planId: { equals: 'diamond', mode: 'insensitive' } },
+          ],
+        });
+      } else {
+        where.planId = { equals: planCode, mode: 'insensitive' };
+      }
+    }
+
+    if (query.stateId) {
+      where.user = { stateId: query.stateId };
+    }
+
+    if (query.validity === 'active') {
+      and.push({
+        OR: [
+          { validUntil: { gte: now } },
+          { validUntil: null, paidAt: { gte: addDays(now, -365) } },
+        ],
+      });
+    } else if (query.validity === 'inactive') {
+      where.validUntil = { lt: now };
+    }
+
+    if (and.length) where.AND = and;
 
     const rows = await this.prisma.payment.findMany({
       where,

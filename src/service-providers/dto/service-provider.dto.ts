@@ -243,6 +243,11 @@ export class ListServiceProvidersQueryDto {
   @IsUUID()
   subcategoryId?: string;
 
+  /** Filter providers that have this user as a provider admin */
+  @IsOptional()
+  @IsUUID()
+  adminUserId?: string;
+
   @IsOptional()
   @IsString()
   city?: string;
