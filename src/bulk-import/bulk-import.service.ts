@@ -15,7 +15,6 @@ import {
   resolveScopedStateId,
 } from '../common/utils/state-scope';
 import { normalizeBusinessCode } from '../common/utils/business-code';
-import { slugify } from '../common/utils/slugify';
 import { PrismaService } from '../prisma/prisma.service';
 import type { BulkImportEntity, BulkImportResult } from './bulk-import.types';
 import {
@@ -189,7 +188,6 @@ export class BulkImportService {
     const name = pick(row, 'name', 'cat_desc', 'category');
     if (!name) throw new BadRequestException('name is required');
 
-    const slug = pick(row, 'slug') || slugify(name);
     const codeRaw = pick(row, 'code', 'category_id', 'cat_custom');
     const code = codeRaw
       ? normalizeBusinessCode(codeRaw, { required: false, field: 'code' })
@@ -198,7 +196,6 @@ export class BulkImportService {
       where: {
         OR: [
           { name: { equals: name, mode: 'insensitive' } },
-          { slug },
           ...(code ? [{ code }] : []),
         ],
       },
@@ -225,7 +222,6 @@ export class BulkImportService {
       data: {
         name,
         code: code || undefined,
-        slug,
         description: pick(row, 'description') || undefined,
         type,
         sortOrder: parseIntSafe(pick(row, 'sortorder', 'sort_order')),
@@ -370,7 +366,6 @@ export class BulkImportService {
       return 'skipped';
     }
 
-    const slug = pick(row, 'slug') || slugify(name);
     if (dryRun) return 'created';
 
     await this.prisma.subcategory.create({
@@ -378,7 +373,6 @@ export class BulkImportService {
         categoryId,
         name,
         code: code || undefined,
-        slug,
         description: pick(row, 'description') || undefined,
         sortOrder: parseIntSafe(pick(row, 'sortorder', 'sort_order')),
         isActive: parseBool(pick(row, 'isactive', 'active'), true),
@@ -580,12 +574,12 @@ export class BulkImportService {
   getTemplate(entity: BulkImportEntity): { columns: string[]; sample: string[] } {
     const templates: Record<BulkImportEntity, { columns: string[]; sample: string[] }> = {
       categories: {
-        columns: ['name', 'code', 'slug', 'description', 'type', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'PHY', 'physiotherapy', 'Rehab services', 'SERVICE', '0', 'true'],
+        columns: ['name', 'code', 'description', 'type', 'sortOrder', 'isActive'],
+        sample: ['Physiotherapy', 'PHY', 'Rehab services', 'SERVICE', '0', 'true'],
       },
       subcategories: {
-        columns: ['category', 'name', 'code', 'slug', 'description', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'Pediatric PT', 'PHY_PED_PHY', 'pediatric-pt', '', '0', 'true'],
+        columns: ['category', 'name', 'code', 'description', 'sortOrder', 'isActive'],
+        sample: ['Physiotherapy', 'Pediatric PT', 'PHY_PED_PHY', '', '0', 'true'],
       },
       keywords: {
         columns: ['category', 'subcategory', 'term', 'isActive'],

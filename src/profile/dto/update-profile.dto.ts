@@ -1,4 +1,14 @@
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
+import { AgeRange } from '@prisma/client';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -12,6 +22,18 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsUUID()
+  stateId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  stateName?: string;
 
   @IsOptional()
   @IsNumber()
@@ -30,4 +52,13 @@ export class UpdateProfileDto {
   @Min(1)
   @Max(100)
   km?: number;
+
+  @IsOptional()
+  @IsEnum(AgeRange)
+  ageRange?: AgeRange | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  disabilitySubcategoryIds?: string[];
 }

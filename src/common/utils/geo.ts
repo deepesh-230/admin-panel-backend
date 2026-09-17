@@ -27,3 +27,16 @@ export function isWithinRadius(
   if (pointLat == null || pointLng == null) return false;
   return haversineKm(originLat, originLng, pointLat, pointLng) <= radiusKm;
 }
+
+/** Axis-aligned WGS84 box that contains a circle of radiusKm. */
+export function boundingBox(lat: number, lng: number, radiusKm: number) {
+  const latDelta = radiusKm / 111.32;
+  const cosLat = Math.cos((lat * Math.PI) / 180);
+  const lngDelta = radiusKm / (111.32 * (Math.abs(cosLat) < 0.01 ? 0.01 : cosLat));
+  return {
+    minLat: lat - latDelta,
+    maxLat: lat + latDelta,
+    minLng: lng - lngDelta,
+    maxLng: lng + lngDelta,
+  };
+}

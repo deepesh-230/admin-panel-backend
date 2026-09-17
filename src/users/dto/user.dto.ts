@@ -1,8 +1,10 @@
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -10,7 +12,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RoleName } from '@prisma/client';
+import { AgeRange, CategoryType, RoleName } from '@prisma/client';
 
 export class CreateUserDto {
   @IsEmail()
@@ -36,6 +38,39 @@ export class CreateUserDto {
   stateId?: string;
 
   @IsOptional()
+  @IsString()
+  stateName?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
+  @IsEnum(AgeRange)
+  ageRange?: AgeRange;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  disabilitySubcategoryIds?: string[];
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
@@ -58,6 +93,39 @@ export class UpdateUserDto {
   stateId?: string | null;
 
   @IsOptional()
+  @IsString()
+  stateName?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
+  @IsEnum(AgeRange)
+  ageRange?: AgeRange | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  disabilitySubcategoryIds?: string[];
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
@@ -77,13 +145,42 @@ export class ListUsersQueryDto {
   @IsString()
   search?: string;
 
+  /** Dedicated name filter (also covered by search). */
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  name?: string;
+
+  /** One id or comma-separated ids for multi-state filters. */
+  @IsOptional()
+  @IsString()
   stateId?: string;
 
   @IsOptional()
   @IsEnum(RoleName)
   role?: RoleName;
+
+  /** CARE = Service, SERVICE = Emergency Service (via assigned providers). */
+  @IsOptional()
+  @IsEnum(CategoryType)
+  categoryType?: CategoryType;
+
+  /** Disability category ids (comma-separated). */
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  /** Disability subcategory ids (comma-separated). */
+  @IsOptional()
+  @IsString()
+  subcategoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  createdFrom?: string;
+
+  @IsOptional()
+  @IsString()
+  createdTo?: string;
 
   @IsOptional()
   @IsString()

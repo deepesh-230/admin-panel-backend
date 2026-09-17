@@ -9,9 +9,11 @@ import { Prisma, ProviderApprovalStatus, RoleName, BusinessVerificationStatus } 
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import {
   assertStateAccess,
+  parseStateIds,
   resolveScopedStateId,
+  resolveScopedStateIds,
 } from '../common/utils/state-scope';
-import { haversineKm } from '../common/utils/geo';
+import { haversineKm, boundingBox } from '../common/utils/geo';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AssignProviderAdminDto,
@@ -44,13 +46,23 @@ const providerInclude = {
   _count: { select: { admins: true } },
 } as const;
 
+const providerListInclude = {
+  category: { select: { id: true, name: true } },
+  subcategory: { select: { id: true, name: true, categoryId: true } },
+  state: { select: { id: true, name: true, code: true } },
+  createdBy: { select: { id: true, name: true, email: true } },
+  approvedBy: { select: { id: true, name: true, email: true } },
+  _count: { select: { admins: true } },
+} as const;
+
 type ProviderRow = Prisma.ServiceProviderGetPayload<{ include: typeof providerInclude }>;
+type ProviderListRow = Prisma.ServiceProviderGetPayload<{ include: typeof providerListInclude }>;
 
 @Injectable()
 export class ServiceProvidersService {
   constructor(private prisma: PrismaService) {}
 
-  private sanitize(provider: ProviderRow, distanceKm?: number | null) {
+  private sanitize(provider: ProviderRow | ProviderListRow, distanceKm?: number | null) {
     return {
       id: provider.id,
       name: provider.name,
@@ -90,7 +102,7 @@ export class ServiceProvidersService {
       state: provider.state,
       createdBy: provider.createdBy,
       approvedBy: provider.approvedBy,
-      admins: provider.admins.map((a) => ({
+      admins: ('admins' in provider ? provider.admins : []).map((a) => ({
         id: a.id,
         userId: a.userId,
         isPrimary: a.isPrimary,
@@ -172,6 +184,7 @@ export class ServiceProvidersService {
     options?: {
       forceApprovedActive?: boolean;
       scopedStateId?: string;
+      scopedStateIds?: string[];
       providerAdminUserId?: string;
     },
   ): Promise<Prisma.ServiceProviderWhereInput> {
@@ -190,11 +203,18 @@ export class ServiceProvidersService {
       if (query.isActive === 'false') where.isActive = false;
     }
 
-    if (options?.scopedStateId) where.stateId = options.scopedStateId;
-    else if (query.stateId) where.stateId = query.stateId;
+    const scopedIds =
+      options?.scopedStateIds ??
+      (options?.scopedStateId ? [options.scopedStateId] : parseStateIds(query.stateId));
+    if (scopedIds.length) where.stateId = { in: scopedIds };
 
-    if (query.categoryId) where.categoryId = query.categoryId;
-    if (query.subcategoryId) where.subcategoryId = query.subcategoryId;
+    const categoryIds = parseStateIds(query.categoryId);
+    if (categoryIds.length) where.categoryId = { in: categoryIds };
+    if (query.categoryType === 'CARE' || query.categoryType === 'SERVICE') {
+      where.category = { type: query.categoryType };
+    }
+    const subcategoryIds = parseStateIds(query.subcategoryId);
+    if (subcategoryIds.length) where.subcategoryId = { in: subcategoryIds };
     if (query.city?.trim()) {
       where.city = { contains: query.city.trim(), mode: 'insensitive' };
     }
@@ -249,6 +269,7 @@ export class ServiceProvidersService {
     options?: {
       forceApprovedActive?: boolean;
       scopedStateId?: string;
+      scopedStateIds?: string[];
       providerAdminUserId?: string;
     },
   ) {
@@ -290,7 +311,7 @@ export class ServiceProvidersService {
       const [rows, total] = await this.prisma.$transaction([
         this.prisma.serviceProvider.findMany({
           where,
-          include: providerInclude,
+          include: providerListInclude,
           skip,
           take: limit,
           orderBy,
@@ -312,10 +333,29 @@ export class ServiceProvidersService {
     const originLat = query.latitude!;
     const originLng = query.longitude!;
     const radiusKm = query.radius!;
+    const box = boundingBox(originLat, originLng, radiusKm);
+
+    const geoWhere: Prisma.ServiceProviderWhereInput = {
+      ...where,
+      latitude: { gte: box.minLat, lte: box.maxLat },
+      longitude: { gte: box.minLng, lte: box.maxLng },
+    };
 
     const candidates = await this.prisma.serviceProvider.findMany({
-      where,
-      include: providerInclude,
+      where: geoWhere,
+      select: {
+        id: true,
+        latitude: true,
+        longitude: true,
+        name: true,
+        city: true,
+        approvalStatus: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        state: { select: { name: true } },
+        category: { select: { name: true } },
+      },
     });
 
     const withDistance = candidates
@@ -358,7 +398,6 @@ export class ServiceProvidersService {
         const bv = b.row[sortBy].getTime();
         return sortOrder === 'asc' ? av - bv : bv - av;
       }
-      // default + explicit distance
       return sortOrder === 'asc'
         ? a.distanceKm - b.distanceKm
         : b.distanceKm - a.distanceKm;
@@ -366,10 +405,21 @@ export class ServiceProvidersService {
 
     const total = withDistance.length;
     const pageItems = withDistance.slice(skip, skip + limit);
+    const pageIds = pageItems.map((item) => item.row.id);
+    const distanceById = new Map(pageItems.map((item) => [item.row.id, item.distanceKm]));
+
+    const rows = pageIds.length
+      ? await this.prisma.serviceProvider.findMany({
+          where: { id: { in: pageIds } },
+          include: providerListInclude,
+        })
+      : [];
+    const order = new Map(pageIds.map((id, index) => [id, index]));
+    rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
     return {
-      items: pageItems.map(({ row, distanceKm }) =>
-        this.sanitize(row, Math.round(distanceKm * 100) / 100),
+      items: rows.map((row) =>
+        this.sanitize(row, Math.round((distanceById.get(row.id) || 0) * 100) / 100),
       ),
       pagination: {
         page,
@@ -381,10 +431,10 @@ export class ServiceProvidersService {
   }
 
   async findAll(currentUser: AuthUser, query: ListServiceProvidersQueryDto) {
-    const scopedStateId = resolveScopedStateId(currentUser, query.stateId);
+    const scopedStateIds = resolveScopedStateIds(currentUser, query.stateId);
     const providerAdminUserId =
       currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN ? currentUser.id : undefined;
-    return this.runSearch(query, { scopedStateId, providerAdminUserId });
+    return this.runSearch(query, { scopedStateIds, providerAdminUserId });
   }
 
   /** Mobile/public discovery: approved + active only */

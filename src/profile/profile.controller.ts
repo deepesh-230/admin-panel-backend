@@ -13,7 +13,11 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { ServiceProvidersService } from '../service-providers/service-providers.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { resolveDigipinFields } from '../common/digipin.util';
+import {
+  assertSubcategoryIds,
+  resolvePlaceProfileFields,
+  syncUserDisabilities,
+} from '../common/utils/user-profile';
 
 @Controller('profile')
 @Roles(
@@ -33,44 +37,111 @@ export class ProfileController {
   @Patch()
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
   async updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
-    const shouldRecomputeDigipin = dto.latitude !== undefined && dto.longitude !== undefined;
-    const digipinFields = shouldRecomputeDigipin
-      ? resolveDigipinFields(dto.latitude, dto.longitude, dto.pincode)
-      : dto.pincode !== undefined
-        ? { digipin: undefined, pincode: dto.pincode.trim() || null }
-        : {};
-
-    const updated = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        name: dto.name,
-        phone: dto.phone,
-        location: dto.location,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        km: dto.km,
-        ...(digipinFields.digipin !== undefined ? { digipin: digipinFields.digipin } : {}),
-        ...(digipinFields.pincode !== undefined ? { pincode: digipinFields.pincode } : {}),
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        location: true,
-        latitude: true,
-        longitude: true,
-        digipin: true,
-        pincode: true,
-        km: true,
-        isActive: true,
-      },
+    const place = await resolvePlaceProfileFields(this.prisma, {
+      location: dto.location,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      pincode: dto.pincode,
+      stateId: dto.stateId,
+      stateName: dto.stateName,
     });
+    const disabilityIds =
+      dto.disabilitySubcategoryIds !== undefined
+        ? await assertSubcategoryIds(this.prisma, dto.disabilitySubcategoryIds)
+        : undefined;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          name: dto.name,
+          phone: dto.phone,
+          km: dto.km,
+          ageRange: dto.ageRange === undefined ? undefined : dto.ageRange,
+          ...place,
+        },
+        include: {
+          state: { select: { id: true, name: true, code: true } },
+          disabilities: {
+            include: {
+              subcategory: {
+                select: {
+                  id: true,
+                  name: true,
+                  categoryId: true,
+                  category: { select: { id: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (place.stateId) {
+        await tx.userState.upsert({
+          where: {
+            userId_stateId: { userId: user.id, stateId: place.stateId },
+          },
+          update: { isPrimary: true },
+          create: { userId: user.id, stateId: place.stateId, isPrimary: true },
+        });
+      }
+
+      if (disabilityIds !== undefined) {
+        await syncUserDisabilities(tx, user.id, disabilityIds);
+        return tx.user.findUniqueOrThrow({
+          where: { id: user.id },
+          include: {
+            state: { select: { id: true, name: true, code: true } },
+            disabilities: {
+              include: {
+                subcategory: {
+                  select: {
+                    id: true,
+                    name: true,
+                    categoryId: true,
+                    category: { select: { id: true, name: true } },
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      return row;
+    });
+
+    const disabilities = updated.disabilities.map((d) => ({
+      id: d.subcategory.id,
+      name: d.subcategory.name,
+      categoryId: d.subcategory.categoryId,
+      categoryName: d.subcategory.category.name,
+    }));
 
     return {
       success: true,
       message: 'Profile updated',
-      data: updated,
+      data: {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        phone: updated.phone,
+        location: updated.location,
+        city: updated.city,
+        latitude: updated.latitude,
+        longitude: updated.longitude,
+        digipin: updated.digipin,
+        pincode: updated.pincode,
+        km: updated.km,
+        ageRange: updated.ageRange,
+        isActive: updated.isActive,
+        stateId: updated.stateId,
+        state: updated.state,
+        disabilities,
+        disabilitySubcategoryIds: disabilities.map((d) => d.id),
+      },
     };
   }
 

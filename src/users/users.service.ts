@@ -10,8 +10,16 @@ import * as bcrypt from 'bcryptjs';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import {
   assertStateAccess,
-  resolveScopedStateId,
+  parseStateIds,
+  resolveScopedStateIds,
 } from '../common/utils/state-scope';
+import {
+  assertSubcategoryIds,
+  parseCreatedAtRange,
+  resolvePlaceProfileFields,
+  syncUserDisabilities,
+} from '../common/utils/user-profile';
+import { invalidateAuthCache } from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateUserDto,
@@ -23,42 +31,63 @@ const userInclude = {
   role: true,
   state: true,
   userStates: { include: { state: true } },
+  disabilities: {
+    include: {
+      subcategory: {
+        select: {
+          id: true,
+          name: true,
+          categoryId: true,
+          category: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
 } as const;
+
+const userListInclude = {
+  role: true,
+  state: true,
+  disabilities: userInclude.disabilities,
+} as const;
+
+type UserWithRelations = Prisma.UserGetPayload<{ include: typeof userInclude }>;
+type UserListRow = Prisma.UserGetPayload<{ include: typeof userListInclude }>;
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  private sanitize(user: {
-    id: string;
-    email: string;
-    name: string | null;
-    phone: string | null;
-    isActive: boolean;
-    stateId: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    role: { id: string; name: RoleName; description: string | null };
-    state: { id: string; name: string; code: string | null } | null;
-    userStates?: {
-      isPrimary: boolean;
-      state: { id: string; name: string; code: string | null };
-    }[];
-  }) {
+  private sanitize(user: UserWithRelations | UserListRow) {
+    const disabilities = (user.disabilities || []).map((d) => ({
+      id: d.subcategory.id,
+      name: d.subcategory.name,
+      categoryId: d.subcategory.categoryId,
+      categoryName: d.subcategory.category.name,
+    }));
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       phone: user.phone,
+      location: user.location,
+      city: user.city,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      pincode: user.pincode,
+      ageRange: user.ageRange,
       isActive: user.isActive,
       stateId: user.stateId,
       role: user.role.name,
       roleDetails: user.role,
       state: user.state,
-      states: (user.userStates || []).map((us) => ({
+      states: ('userStates' in user ? user.userStates || [] : []).map((us) => ({
         ...us.state,
         isPrimary: us.isPrimary,
       })),
+      disabilities,
+      disabilitySubcategoryIds: disabilities.map((d) => d.id),
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -74,13 +103,16 @@ export class UsersService {
     const page = query.page || 1;
     const limit = Math.min(query.limit || 20, 100);
     const skip = (page - 1) * limit;
-    const stateId = resolveScopedStateId(currentUser, query.stateId);
+    const stateIds = resolveScopedStateIds(currentUser, query.stateId);
 
     const where: Prisma.UserWhereInput = {};
 
-    if (stateId) where.stateId = stateId;
+    if (stateIds?.length) where.stateId = { in: stateIds };
     if (query.isActive === 'true') where.isActive = true;
     if (query.isActive === 'false') where.isActive = false;
+
+    const createdAt = parseCreatedAtRange(query.createdFrom, query.createdTo);
+    if (createdAt) where.createdAt = createdAt;
 
     // STATE_ADMIN cannot see main ADMIN accounts
     if (currentUser.role === RoleName.STATE_ADMIN) {
@@ -95,6 +127,30 @@ export class UsersService {
         : { NOT: { name: RoleName.ADMIN } };
     } else if (query.role) {
       where.role = { name: query.role };
+    }
+
+    if (query.categoryType === 'CARE' || query.categoryType === 'SERVICE') {
+      where.serviceProviderAdmins = {
+        some: {
+          serviceProvider: {
+            category: { type: query.categoryType },
+          },
+        },
+      };
+    }
+
+    const disabilitySubcategoryIds = parseStateIds(query.subcategoryId);
+    const disabilityCategoryIds = parseStateIds(query.categoryId);
+    if (disabilitySubcategoryIds.length) {
+      where.disabilities = { some: { subcategoryId: { in: disabilitySubcategoryIds } } };
+    } else if (disabilityCategoryIds.length) {
+      where.disabilities = {
+        some: { subcategory: { categoryId: { in: disabilityCategoryIds } } },
+      };
+    }
+
+    if (query.name?.trim()) {
+      where.name = { contains: query.name.trim(), mode: 'insensitive' };
     }
 
     if (query.search?.trim()) {
@@ -121,7 +177,7 @@ export class UsersService {
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,
-        include: userInclude,
+        include: userListInclude,
         orderBy,
         skip,
         take: limit,
@@ -174,7 +230,18 @@ export class UsersService {
       throw new ForbiddenException('Only main admin can create this role');
     }
 
-    if (dto.role === RoleName.STATE_ADMIN && !dto.stateId) {
+    const place = await resolvePlaceProfileFields(this.prisma, {
+      location: dto.location,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      pincode: dto.pincode,
+      stateId: dto.stateId,
+      stateName: dto.stateName,
+    });
+    const stateId = place.stateId ?? dto.stateId;
+
+    if (dto.role === RoleName.STATE_ADMIN && !stateId) {
       throw new BadRequestException('stateId is required for STATE_ADMIN');
     }
 
@@ -183,32 +250,45 @@ export class UsersService {
     });
     if (existing) throw new ConflictException('Email already registered');
 
-    if (dto.stateId) {
-      const state = await this.prisma.state.findUnique({ where: { id: dto.stateId } });
-      if (!state) throw new BadRequestException('Invalid stateId');
-    }
+    const disabilityIds = dto.disabilitySubcategoryIds
+      ? await assertSubcategoryIds(this.prisma, dto.disabilitySubcategoryIds)
+      : [];
 
     const role = await this.getRole(dto.role);
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email.toLowerCase(),
-        passwordHash,
-        name: dto.name,
-        phone: dto.phone,
-        isActive: dto.isActive ?? true,
-        roleId: role.id,
-        stateId: dto.stateId,
-        ...(dto.stateId
-          ? {
-              userStates: {
-                create: { stateId: dto.stateId, isPrimary: true },
-              },
-            }
-          : {}),
-      },
-      include: userInclude,
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: dto.email.toLowerCase(),
+          passwordHash,
+          name: dto.name,
+          phone: dto.phone,
+          isActive: dto.isActive ?? true,
+          roleId: role.id,
+          ageRange: dto.ageRange,
+          ...place,
+          stateId,
+          ...(stateId
+            ? {
+                userStates: {
+                  create: { stateId, isPrimary: true },
+                },
+              }
+            : {}),
+        },
+        include: userInclude,
+      });
+
+      if (disabilityIds.length) {
+        await syncUserDisabilities(tx, created.id, disabilityIds);
+        return tx.user.findUniqueOrThrow({
+          where: { id: created.id },
+          include: userInclude,
+        });
+      }
+
+      return created;
     });
 
     return this.sanitize(user);
@@ -244,10 +324,15 @@ export class UsersService {
       throw new ForbiddenException('Only main admin can assign ADMIN role');
     }
 
-    if (dto.stateId) {
-      const state = await this.prisma.state.findUnique({ where: { id: dto.stateId } });
-      if (!state) throw new BadRequestException('Invalid stateId');
-    }
+    const place = await resolvePlaceProfileFields(this.prisma, {
+      location: dto.location,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      pincode: dto.pincode,
+      stateId: dto.stateId,
+      stateName: dto.stateName,
+    });
 
     let roleId: string | undefined;
     if (dto.role) {
@@ -258,6 +343,11 @@ export class UsersService {
       ? await bcrypt.hash(dto.password, 12)
       : undefined;
 
+    const disabilityIds =
+      dto.disabilitySubcategoryIds !== undefined
+        ? await assertSubcategoryIds(this.prisma, dto.disabilitySubcategoryIds)
+        : undefined;
+
     const user = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id },
@@ -265,26 +355,36 @@ export class UsersService {
           name: dto.name,
           phone: dto.phone,
           isActive: dto.isActive,
-          stateId: dto.stateId === undefined ? undefined : dto.stateId,
           roleId,
           passwordHash,
+          ageRange: dto.ageRange === undefined ? undefined : dto.ageRange,
+          ...place,
         },
         include: userInclude,
       });
 
-      if (dto.stateId) {
+      if (place.stateId) {
         await tx.userState.upsert({
           where: {
-            userId_stateId: { userId: id, stateId: dto.stateId },
+            userId_stateId: { userId: id, stateId: place.stateId },
           },
           update: { isPrimary: true },
-          create: { userId: id, stateId: dto.stateId, isPrimary: true },
+          create: { userId: id, stateId: place.stateId, isPrimary: true },
+        });
+      }
+
+      if (disabilityIds !== undefined) {
+        await syncUserDisabilities(tx, id, disabilityIds);
+        return tx.user.findUniqueOrThrow({
+          where: { id },
+          include: userInclude,
         });
       }
 
       return updated;
     });
 
+    invalidateAuthCache(id);
     return this.sanitize(user);
   }
 

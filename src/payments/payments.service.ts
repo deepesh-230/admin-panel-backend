@@ -11,6 +11,7 @@ import {
   UpdatePaymentDto,
 } from './dto/payment.dto';
 import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
+import { parseStateIds } from '../common/utils/state-scope';
 
 const paymentInclude = {
   user: {
@@ -132,8 +133,9 @@ export class PaymentsService {
       }
     }
 
-    if (query.stateId) {
-      where.user = { stateId: query.stateId };
+    const stateIds = parseStateIds(query.stateId);
+    if (stateIds.length) {
+      where.user = { stateId: { in: stateIds } };
     }
 
     if (query.validity === 'active') {

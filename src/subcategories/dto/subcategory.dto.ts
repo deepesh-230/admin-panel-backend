@@ -1,5 +1,7 @@
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -22,10 +24,6 @@ export class CreateSubcategoryDto {
     message: 'code must use letters, numbers, and underscores only',
   })
   code!: string;
-
-  @IsOptional()
-  @IsString()
-  slug?: string;
 
   @IsOptional()
   @IsString()
@@ -59,10 +57,6 @@ export class UpdateSubcategoryDto {
 
   @IsOptional()
   @IsString()
-  slug?: string;
-
-  @IsOptional()
-  @IsString()
   description?: string;
 
   @IsOptional()
@@ -73,4 +67,34 @@ export class UpdateSubcategoryDto {
   @IsInt()
   @Min(0)
   sortOrder?: number;
+}
+
+export class ListSubcategoriesQueryDto {
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
+
+  @IsOptional()
+  @IsIn(['sortOrder', 'name', 'code', 'category', 'isActive'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }

@@ -22,6 +22,8 @@ export class EnquiriesService {
     searchQuery?: string,
     kind?: string,
     status?: EnquiryStatus,
+    page?: number,
+    limit?: number,
   ) {
     const where: Prisma.EnquiryWhereInput = {
       AND: [await this.scopeWhere(currentUser)],
@@ -44,11 +46,35 @@ export class EnquiriesService {
       });
     }
 
-    return this.prisma.enquiry.findMany({
-      where,
-      include: enquiryInclude,
-      orderBy: { sNo: 'asc' },
-    });
+    if (!page) {
+      return this.prisma.enquiry.findMany({
+        where,
+        include: enquiryInclude,
+        orderBy: { sNo: 'asc' },
+      });
+    }
+
+    const take = Math.min(limit || 20, 100);
+    const skip = (page - 1) * take;
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.enquiry.findMany({
+        where,
+        include: enquiryInclude,
+        orderBy: { sNo: 'asc' },
+        skip,
+        take,
+      }),
+      this.prisma.enquiry.count({ where }),
+    ]);
+    return {
+      items,
+      pagination: {
+        page,
+        limit: take,
+        total,
+        totalPages: Math.ceil(total / take) || 0,
+      },
+    };
   }
 
   async findOne(id: string, currentUser: AuthUser) {

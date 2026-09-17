@@ -1,4 +1,4 @@
-import { haversineKm, isWithinRadius } from './geo';
+import { haversineKm, isWithinRadius, boundingBox } from './geo';
 
 describe('geo utils', () => {
   it('computes short Hyderabad distance', () => {
@@ -12,5 +12,13 @@ describe('geo utils', () => {
     expect(isWithinRadius(17.4126, 78.4485, 17.42, 78.45, 10)).toBe(true);
     expect(isWithinRadius(17.4126, 78.4485, 18.5, 78.5, 10)).toBe(false);
     expect(isWithinRadius(17.4126, 78.4485, null, null, 10)).toBe(false);
+  });
+
+  it('builds a bounding box that contains a nearby point', () => {
+    const box = boundingBox(17.4126, 78.4485, 10);
+    expect(box.minLat).toBeLessThan(17.42);
+    expect(box.maxLat).toBeGreaterThan(17.42);
+    expect(box.minLng).toBeLessThan(78.45);
+    expect(box.maxLng).toBeGreaterThan(78.45);
   });
 });

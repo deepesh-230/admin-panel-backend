@@ -23,10 +23,6 @@ export class CreateCategoryDto {
 
   @IsOptional()
   @IsString()
-  slug?: string;
-
-  @IsOptional()
-  @IsString()
   description?: string;
 
   @IsOptional()
@@ -54,10 +50,6 @@ export class UpdateCategoryDto {
     message: 'code must use letters, numbers, and underscores only',
   })
   code?: string;
-
-  @IsOptional()
-  @IsString()
-  slug?: string;
 
   @IsOptional()
   @IsString()

@@ -6,12 +6,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import {
   CreateSubcategoryDto,
+  ListSubcategoriesQueryDto,
   UpdateSubcategoryDto,
 } from './dto/subcategory.dto';
 import { SubcategoriesService } from './subcategories.service';
@@ -20,6 +22,12 @@ import { SubcategoriesService } from './subcategories.service';
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
 export class SubcategoriesController {
   constructor(private readonly subcategoriesService: SubcategoriesService) {}
+
+  @Get()
+  @Permissions('categories.read')
+  findAll(@Query() query: ListSubcategoriesQueryDto) {
+    return this.subcategoriesService.findAll(query);
+  }
 
   @Get(':subcategoryId/keywords')
   @Permissions('categories.read')

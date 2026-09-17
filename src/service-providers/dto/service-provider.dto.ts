@@ -14,7 +14,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProviderApprovalStatus } from '@prisma/client';
+import { CategoryType, ProviderApprovalStatus } from '@prisma/client';
 
 export class CreateServiceProviderDto {
   @IsString()
@@ -231,16 +231,24 @@ export class ListServiceProvidersQueryDto {
   @IsString()
   keyword?: string;
 
+  /** One id or comma-separated ids for multi-state filters. */
   @IsOptional()
-  @IsUUID()
+  @IsString()
   stateId?: string;
 
+  /** One id or comma-separated ids for multi-category filters. */
   @IsOptional()
-  @IsUUID()
+  @IsString()
   categoryId?: string;
 
+  /** CARE = Service (mobile Home), SERVICE = Emergency Service (mobile Service tab) */
   @IsOptional()
-  @IsUUID()
+  @IsEnum(CategoryType)
+  categoryType?: CategoryType;
+
+  /** One id or comma-separated ids for multi-subcategory filters. */
+  @IsOptional()
+  @IsString()
   subcategoryId?: string;
 
   /** Filter providers that have this user as a provider admin */

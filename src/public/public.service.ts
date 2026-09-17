@@ -17,6 +17,7 @@ import {
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 import { coverageVisibilityWhere } from '../common/coverage';
+import { CATALOG_TTL_MS, STATES_TTL_MS, catalogCache } from '../common/utils/ttl-cache';
 
 @Injectable()
 export class PublicService {
@@ -33,7 +34,13 @@ export class PublicService {
   ) {}
 
   listCategories(type?: CategoryType) {
-    return this.categories.findAll(undefined, true, type);
+    const key = `categories:public:${type ?? 'any'}`;
+    const hit = catalogCache.get<Awaited<ReturnType<CategoriesService['findAll']>>>(key);
+    if (hit) return Promise.resolve(hit);
+    return this.categories.findAll(undefined, true, type).then((rows) => {
+      catalogCache.set(key, rows, CATALOG_TTL_MS);
+      return rows;
+    });
   }
 
   async listSubcategories(categoryId: string) {
@@ -48,8 +55,18 @@ export class PublicService {
     });
   }
 
+  listSubcategoriesByCategoryIds(categoryIds: string[]) {
+    return this.categories.listSubcategoriesByCategoryIds(categoryIds, true);
+  }
+
   listStates() {
-    return this.states.findAll(undefined, true);
+    const key = 'states:public';
+    const hit = catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(key);
+    if (hit) return Promise.resolve(hit);
+    return this.states.findAll(undefined, true).then((rows) => {
+      catalogCache.set(key, rows, STATES_TTL_MS);
+      return rows;
+    });
   }
 
   listFaqs() {

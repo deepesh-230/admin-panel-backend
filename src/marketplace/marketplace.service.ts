@@ -10,7 +10,7 @@ const adminProductInclude = {
 export class MarketplaceService {
   constructor(private prisma: PrismaService) {}
 
-  listAdmin(search?: string, listingIntent?: string) {
+  async listAdmin(search?: string, listingIntent?: string, page?: number, limit?: number) {
     const where: Prisma.MarketplaceProductWhereInput = {};
     const intent = listingIntent?.trim().toLowerCase();
     if (intent === 'buy' || intent === 'sell') {
@@ -28,11 +28,34 @@ export class MarketplaceService {
         { createdBy: { name: { contains: q, mode: 'insensitive' } } },
       ];
     }
-    return this.prisma.marketplaceProduct.findMany({
-      where,
-      include: adminProductInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+    if (!page) {
+      return this.prisma.marketplaceProduct.findMany({
+        where,
+        include: adminProductInclude,
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    const take = Math.min(limit || 20, 100);
+    const skip = (page - 1) * take;
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.marketplaceProduct.findMany({
+        where,
+        include: adminProductInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.marketplaceProduct.count({ where }),
+    ]);
+    return {
+      items,
+      pagination: {
+        page,
+        limit: take,
+        total,
+        totalPages: Math.ceil(total / take) || 0,
+      },
+    };
   }
 
   async findAdmin(id: string) {

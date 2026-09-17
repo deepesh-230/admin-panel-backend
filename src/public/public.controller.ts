@@ -1,7 +1,8 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query } from '@nestjs/common';
 import { BecomeTarget, CategoryType } from '@prisma/client';
 import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { parseStateIds } from '../common/utils/state-scope';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 import { PublicService } from './public.service';
@@ -12,18 +13,28 @@ export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
   @Get('categories')
+  @Header('Cache-Control', 'public, max-age=60')
   listCategories(@Query('type') type?: CategoryType) {
     const typeFilter =
       type === CategoryType.CARE || type === CategoryType.SERVICE ? type : undefined;
     return this.publicService.listCategories(typeFilter);
   }
 
+  /** Bulk lookup — must stay above :categoryId/subcategories. */
+  @Get('categories/subcategories')
+  @Header('Cache-Control', 'public, max-age=60')
+  listSubcategoriesBulk(@Query('categoryId') categoryId?: string) {
+    return this.publicService.listSubcategoriesByCategoryIds(parseStateIds(categoryId));
+  }
+
   @Get('categories/:categoryId/subcategories')
+  @Header('Cache-Control', 'public, max-age=60')
   listSubcategories(@Param('categoryId') categoryId: string) {
     return this.publicService.listSubcategories(categoryId);
   }
 
   @Get('states')
+  @Header('Cache-Control', 'public, max-age=300')
   listStates() {
     return this.publicService.listStates();
   }

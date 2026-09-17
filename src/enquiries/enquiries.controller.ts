@@ -27,7 +27,7 @@ export class EnquiriesController {
   @Get()
   @Permissions('enquiries.read')
   findAll(@CurrentUser() user: AuthUser, @Query() query: ListEnquiriesQueryDto) {
-    return this.enquiriesService.findAll(user, query.search, query.kind, query.status);
+    return this.enquiriesService.findAll(user, query.search, query.kind, query.status, query.page, query.limit);
   }
 
   @Get(':id')

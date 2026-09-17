@@ -16,14 +16,21 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         if (attempt > 1) {
           this.logger.log(`Database connected on attempt ${attempt}`);
         }
-        await this.ensureSocialSettingTable();
-        await this.ensureIndiaStates();
-        await this.ensureCmsPages();
-        await this.ensureSystemSettingTable();
-        await this.ensurePaymentPlanTable();
-        await this.ensureBecomeTables();
-        await this.ensureBusinessVerificationColumns();
-        await this.ensureHomeBannerTable();
+        const runEnsure = process.env.RUN_ENSURE_DDL !== 'false';
+        if (runEnsure) {
+          await this.ensureSocialSettingTable();
+          await this.ensureIndiaStates();
+          await this.ensureCmsPages();
+          await this.ensureSystemSettingTable();
+          await this.ensurePaymentPlanTable();
+          await this.ensureBecomeTables();
+          await this.ensureBusinessVerificationColumns();
+          await this.ensureHomeBannerTable();
+          await this.ensureEventCoverageColumns();
+          await this.ensureUserProfileColumns();
+          await this.ensureListFilterIndexes();
+          await this.ensureDropCategorySlugs();
+        }
         return;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -122,13 +129,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       const missing = INDIA_STATES.filter((s) => !existingNames.has(s.name));
       if (!missing.length) return;
 
-      for (const state of missing) {
-        await this.state.upsert({
-          where: { name: state.name },
-          update: { code: state.code, isActive: true },
-          create: { name: state.name, code: state.code, isActive: true },
-        });
-      }
+      await this.state.createMany({
+        data: missing.map((state) => ({
+          name: state.name,
+          code: state.code,
+          isActive: true,
+        })),
+        skipDuplicates: true,
+      });
       this.logger.log(`Ensured Indian states (${missing.length} added)`);
     } catch (error) {
       this.logger.warn(
@@ -516,6 +524,157 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (error) {
       this.logger.warn(
         `Could not ensure HomeBanner table: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureEventCoverageColumns() {
+    try {
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "CoverageFlag" AS ENUM ('NATIONAL', 'STATE', 'LOCAL');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "Event"
+          ADD COLUMN IF NOT EXISTS "coverageFlag" "CoverageFlag" NOT NULL DEFAULT 'NATIONAL'
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "coverageStateId" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "coverageCity" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "Event"
+            ADD CONSTRAINT "Event_coverageStateId_fkey"
+            FOREIGN KEY ("coverageStateId") REFERENCES "State"("id")
+            ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "Event_coverageFlag_idx" ON "Event"("coverageFlag")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "Event_coverageStateId_idx" ON "Event"("coverageStateId")`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure Event coverage columns: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureUserProfileColumns() {
+    try {
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "AgeRange" AS ENUM (
+            'UNDER_18', 'AGE_18_25', 'AGE_26_40', 'AGE_41_60', 'AGE_60_PLUS'
+          );
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "ageRange" "AgeRange"
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_ageRange_idx" ON "User"("ageRange")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_city_idx" ON "User"("city")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_createdAt_idx" ON "User"("createdAt")`,
+      );
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "UserDisability" (
+          "id" TEXT NOT NULL,
+          "userId" TEXT NOT NULL,
+          "subcategoryId" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "UserDisability_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "UserDisability"
+            ADD CONSTRAINT "UserDisability_userId_fkey"
+            FOREIGN KEY ("userId") REFERENCES "User"("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "UserDisability"
+            ADD CONSTRAINT "UserDisability_subcategoryId_fkey"
+            FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE UNIQUE INDEX IF NOT EXISTS "UserDisability_userId_subcategoryId_key"
+        ON "UserDisability"("userId", "subcategoryId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "UserDisability_subcategoryId_idx"
+        ON "UserDisability"("subcategoryId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "UserDisability_userId_idx"
+        ON "UserDisability"("userId")
+      `);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure user profile columns: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureListFilterIndexes() {
+    try {
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_roleId_idx" ON "User"("roleId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_stateId_idx" ON "User"("stateId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_isActive_idx" ON "User"("isActive")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "ServiceProvider_createdAt_idx" ON "ServiceProvider"("createdAt")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "ServiceProvider_latitude_longitude_idx" ON "ServiceProvider"("latitude", "longitude")`,
+      );
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProvider_approvalStatus_isActive_stateId_idx"
+        ON "ServiceProvider"("approvalStatus", "isActive", "stateId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProvider_categoryId_subcategoryId_idx"
+        ON "ServiceProvider"("categoryId", "subcategoryId")
+      `);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure list filter indexes: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureDropCategorySlugs() {
+    try {
+      await this.$executeRawUnsafe(`DROP INDEX IF EXISTS "Category_slug_key"`);
+      await this.$executeRawUnsafe(`ALTER TABLE "Category" DROP COLUMN IF EXISTS "slug"`);
+      await this.$executeRawUnsafe(`DROP INDEX IF EXISTS "Subcategory_slug_key"`);
+      await this.$executeRawUnsafe(`ALTER TABLE "Subcategory" DROP COLUMN IF EXISTS "slug"`);
+    } catch (error) {
+      this.logger.warn(
+        `Could not drop category/subcategory slug columns: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

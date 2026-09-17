@@ -16,15 +16,6 @@ import { CategoryType, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
 function normalizeCode(raw: string) {
   return raw.trim().toUpperCase();
 }
@@ -71,7 +62,6 @@ async function main() {
         data: {
           name: catName,
           code: catCode,
-          slug: slugify(catName),
           type: CategoryType.SERVICE,
           isActive: true,
           sortOrder: 0,
@@ -101,7 +91,6 @@ async function main() {
           categoryId: category.id,
           name: subName,
           code: subCode,
-          slug: slugify(subName),
           isActive: true,
           sortOrder: 0,
         },

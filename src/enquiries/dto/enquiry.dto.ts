@@ -1,5 +1,5 @@
-import { Transform } from 'class-transformer';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsEmail, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { EnquiryStatus } from '@prisma/client';
 
 const emptyToUndefined = ({ value }: { value: unknown }) =>
@@ -120,4 +120,16 @@ export class ListEnquiriesQueryDto {
   @IsOptional()
   @IsEnum(EnquiryStatus)
   status?: EnquiryStatus;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
 }

@@ -40,7 +40,7 @@ export class ListPaymentsQueryDto {
   planId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   stateId?: string;
 
   /** Sponsorship validity: active = not expired; inactive = validUntil in the past. */

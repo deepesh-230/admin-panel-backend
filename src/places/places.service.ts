@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PLACES_TTL_MS, placesCache } from '../common/utils/ttl-cache';
 
 type AutocompleteResponse = {
   status: string;
@@ -84,6 +85,10 @@ export class PlacesService {
     const trimmed = query.trim();
     if (trimmed.length < 2) return [];
 
+    const cacheKey = `ac:${trimmed.toLowerCase()}`;
+    const cached = placesCache.get<{ placeId: string; description: string }[]>(cacheKey);
+    if (cached) return cached;
+
     const params = new URLSearchParams({
       input: trimmed,
       key: this.getApiKey(),
@@ -103,19 +108,25 @@ export class PlacesService {
       throw new BadRequestException(data.error_message || `Place search failed (${data.status})`);
     }
 
-    return (data.predictions ?? [])
+    const results = (data.predictions ?? [])
       .filter((p) => !this.isRegionOnlyPrediction(p.types))
       .slice(0, 8)
       .map((p) => ({
         placeId: p.place_id,
         description: p.description,
       }));
+    placesCache.set(cacheKey, results, PLACES_TTL_MS);
+    return results;
   }
 
   async details(placeId: string, fallbackLabel?: string) {
     if (!placeId.trim()) {
       throw new BadRequestException('placeId is required');
     }
+
+    const cacheKey = `dt:${placeId.trim()}:${fallbackLabel || ''}`;
+    const cached = placesCache.get<Record<string, unknown>>(cacheKey);
+    if (cached) return cached;
 
     const params = new URLSearchParams({
       place_id: placeId.trim(),
@@ -149,7 +160,7 @@ export class PlacesService {
     const stateName = this.component(components, 'administrative_area_level_1');
     const pincode = this.component(components, 'postal_code');
 
-    return {
+    const result = {
       label: address,
       address,
       latitude: location.lat,
@@ -158,5 +169,7 @@ export class PlacesService {
       stateName,
       pincode,
     };
+    placesCache.set(cacheKey, result, PLACES_TTL_MS);
+    return result;
   }
 }

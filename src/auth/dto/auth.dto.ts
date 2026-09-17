@@ -1,4 +1,16 @@
-import { IsEmail, IsNumber, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+  MinLength,
+} from 'class-validator';
+import { AgeRange } from '@prisma/client';
 
 export class RegisterDto {
   @IsEmail()
@@ -21,6 +33,18 @@ export class RegisterDto {
   location?: string;
 
   @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsUUID()
+  stateId?: string;
+
+  @IsOptional()
+  @IsString()
+  stateName?: string;
+
+  @IsOptional()
   @IsNumber()
   latitude?: number;
 
@@ -37,6 +61,15 @@ export class RegisterDto {
   @Min(1)
   @Max(100)
   km?: number;
+
+  @IsOptional()
+  @IsEnum(AgeRange)
+  ageRange?: AgeRange;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  disabilitySubcategoryIds?: string[];
 }
 
 export class LoginDto {

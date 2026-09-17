@@ -14,6 +14,7 @@ import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
+import { parseStateIds } from '../common/utils/state-scope';
 
 @Controller('categories')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
@@ -40,6 +41,12 @@ export class CategoriesController {
   @Header('Content-Disposition', 'attachment; filename="categories-subcategories.csv"')
   exportCsv() {
     return this.categoriesService.exportCsv();
+  }
+
+  @Get('subcategories')
+  @Permissions('categories.read')
+  listSubcategoriesBulk(@Query('categoryId') categoryId?: string) {
+    return this.categoriesService.listSubcategoriesByCategoryIds(parseStateIds(categoryId));
   }
 
   @Get(':categoryId/subcategories')

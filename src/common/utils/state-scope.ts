@@ -18,3 +18,21 @@ export function resolveScopedStateId(
   }
   return requestedStateId;
 }
+
+/** Parse `stateId` query values: comma-separated or repeated params. */
+export function parseStateIds(value?: string | string[] | null): string[] {
+  const raw = Array.isArray(value) ? value.join(',') : String(value || '');
+  return [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))];
+}
+
+/** List-filter state ids. STATE_ADMIN is always locked to their assigned state. */
+export function resolveScopedStateIds(
+  currentUser: AuthUser,
+  requestedStateId?: string,
+): string[] | undefined {
+  if (currentUser.role === RoleName.STATE_ADMIN) {
+    return currentUser.stateId ? [currentUser.stateId] : undefined;
+  }
+  const ids = parseStateIds(requestedStateId);
+  return ids.length ? ids : undefined;
+}

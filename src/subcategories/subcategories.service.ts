@@ -5,16 +5,69 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { normalizeBusinessCode } from '../common/utils/business-code';
-import { slugify } from '../common/utils/slugify';
+import { invalidateCatalogCache } from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateSubcategoryDto,
+  ListSubcategoriesQueryDto,
   UpdateSubcategoryDto,
 } from './dto/subcategory.dto';
+import { parseStateIds } from '../common/utils/state-scope';
 
 @Injectable()
 export class SubcategoriesService {
   constructor(private prisma: PrismaService) {}
+
+  async findAll(query: ListSubcategoriesQueryDto) {
+    const page = query.page || 1;
+    const limit = Math.min(query.limit || 10, 100);
+    const skip = (page - 1) * limit;
+    const categoryIds = parseStateIds(query.categoryId);
+
+    const where: Prisma.SubcategoryWhereInput = {};
+    if (categoryIds.length) where.categoryId = { in: categoryIds };
+    if (query.search?.trim()) {
+      const q = query.search.trim();
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { code: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const sortOrder: Prisma.SortOrder = query.sortOrder === 'desc' ? 'desc' : 'asc';
+    const orderBy: Prisma.SubcategoryOrderByWithRelationInput =
+      query.sortBy === 'category'
+        ? { category: { name: sortOrder } }
+        : query.sortBy === 'name'
+          ? { name: sortOrder }
+          : query.sortBy === 'code'
+            ? { code: sortOrder }
+            : query.sortBy === 'isActive'
+              ? { isActive: sortOrder }
+              : { sortOrder };
+
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.subcategory.count({ where }),
+      this.prisma.subcategory.findMany({
+        where,
+        include: { category: { select: { id: true, name: true, code: true } } },
+        orderBy: [orderBy, { name: 'asc' }],
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
+  }
 
   async findOne(id: string) {
     const subcategory = await this.prisma.subcategory.findUnique({
@@ -46,22 +99,22 @@ export class SubcategoriesService {
       throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
     }
 
-    const slug = dto.slug?.trim() || slugify(dto.name);
     const code = normalizeBusinessCode(dto.code, { required: true, field: 'code' });
 
     try {
-      return await this.prisma.subcategory.create({
+      const row = await this.prisma.subcategory.create({
         data: {
           categoryId: dto.categoryId,
           name: dto.name,
           code,
-          slug,
           description: dto.description,
           isActive: dto.isActive ?? true,
           sortOrder: dto.sortOrder ?? 0,
         },
         include: { keywords: true },
       });
+      invalidateCatalogCache();
+      return row;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -87,31 +140,26 @@ export class SubcategoriesService {
       }
     }
 
-    const slug =
-      dto.slug !== undefined
-        ? dto.slug.trim() || undefined
-        : dto.name
-          ? slugify(dto.name)
-          : undefined;
     const code =
       dto.code !== undefined
         ? normalizeBusinessCode(dto.code, { required: true, field: 'code' })
         : undefined;
 
     try {
-      return await this.prisma.subcategory.update({
+      const row = await this.prisma.subcategory.update({
         where: { id },
         data: {
           ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
           ...(dto.name !== undefined && { name: dto.name }),
           ...(code !== undefined && { code }),
-          ...(slug !== undefined && { slug }),
           ...(dto.description !== undefined && { description: dto.description }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
         },
         include: { keywords: true },
       });
+      invalidateCatalogCache();
+      return row;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -127,6 +175,8 @@ export class SubcategoriesService {
 
   async remove(id: string) {
     await this.findOne(id);
-    return this.prisma.subcategory.delete({ where: { id } });
+    const row = await this.prisma.subcategory.delete({ where: { id } });
+    invalidateCatalogCache();
+    return row;
   }
 }

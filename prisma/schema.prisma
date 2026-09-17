@@ -48,6 +48,7 @@ model State {
   userStates       UserState[]
   enquiries        Enquiry[]
   homeBanners      HomeBanner[]
+  events           Event[]
 }
 
 model User {
@@ -62,6 +63,9 @@ model User {
   digipin                  String?
   pincode                  String?
   km                       Int?                   @default(1)
+  /// City parsed from Places (distinct from free-text location)
+  city                     String?
+  ageRange                 AgeRange?
   isActive                 Boolean                @default(true)
   /// Set when email/OTP verification succeeds
   emailVerifiedAt          DateTime?
@@ -85,6 +89,28 @@ model User {
   role                     Role                   @relation(fields: [roleId], references: [id])
   state                    State?                 @relation("UserPrimaryState", fields: [stateId], references: [id])
   userStates               UserState[]
+  disabilities             UserDisability[]
+
+  @@index([ageRange])
+  @@index([city])
+  @@index([createdAt])
+  @@index([roleId])
+  @@index([stateId])
+  @@index([isActive])
+}
+
+/// App-user disability taxonomy: one user can have many subcategories
+model UserDisability {
+  id            String      @id @default(uuid())
+  userId        String
+  subcategoryId String
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subcategoryId])
+  @@index([subcategoryId])
+  @@index([userId])
 }
 
 /// Many-to-many assignment of users to one or more states
@@ -191,6 +217,10 @@ model ServiceProvider {
   @@index([businessVerificationStatus])
   @@index([isActive])
   @@index([name])
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@index([approvalStatus, isActive, stateId])
+  @@index([categoryId, subcategoryId])
 }
 
 model ServiceProviderAdmin {
@@ -390,10 +420,15 @@ model Event {
   registrationLink String?
   contactInfo      String?
   isActive         Boolean            @default(true)
+  /// Red = NATIONAL, Orange = STATE, Green = LOCAL
+  coverageFlag     CoverageFlag       @default(NATIONAL)
+  coverageStateId  String?
+  coverageCity     String?
   adminFlag        AdminLifecycleFlag @default(ACTIVE)
   deletedAt        DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+  coverageState    State?             @relation(fields: [coverageStateId], references: [id], onDelete: SetNull)
 
   @@index([location])
   @@index([startsAt])
@@ -401,6 +436,8 @@ model Event {
   @@index([isActive])
   @@index([adminFlag])
   @@index([deletedAt])
+  @@index([coverageFlag])
+  @@index([coverageStateId])
 }
 
 model Volunteer {
@@ -484,7 +521,6 @@ model Category {
   name             String            @unique
   /// Client business code (e.g. PHY, AMB). Unique when set.
   code             String?           @unique
-  slug             String?           @unique
   description      String?
   /// CARE = Home tab, SERVICE = Providers tab
   type             CategoryType      @default(SERVICE)
@@ -504,7 +540,6 @@ model Subcategory {
   name             String
   /// Client business code (e.g. PHY_NEURO_PHY). Unique when set.
   code             String?           @unique
-  slug             String?
   description      String?
   isActive         Boolean           @default(true)
   sortOrder        Int               @default(0)
@@ -512,6 +547,7 @@ model Subcategory {
   updatedAt        DateTime          @updatedAt
   keywords         Keyword[]
   serviceProviders ServiceProvider[]
+  userDisabilities UserDisability[]
   category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([categoryId, name])
@@ -657,6 +693,14 @@ model UserBroadcast {
   @@index([userId, createdAt])
   @@index([jobAlertId])
   @@index([usefulLinkId])
+}
+
+enum AgeRange {
+  UNDER_18
+  AGE_18_25
+  AGE_26_40
+  AGE_41_60
+  AGE_60_PLUS
 }
 
 enum RoleName {

@@ -12,13 +12,6 @@ const prisma = new PrismaClient();
 
 const PERMISSIONS = PERMISSION_CATALOG.map(({ code, description }) => ({ code, description }));
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
-
 async function main() {
   for (const permission of PERMISSIONS) {
     await prisma.permission.upsert({
@@ -149,7 +142,6 @@ async function main() {
         description: cat.description,
         sortOrder: cat.sortOrder,
         isActive: true,
-        slug: slugify(cat.name),
         type: cat.type ?? 'SERVICE',
       },
       create: {
@@ -157,7 +149,6 @@ async function main() {
         description: cat.description,
         sortOrder: cat.sortOrder,
         isActive: true,
-        slug: slugify(cat.name),
         type: cat.type ?? 'SERVICE',
       },
     });
@@ -173,14 +164,12 @@ async function main() {
         update: {
           description: sub.description,
           isActive: true,
-          slug: slugify(sub.name),
         },
         create: {
           categoryId: category.id,
           name: sub.name,
           description: sub.description,
           isActive: true,
-          slug: slugify(sub.name),
         },
       });
 

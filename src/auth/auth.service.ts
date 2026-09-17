@@ -11,7 +11,11 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { resolveDigipinFields } from '../common/digipin.util';
+import {
+  assertSubcategoryIds,
+  resolvePlaceProfileFields,
+  syncUserDisabilities,
+} from '../common/utils/user-profile';
 import {
   ForgotPasswordDto,
   LoginDto,
@@ -50,27 +54,49 @@ export class AuthService {
     name: string | null;
     phone: string | null;
     location: string | null;
+    city: string | null;
     latitude: number | null;
     longitude: number | null;
     digipin: string | null;
     pincode: string | null;
     km: number | null;
+    ageRange: string | null;
     isActive: boolean;
     stateId: string | null;
     role: { name: RoleName; permissions?: { permission: { code: string } }[] };
-    userStates?: { stateId: string; isPrimary: boolean; state: { id: string; name: string; code: string | null } }[];
+    userStates?: {
+      stateId: string;
+      isPrimary: boolean;
+      state: { id: string; name: string; code: string | null };
+    }[];
+    disabilities?: {
+      subcategory: {
+        id: string;
+        name: string;
+        categoryId: string;
+        category: { id: string; name: string };
+      };
+    }[];
   }) {
+    const disabilities = (user.disabilities || []).map((d) => ({
+      id: d.subcategory.id,
+      name: d.subcategory.name,
+      categoryId: d.subcategory.categoryId,
+      categoryName: d.subcategory.category.name,
+    }));
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       phone: user.phone,
       location: user.location,
+      city: user.city,
       latitude: user.latitude,
       longitude: user.longitude,
       digipin: user.digipin,
       pincode: user.pincode,
       km: user.km,
+      ageRange: user.ageRange,
       isActive: user.isActive,
       stateId: user.stateId,
       role: user.role.name,
@@ -81,6 +107,8 @@ export class AuthService {
         code: us.state.code,
         isPrimary: us.isPrimary,
       })),
+      disabilities,
+      disabilitySubcategoryIds: disabilities.map((d) => d.id),
     };
   }
 
@@ -88,6 +116,18 @@ export class AuthService {
     return {
       role: { include: { permissions: { include: { permission: true } } } },
       userStates: { include: { state: true } },
+      disabilities: {
+        include: {
+          subcategory: {
+            select: {
+              id: true,
+              name: true,
+              categoryId: true,
+              category: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
     } as const;
   }
 
@@ -131,24 +171,51 @@ export class AuthService {
 
     const role = await this.getRoleByName(RoleName.END_USER);
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const { digipin, pincode } = resolveDigipinFields(dto.latitude, dto.longitude, dto.pincode);
+    const place = await resolvePlaceProfileFields(this.prisma, {
+      location: dto.location,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      pincode: dto.pincode,
+      stateId: dto.stateId,
+      stateName: dto.stateName,
+    });
+    const disabilityIds = dto.disabilitySubcategoryIds
+      ? await assertSubcategoryIds(this.prisma, dto.disabilitySubcategoryIds)
+      : [];
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email.toLowerCase(),
-        passwordHash,
-        name: dto.name,
-        phone: dto.phone,
-        location: dto.location,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        digipin,
-        pincode,
-        km: dto.km ?? 1,
-        roleId: role.id,
-        emailVerifiedAt: new Date(),
-      },
-      include: this.userInclude(),
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: dto.email.toLowerCase(),
+          passwordHash,
+          name: dto.name,
+          phone: dto.phone,
+          km: dto.km ?? 1,
+          ageRange: dto.ageRange,
+          roleId: role.id,
+          emailVerifiedAt: new Date(),
+          ...place,
+          ...(place.stateId
+            ? {
+                userStates: {
+                  create: { stateId: place.stateId, isPrimary: true },
+                },
+              }
+            : {}),
+        },
+        include: this.userInclude(),
+      });
+
+      if (disabilityIds.length) {
+        await syncUserDisabilities(tx, created.id, disabilityIds);
+        return tx.user.findUniqueOrThrow({
+          where: { id: created.id },
+          include: this.userInclude(),
+        });
+      }
+
+      return created;
     });
 
     const tokens = await this.issueTokens(user.id, user.email, meta);

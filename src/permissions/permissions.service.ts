@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { invalidateAuthCache } from '../common/utils/ttl-cache';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   EDITABLE_ROLES,
@@ -164,6 +165,7 @@ export class PermissionsService {
       }
     });
 
+    invalidateAuthCache();
     return this.getMatrix();
   }
 

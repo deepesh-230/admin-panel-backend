@@ -84,8 +84,6 @@ export class DashboardService {
     currentUser: AuthUser,
     range?: { from?: string; to?: string },
   ) {
-    await this.purgeDeleted().catch(() => undefined);
-
     const stateId = resolveScopedStateId(currentUser);
     const now = new Date();
     const since7 = addDays(now, -7);
@@ -289,6 +287,9 @@ export class DashboardService {
       last7ActiveServiceProviders,
       last7ActiveListings,
       salesBreakdown,
+      suggestionsByStatus,
+      centralAdmin,
+      subscriptions,
     ] = await Promise.all([
       this.prisma.user.count({
         where: { role: { name: { in: TRACKED_USER_ROLES } }, ...userStateFilter },
@@ -346,13 +347,10 @@ export class DashboardService {
         },
       }),
       this.salesSubmitterBreakdown(stateId),
+      this.suggestionsByStatus(),
+      isCentralAdmin ? this.centralAdminExtras(now) : Promise.resolve(null),
+      this.subscriptionStats(now, stateId),
     ]);
-
-    const centralAdmin = isCentralAdmin
-      ? await this.centralAdminExtras(now)
-      : null;
-
-    const subscriptions = await this.subscriptionStats(now, stateId);
 
     return {
       // legacy flat cards
@@ -418,7 +416,7 @@ export class DashboardService {
         total: suggestionsTotal,
         open: suggestionsOpen,
         closed: suggestionsClosed,
-        byStatus: await this.suggestionsByStatus(),
+        byStatus: suggestionsByStatus,
       },
 
         jobAlerts: {

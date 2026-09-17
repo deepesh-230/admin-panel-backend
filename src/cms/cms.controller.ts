@@ -305,8 +305,12 @@ export class MarketplaceProductsController {
   findAll(
     @Query('search') search?: string,
     @Query('listingIntent') listingIntent?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.marketplace.listAdmin(search, listingIntent);
+    const pageNum = page && Number(page) >= 1 ? Number(page) : undefined;
+    const limitNum = limit && Number(limit) >= 1 ? Number(limit) : undefined;
+    return this.marketplace.listAdmin(search, listingIntent, pageNum, limitNum);
   }
 
   @Get(':id')
