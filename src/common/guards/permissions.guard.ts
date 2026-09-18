@@ -33,8 +33,17 @@ export class PermissionsGuard implements CanActivate {
     // ADMIN always passes permission checks
     if (user.role === RoleName.ADMIN) return true;
 
+    if (user.role === RoleName.STATE_ADMIN) {
+      if (required.some((code) => code.startsWith('state_admins.'))) {
+        throw new ForbiddenException('State Admins cannot access the State Admins module');
+      }
+    }
+
     const userPermissions: string[] = user.permissions || [];
-    const missing = required.filter((code) => !userPermissions.includes(code));
+    const missing = required.filter((code) => {
+      if (user.role === RoleName.STATE_ADMIN && code === 'dashboard.read') return false;
+      return !userPermissions.includes(code);
+    });
 
     if (missing.length) {
       throw new ForbiddenException(

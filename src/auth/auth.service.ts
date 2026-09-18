@@ -103,6 +103,14 @@ export class AuthService {
       ageRange: user.ageRange,
       isActive: user.isActive,
       stateId: user.stateId,
+      stateIds: [
+        ...new Set(
+          [
+            user.stateId,
+            ...(user.userStates || []).map((us) => us.state?.id || us.stateId),
+          ].filter((id): id is string => Boolean(id)),
+        ),
+      ],
       role: user.role.name,
       permissions: (user.role.permissions || []).map((rp) => rp.permission.code),
       states: (user.userStates || []).map((us) => ({
@@ -312,6 +320,10 @@ export class AuthService {
         }>)
       : [];
 
+    const stateIds = [
+      ...new Set([row.stateId, ...states.map((s) => s.id)].filter((id): id is string => Boolean(id))),
+    ];
+
     authCache.set(
       `auth:${row.id}`,
       {
@@ -320,6 +332,7 @@ export class AuthService {
         name: row.name,
         role: row.role,
         stateId: row.stateId,
+        stateIds,
         permissions,
       },
       AUTH_TTL_MS,
@@ -348,6 +361,7 @@ export class AuthService {
           ageRange: row.ageRange,
           isActive: row.isActive,
           stateId: row.stateId,
+          stateIds,
           role: row.role,
           permissions,
           states,

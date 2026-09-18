@@ -6,6 +6,7 @@ export type AuthUser = {
   role: string;
   permissions: string[];
   stateId?: string | null;
+  stateIds?: string[];
 };
 
 export const CurrentUser = createParamDecorator(

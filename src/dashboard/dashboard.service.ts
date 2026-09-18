@@ -7,7 +7,7 @@ import {
   RoleName,
 } from '@prisma/client';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
-import { resolveScopedStateId } from '../common/utils/state-scope';
+import { assignedStateIds } from '../common/utils/state-scope';
 import { TtlCache } from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -68,6 +68,17 @@ function isSponsorshipActive(
 ) {
   if (validUntil) return validUntil >= now;
   return Boolean(paidAt && paidAt >= addDays(now, -365));
+}
+
+function sqlStateIn(column: Prisma.Sql, stateIds: string[] | null) {
+  if (!stateIds) return Prisma.sql`AND TRUE`;
+  const ids = stateIds.length ? stateIds : ['__none__'];
+  return Prisma.sql`AND ${column} IN (${Prisma.join(ids)})`;
+}
+
+function prismaStateIn(stateIds: string[] | null): { in: string[] } | undefined {
+  if (!stateIds) return undefined;
+  return { in: stateIds.length ? stateIds : ['__none__'] };
 }
 
 async function runPool(fns: Array<() => Promise<unknown>>, limit = QUERY_CONCURRENCY): Promise<unknown[]> {
@@ -136,13 +147,14 @@ export class DashboardService {
     currentUser: AuthUser,
     range?: { from?: string; to?: string },
   ) {
-    const stateId = resolveScopedStateId(currentUser);
+    const stateIds =
+      currentUser.role === RoleName.STATE_ADMIN ? assignedStateIds(currentUser) : null;
     const now = new Date();
     const since7 = addDays(now, -7);
     const windowStart = range?.from ? new Date(range.from) : startOfDay(now);
     const windowEnd = range?.to ? new Date(range.to) : addDays(startOfDay(now), 30);
     const isCentralAdmin = currentUser.role === RoleName.ADMIN;
-    const cacheKey = `stats:${currentUser.role}:${stateId || 'all'}:${windowStart.toISOString().slice(0, 10)}:${windowEnd.toISOString().slice(0, 10)}`;
+    const cacheKey = `stats:${currentUser.role}:${stateIds?.join(',') || 'all'}:${windowStart.toISOString().slice(0, 10)}:${windowEnd.toISOString().slice(0, 10)}`;
     const cached = statsCache.get<Record<string, unknown>>(cacheKey);
     if (cached) return cached;
 
@@ -155,7 +167,7 @@ export class DashboardService {
     try {
       try {
         const fast = await this.loadFastStats(
-          stateId ?? null,
+          stateIds,
           now,
           since7,
           windowStart,
@@ -188,12 +200,13 @@ export class DashboardService {
       const providerWhere: Prisma.ServiceProviderWhereInput = {};
       const productWhere: Prisma.MarketplaceProductWhereInput = { ...notDeleted };
       const enquiryWhere: Prisma.EnquiryWhereInput = { ...notDeleted };
-      if (stateId) {
-        userWhere.stateId = stateId;
-        trackedUserWhere.stateId = stateId;
-        providerWhere.stateId = stateId;
-        productWhere.stateId = stateId;
-        enquiryWhere.stateId = stateId;
+      const stateIn = prismaStateIn(stateIds);
+      if (stateIn) {
+        userWhere.stateId = stateIn;
+        trackedUserWhere.stateId = stateIn;
+        providerWhere.stateId = stateIn;
+        productWhere.stateId = stateIn;
+        enquiryWhere.stateId = stateIn;
       }
 
       const raw = await runPool([
@@ -244,9 +257,9 @@ export class DashboardService {
             _count: { _all: true },
           }),
         () =>
-          this.prisma.enquiry.groupBy({
+            this.prisma.enquiry.groupBy({
             by: ['kind'],
-            where: notDeleted,
+            where: enquiryWhere,
             _count: { _all: true },
           }),
         () =>
@@ -318,7 +331,7 @@ export class DashboardService {
             where: {
               purpose: 'SPONSORSHIP',
               status: 'SUCCESS',
-              ...(stateId ? { user: { stateId } } : {}),
+              ...(stateIn ? { user: { stateId: stateIn } } : {}),
             },
             select: {
               planId: true,
@@ -734,7 +747,7 @@ export class DashboardService {
   }
 
   private async loadFastStats(
-    stateId: string | null,
+    stateIds: string[] | null,
     now: Date,
     since7: Date,
     windowStart: Date,
@@ -749,14 +762,14 @@ export class DashboardService {
             SELECT COUNT(*)::int FROM "User" u
             INNER JOIN "Role" r ON r.id = u."roleId"
             WHERE r.name::text IN ('END_USER', 'SERVICE_PROVIDER_ADMIN')
-              AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
           ) AS "totalUsers",
           (
             SELECT COUNT(*)::int FROM "User" u
             INNER JOIN "Role" r ON r.id = u."roleId"
             WHERE r.name::text IN ('END_USER', 'SERVICE_PROVIDER_ADMIN')
               AND u."isActive" = true
-              AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
           ) AS "activeUsers",
           (
             SELECT COUNT(*)::int FROM "User" u
@@ -764,92 +777,93 @@ export class DashboardService {
             WHERE r.name::text IN ('END_USER', 'SERVICE_PROVIDER_ADMIN')
               AND u."isActive" = true
               AND u."createdAt" >= ${since7}
-              AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
           ) AS "last7ActiveUsers",
           (
             SELECT COUNT(*)::int FROM "ServiceProvider" sp
-            WHERE (${stateId}::text IS NULL OR sp."stateId" = ${stateId})
+            WHERE TRUE
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
           ) AS "totalServiceProviders",
           (
             SELECT COUNT(*)::int FROM "ServiceProvider" sp
             WHERE sp."isActive" = true
-              AND (${stateId}::text IS NULL OR sp."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
           ) AS "activeServiceProviders",
           (
             SELECT COUNT(*)::int FROM "ServiceProvider" sp
             WHERE sp."approvalStatus"::text = 'APPROVED'
-              AND (${stateId}::text IS NULL OR sp."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
           ) AS "verifiedProviders",
           (
             SELECT COUNT(*)::int FROM "ServiceProvider" sp
             WHERE sp."isActive" = true
               AND sp."createdAt" >= ${since7}
-              AND (${stateId}::text IS NULL OR sp."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
           ) AS "last7ActiveServiceProviders",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS listings,
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."isActive" = true
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "activeListings",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."approvalStatus"::text = 'APPROVED'
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "saleApproved",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."approvalStatus"::text = 'PENDING'
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "salePending",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."approvalStatus"::text = 'REJECTED'
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "saleRejected",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."createdAt" >= ${since7}
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "newSaleListings7d",
           (
             SELECT COUNT(*)::int FROM "MarketplaceProduct" p
             WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
               AND p."isActive" = true AND p."createdAt" >= ${since7}
-              AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
           ) AS "last7ActiveListings",
           (
             SELECT COUNT(*)::int FROM "Enquiry" e
             WHERE e."deletedAt" IS NULL AND e."adminFlag"::text <> 'DELETE'
               AND e.status::text IN ('NEW', 'CONTACTED')
-              AND (${stateId}::text IS NULL OR e."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`e."stateId"`, stateIds)}
           ) AS "openEnquiries",
           (
             SELECT COUNT(*)::int FROM "Enquiry" e
             WHERE e."deletedAt" IS NULL AND e."adminFlag"::text <> 'DELETE'
               AND e.status::text = 'CLOSED'
-              AND (${stateId}::text IS NULL OR e."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`e."stateId"`, stateIds)}
           ) AS "closedEnquiries",
           (
             SELECT COUNT(*)::int FROM "Enquiry" e
             WHERE e."deletedAt" IS NULL AND e."adminFlag"::text <> 'DELETE'
               AND e."providerId" IS NULL
-              AND (${stateId}::text IS NULL OR e."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`e."stateId"`, stateIds)}
           ) AS "enquiryCentral",
           (
             SELECT COUNT(*)::int FROM "Enquiry" e
             WHERE e."deletedAt" IS NULL AND e."adminFlag"::text <> 'DELETE'
               AND e."providerId" IS NOT NULL
-              AND (${stateId}::text IS NULL OR e."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`e."stateId"`, stateIds)}
           ) AS "enquiryProvider",
           (
             SELECT COUNT(*)::int FROM "Enquiry" e
@@ -895,7 +909,7 @@ export class DashboardService {
             SELECT COUNT(*)::int FROM "Payment" p
             LEFT JOIN "User" u ON u.id = p."userId"
             WHERE p.purpose::text = 'SPONSORSHIP' AND p.status::text = 'SUCCESS'
-              AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
               AND (
                 (p."validUntil" IS NOT NULL AND p."validUntil" >= ${now})
                 OR (p."validUntil" IS NULL AND p."paidAt" IS NOT NULL AND p."paidAt" >= ${yearAgo})
@@ -905,7 +919,7 @@ export class DashboardService {
             SELECT COUNT(*)::int FROM "Payment" p
             LEFT JOIN "User" u ON u.id = p."userId"
             WHERE p.purpose::text = 'SPONSORSHIP' AND p.status::text = 'SUCCESS'
-              AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+              ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
               AND NOT (
                 (p."validUntil" IS NOT NULL AND p."validUntil" >= ${now})
                 OR (p."validUntil" IS NULL AND p."paidAt" IS NOT NULL AND p."paidAt" >= ${yearAgo})
@@ -924,7 +938,7 @@ export class DashboardService {
               INNER JOIN "Role" r ON r.id = u."roleId"
               LEFT JOIN "State" st ON st.id = u."stateId"
               WHERE r.name::text IN ('END_USER', 'SERVICE_PROVIDER_ADMIN')
-                AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+                ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
               GROUP BY u."stateId", st.name
               ORDER BY COALESCE(st.name, 'Unassigned')
             ) x
@@ -939,7 +953,7 @@ export class DashboardService {
               INNER JOIN "Role" r ON r.id = u."roleId"
               LEFT JOIN "State" st ON st.id = u."stateId"
               WHERE r.name::text = 'VOLUNTEER'
-                AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+                ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
               GROUP BY u."stateId", st.name
               ORDER BY COALESCE(st.name, 'Unassigned')
             ) x
@@ -954,7 +968,8 @@ export class DashboardService {
                 COUNT(*) FILTER (WHERE sp."approvalStatus"::text <> 'APPROVED')::int AS unverified
               FROM "ServiceProvider" sp
               LEFT JOIN "State" st ON st.id = sp."stateId"
-              WHERE (${stateId}::text IS NULL OR sp."stateId" = ${stateId})
+              WHERE TRUE
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
               GROUP BY sp."stateId", st.name
               ORDER BY COALESCE(st.name, 'Unknown')
             ) x
@@ -968,7 +983,7 @@ export class DashboardService {
               FROM "MarketplaceProduct" p
               LEFT JOIN "State" st ON st.id = p."stateId"
               WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
-                AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+                ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
               GROUP BY p."stateId", st.name
             ) x
           ) AS "salesByState",
@@ -1010,7 +1025,7 @@ export class DashboardService {
               LEFT JOIN "User" u ON u.id = p."createdById"
               LEFT JOIN "Role" r ON r.id = u."roleId"
               WHERE p."deletedAt" IS NULL AND p."adminFlag"::text <> 'DELETE'
-                AND (${stateId}::text IS NULL OR p."stateId" = ${stateId})
+                ${sqlStateIn(Prisma.sql`p."stateId"`, stateIds)}
               GROUP BY p."approvalStatus", r.name, (u."emailVerifiedAt" IS NOT NULL)
             ) x
           ) AS "salesSubmitters",
@@ -1036,7 +1051,7 @@ export class DashboardService {
                 LEFT JOIN "User" u ON u.id = p."userId"
                 LEFT JOIN "State" st ON st.id = u."stateId"
                 WHERE p.purpose::text = 'SPONSORSHIP' AND p.status::text = 'SUCCESS'
-                  AND (${stateId}::text IS NULL OR u."stateId" = ${stateId})
+                  ${sqlStateIn(Prisma.sql`u."stateId"`, stateIds)}
               ) pay
               GROUP BY pay."stateId", pay."stateName", pay."planId", pay.active
               ORDER BY pay."stateName"

@@ -88,7 +88,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     'providers.read',
     'providers.write',
     'states.read',
-    'state_admins.read',
     'categories.read',
     'categories.write',
     'cms.read',
@@ -118,6 +117,27 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleName, string[]> = {
     'enquiries.write',
   ],
 };
+
+/** Always granted to STATE_ADMIN regardless of the access-control matrix. */
+export const STATE_ADMIN_LOCKED_ON = ['dashboard.read'] as const;
+
+/** Never granted to STATE_ADMIN — they cannot open or manage the State Admins tab. */
+export const STATE_ADMIN_LOCKED_OFF = ['state_admins.read', 'state_admins.write'] as const;
+
+export function applyStateAdminPermissionLocks(roleName: RoleName, codes: string[]): string[] {
+  const unique = [...new Set(codes)];
+  if (roleName !== RoleName.STATE_ADMIN) return unique.sort();
+  const set = new Set(unique);
+  for (const code of STATE_ADMIN_LOCKED_ON) set.add(code);
+  for (const code of STATE_ADMIN_LOCKED_OFF) set.delete(code);
+  return [...set].sort();
+}
+
+export function stateAdminPermissionLock(code: string): 'on' | 'off' | null {
+  if ((STATE_ADMIN_LOCKED_ON as readonly string[]).includes(code)) return 'on';
+  if ((STATE_ADMIN_LOCKED_OFF as readonly string[]).includes(code)) return 'off';
+  return null;
+}
 
 export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
   [RoleName.ADMIN]: 'Main platform administrator',

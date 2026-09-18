@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { EnquiryStatus, Prisma, RoleName } from '@prisma/client';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
+import { assignedStateIds } from '../common/utils/state-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEnquiryDto, UpdateEnquiryDto } from './dto/enquiry.dto';
 
@@ -149,8 +150,9 @@ export class EnquiriesService {
     if (currentUser.role === RoleName.ADMIN) return {};
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (!currentUser.stateId) return { id: { in: [] } };
-      return { stateId: currentUser.stateId };
+      const ids = assignedStateIds(currentUser);
+      if (!ids.length) return { id: { in: [] } };
+      return { stateId: { in: ids } };
     }
 
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {
@@ -172,7 +174,8 @@ export class EnquiriesService {
     if (currentUser.role === RoleName.ADMIN) return;
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (!currentUser.stateId || enquiry.stateId !== currentUser.stateId) {
+      const ids = assignedStateIds(currentUser);
+      if (!enquiry.stateId || !ids.includes(enquiry.stateId)) {
         throw new ForbiddenException('You can only access enquiries in your assigned state');
       }
       return;
@@ -219,7 +222,12 @@ export class EnquiriesService {
     }
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      stateId = currentUser.stateId ?? null;
+      const ids = assignedStateIds(currentUser);
+      if (stateId && ids.includes(stateId)) {
+        // keep requested assigned state
+      } else {
+        stateId = ids[0] ?? null;
+      }
     }
 
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {

@@ -9,7 +9,9 @@ import { Prisma, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import {
+  assertAssignedStateOverlap,
   assertStateAccess,
+  assignedStateIds,
   parseStateIds,
   resolveScopedStateIds,
 } from '../common/utils/state-scope';
@@ -114,7 +116,16 @@ export class UsersService {
 
     const where: Prisma.UserWhereInput = {};
 
-    if (stateIds?.length) where.stateId = { in: stateIds };
+    const and: Prisma.UserWhereInput[] = [];
+
+    if (stateIds?.length) {
+      and.push({
+        OR: [
+          { stateId: { in: stateIds } },
+          { userStates: { some: { stateId: { in: stateIds } } } },
+        ],
+      });
+    }
     if (query.isActive === 'true') where.isActive = true;
     if (query.isActive === 'false') where.isActive = false;
 
@@ -123,7 +134,7 @@ export class UsersService {
 
     // STATE_ADMIN cannot see main ADMIN accounts
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (query.role === RoleName.ADMIN) {
+      if (query.role === RoleName.ADMIN || query.role === RoleName.STATE_ADMIN) {
         return {
           items: [],
           pagination: { page, limit, total: 0, totalPages: 0 },
@@ -131,7 +142,7 @@ export class UsersService {
       }
       where.role = query.role
         ? { name: query.role }
-        : { NOT: { name: RoleName.ADMIN } };
+        : { NOT: { name: { in: [RoleName.ADMIN, RoleName.STATE_ADMIN] } } };
     } else if (query.role) {
       where.role = { name: query.role };
     }
@@ -162,12 +173,16 @@ export class UsersService {
 
     if (query.search?.trim()) {
       const q = query.search.trim();
-      where.OR = [
-        { email: { contains: q, mode: 'insensitive' } },
-        { name: { contains: q, mode: 'insensitive' } },
-        { phone: { contains: q, mode: 'insensitive' } },
-      ];
+      and.push({
+        OR: [
+          { email: { contains: q, mode: 'insensitive' } },
+          { name: { contains: q, mode: 'insensitive' } },
+          { phone: { contains: q, mode: 'insensitive' } },
+        ],
+      });
     }
+
+    if (and.length) where.AND = and;
 
     const allowedSort = new Set(['createdAt', 'email', 'name', 'updatedAt', 'isActive', 'role', 'state']);
     const sortBy = allowedSort.has(query.sortBy || '') ? query.sortBy! : 'createdAt';
@@ -210,10 +225,13 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (user.role.name === RoleName.ADMIN) {
+      if (user.role.name === RoleName.ADMIN || user.role.name === RoleName.STATE_ADMIN) {
         throw new ForbiddenException('Access denied');
       }
-      assertStateAccess(currentUser, user.stateId);
+      assertAssignedStateOverlap(currentUser, [
+        user.stateId,
+        ...(user.userStates || []).map((us) => us.stateId),
+      ]);
     }
 
     return this.sanitize(user);
@@ -224,10 +242,15 @@ export class UsersService {
       if (dto.role === RoleName.ADMIN || dto.role === RoleName.STATE_ADMIN) {
         throw new ForbiddenException('You cannot create this role');
       }
-      if (!currentUser.stateId) {
+      const ids = assignedStateIds(currentUser);
+      if (!ids.length) {
         throw new ForbiddenException('State admin has no assigned state');
       }
-      dto.stateId = currentUser.stateId;
+      if (dto.stateId) {
+        assertStateAccess(currentUser, dto.stateId);
+      } else {
+        dto.stateId = ids[0];
+      }
     }
 
     if (
@@ -304,7 +327,7 @@ export class UsersService {
   async update(id: string, dto: UpdateUserDto, currentUser: AuthUser) {
     const existing = await this.prisma.user.findUnique({
       where: { id },
-      include: { role: true },
+      include: { role: true, userStates: true },
     });
     if (!existing) throw new NotFoundException('User not found');
 
@@ -312,7 +335,10 @@ export class UsersService {
       if (existing.role.name === RoleName.ADMIN || existing.role.name === RoleName.STATE_ADMIN) {
         throw new ForbiddenException('Access denied');
       }
-      assertStateAccess(currentUser, existing.stateId);
+      assertAssignedStateOverlap(currentUser, [
+        existing.stateId,
+        ...existing.userStates.map((us) => us.stateId),
+      ]);
       if (dto.role && dto.role !== existing.role.name) {
         const allowed =
           (existing.role.name === RoleName.END_USER && dto.role === RoleName.VOLUNTEER) ||
@@ -321,10 +347,9 @@ export class UsersService {
           throw new ForbiddenException('You can only promote/demote END_USER ↔ VOLUNTEER');
         }
       }
-      if (dto.stateId && dto.stateId !== currentUser.stateId) {
-        throw new ForbiddenException('You cannot move users to another state');
+      if (dto.stateId) {
+        assertStateAccess(currentUser, dto.stateId);
       }
-      dto.stateId = currentUser.stateId;
     }
 
     if (dto.role === RoleName.ADMIN && currentUser.role !== RoleName.ADMIN) {
@@ -402,7 +427,7 @@ export class UsersService {
   async remove(id: string, currentUser: AuthUser) {
     const existing = await this.prisma.user.findUnique({
       where: { id },
-      include: { role: true },
+      include: { role: true, userStates: true },
     });
     if (!existing) throw new NotFoundException('User not found');
 
@@ -414,7 +439,10 @@ export class UsersService {
       if (existing.role.name === RoleName.ADMIN || existing.role.name === RoleName.STATE_ADMIN) {
         throw new ForbiddenException('Access denied');
       }
-      assertStateAccess(currentUser, existing.stateId);
+      assertAssignedStateOverlap(currentUser, [
+        existing.stateId,
+        ...existing.userStates.map((us) => us.stateId),
+      ]);
     }
 
     if (existing.role.name === RoleName.ADMIN && currentUser.role !== RoleName.ADMIN) {

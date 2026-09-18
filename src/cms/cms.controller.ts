@@ -9,6 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CmsModel, CmsService } from './cms.service';
@@ -155,12 +157,41 @@ export class SocialSettingsController extends resourceController(
   ['name', 'code'],
 ) {}
 
-export class HelpTicketsController extends resourceController(
-  'help-tickets',
-  'helpTicket',
-  'cms',
-  ['name', 'email', 'message'],
-) {}
+@Controller('help-tickets')
+@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
+export class HelpTicketsController {
+  constructor(private readonly cms: CmsService) {}
+
+  @Get()
+  @Permissions('cms.read')
+  findAll(@CurrentUser() user: AuthUser, @Query('search') search?: string) {
+    return this.cms.findHelpTickets(search, user);
+  }
+
+  @Get(':id')
+  @Permissions('cms.read')
+  findOne(@Param('id') id: string) {
+    return this.cms.findOne('helpTicket', id);
+  }
+
+  @Post()
+  @Permissions('cms.write')
+  create(@Body() body: Record<string, unknown>) {
+    return this.cms.create('helpTicket', body);
+  }
+
+  @Patch(':id')
+  @Permissions('cms.write')
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.cms.update('helpTicket', id, body);
+  }
+
+  @Delete(':id')
+  @Permissions('cms.write')
+  remove(@Param('id') id: string) {
+    return this.cms.remove('helpTicket', id);
+  }
+}
 
 export class CmsPagesController extends resourceController('pages', 'cmsPage', 'cms', [
   'title',

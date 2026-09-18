@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsOptional,
@@ -23,8 +24,14 @@ export class CreateStateAdminDto {
   @IsString()
   phone?: string;
 
+  @IsOptional()
   @IsUUID()
-  stateId!: string;
+  stateId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  stateIds?: string[];
 }
 
 export class UpdateStateAdminDto {
@@ -39,6 +46,11 @@ export class UpdateStateAdminDto {
   @IsOptional()
   @IsUUID()
   stateId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  stateIds?: string[];
 
   @IsOptional()
   @IsBoolean()

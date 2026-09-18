@@ -8,6 +8,7 @@ import { RoleName } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { invalidateAuthCache } from '../common/utils/ttl-cache';
 import {
+  applyStateAdminPermissionLocks,
   DEFAULT_ROLE_PERMISSIONS,
   EDITABLE_ROLES,
   PANEL_ROLES,
@@ -59,9 +60,9 @@ export class PermissionsService {
     const roleMeta = PANEL_ROLES.map((name) => {
       const role = roles.find((r) => r.name === name);
       const codes = role
-        ? role.permissions.map((rp) => rp.permission.code).sort()
-        : [...(DEFAULT_ROLE_PERMISSIONS[name] || [])].sort();
-      matrix[name] = codes;
+        ? role.permissions.map((rp) => rp.permission.code)
+        : [...(DEFAULT_ROLE_PERMISSIONS[name] || [])];
+      matrix[name] = applyStateAdminPermissionLocks(name, codes);
       return {
         name,
         label: ROLE_LABELS[name],
@@ -91,7 +92,7 @@ export class PermissionsService {
     const role = await this.prisma.role.findUnique({ where: { name: roleName } });
     if (!role) throw new NotFoundException(`Role ${roleName} not found`);
 
-    const uniqueCodes = [...new Set(permissionCodes)];
+    const uniqueCodes = applyStateAdminPermissionLocks(roleName, permissionCodes);
     const permissions = await this.prisma.permission.findMany({
       where: { code: { in: uniqueCodes } },
     });
@@ -132,7 +133,11 @@ export class PermissionsService {
       }
     }
 
-    const allCodes = [...new Set(entries.flatMap(([, codes]) => codes || []))];
+    const lockedEntries = entries.map(
+      ([roleName, codes]) =>
+        [roleName, applyStateAdminPermissionLocks(roleName, codes || [])] as [RoleName, string[]],
+    );
+    const allCodes = [...new Set(lockedEntries.flatMap(([, codes]) => codes))];
     const permissions = allCodes.length
       ? await this.prisma.permission.findMany({ where: { code: { in: allCodes } } })
       : [];
@@ -148,11 +153,10 @@ export class PermissionsService {
     const roleByName = new Map(roles.map((r) => [r.name, r]));
 
     await this.prisma.$transaction(async (tx) => {
-      for (const [roleName, codes] of entries) {
+      for (const [roleName, uniqueCodes] of lockedEntries) {
         if (roleName === RoleName.ADMIN) continue;
         const role = roleByName.get(roleName);
         if (!role) throw new NotFoundException(`Role ${roleName} not found`);
-        const uniqueCodes = [...new Set(codes || [])];
         await tx.rolePermission.deleteMany({ where: { roleId: role.id } });
         if (uniqueCodes.length) {
           await tx.rolePermission.createMany({

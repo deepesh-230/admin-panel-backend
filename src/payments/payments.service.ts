@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
+import type { AuthUser } from '../common/decorators/current-user.decorator';
+import { parseStateIds, resolveScopedStateIds } from '../common/utils/state-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreatePaymentDto,
@@ -11,7 +13,6 @@ import {
   UpdatePaymentDto,
 } from './dto/payment.dto';
 import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
-import { parseStateIds } from '../common/utils/state-scope';
 
 const paymentInclude = {
   user: {
@@ -84,7 +85,7 @@ export class PaymentsService {
     };
   }
 
-  async findAll(query: ListPaymentsQueryDto) {
+  async findAll(query: ListPaymentsQueryDto, currentUser?: AuthUser) {
     const where: Prisma.PaymentWhereInput = {};
     const and: Prisma.PaymentWhereInput[] = [];
     const now = new Date();
@@ -133,8 +134,10 @@ export class PaymentsService {
       }
     }
 
-    const stateIds = parseStateIds(query.stateId);
-    if (stateIds.length) {
+    const stateIds = currentUser
+      ? resolveScopedStateIds(currentUser, query.stateId)
+      : parseStateIds(query.stateId);
+    if (stateIds?.length) {
       where.user = { stateId: { in: stateIds } };
     }
 

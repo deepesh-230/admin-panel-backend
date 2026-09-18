@@ -31,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       name: string | null;
       role: string;
       stateId: string | null;
+      stateIds: string[];
       permissions: string[];
     }>(cacheKey);
     if (cached) return cached;
@@ -43,10 +44,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
             permissions: { include: { permission: true } },
           },
         },
+        userStates: { select: { stateId: true, isPrimary: true } },
       },
     });
 
     if (!user || !user.isActive) return null;
+
+    const stateIds = [
+      ...new Set(
+        [
+          user.stateId,
+          ...user.userStates.map((us) => us.stateId),
+        ].filter((id): id is string => Boolean(id)),
+      ),
+    ];
 
     const authUser = {
       id: user.id,
@@ -54,6 +65,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       name: user.name,
       role: user.role.name,
       stateId: user.stateId,
+      stateIds,
       permissions: user.role.permissions.map((rp) => rp.permission.code),
     };
     authCache.set(cacheKey, authUser, AUTH_TTL_MS);

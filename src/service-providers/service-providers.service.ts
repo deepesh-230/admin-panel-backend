@@ -538,9 +538,6 @@ export class ServiceProvidersService {
     let nextStateId = existing.stateId;
     if (dto.stateId) {
       assertStateAccess(currentUser, dto.stateId);
-      if (currentUser.role === RoleName.STATE_ADMIN && dto.stateId !== currentUser.stateId) {
-        throw new BadRequestException('Cannot move provider to another state');
-      }
       const state = await this.prisma.state.findUnique({ where: { id: dto.stateId } });
       if (!state) throw new BadRequestException('State not found');
       nextStateId = dto.stateId;

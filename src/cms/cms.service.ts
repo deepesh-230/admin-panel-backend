@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, RoleName } from '@prisma/client';
 import { sanitizeCoverage } from '../common/coverage';
+import type { AuthUser } from '../common/decorators/current-user.decorator';
+import { assignedStateIds } from '../common/utils/state-scope';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type CmsModel =
@@ -56,6 +58,26 @@ export class CmsService {
       where,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findHelpTickets(search: string | undefined, currentUser: AuthUser) {
+    const extraWhere: Record<string, unknown> = {};
+    if (currentUser.role === RoleName.STATE_ADMIN) {
+      const ids = assignedStateIds(currentUser);
+      const users = ids.length
+        ? await this.prisma.user.findMany({
+            where: {
+              OR: [
+                { stateId: { in: ids } },
+                { userStates: { some: { stateId: { in: ids } } } },
+              ],
+            },
+            select: { email: true },
+          })
+        : [];
+      extraWhere.email = { in: users.map((u) => u.email).concat('__none__') };
+    }
+    return this.findAll('helpTicket', search, ['name', 'email', 'message'], extraWhere);
   }
 
   async findJobAlerts(filters: {
