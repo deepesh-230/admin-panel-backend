@@ -8,12 +8,16 @@ export class TimingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<{ method?: string; originalUrl?: string; url?: string }>();
     const start = Date.now();
+    const path = `${req.method} ${req.originalUrl || req.url}`;
     return next.handle().pipe(
-      tap(() => {
-        const ms = Date.now() - start;
-        if (ms >= 200) {
-          this.logger.log(`${req.method} ${req.originalUrl || req.url} ${ms}ms`);
-        }
+      tap({
+        next: () => {
+          const ms = Date.now() - start;
+          if (ms >= 200) this.logger.log(`${path} ${ms}ms`);
+        },
+        error: (err: { message?: string }) => {
+          this.logger.warn(`${path} ${Date.now() - start}ms FAILED ${err?.message || err}`);
+        },
       }),
     );
   }

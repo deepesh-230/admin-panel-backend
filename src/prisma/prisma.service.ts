@@ -5,9 +5,23 @@ import { INDIA_STATES } from '../states/india-states';
 const MAX_CONNECT_RETRIES = 6;
 const CONNECT_RETRY_DELAY_MS = 5000;
 
+function prismaDatasourceUrl() {
+  const url = process.env.DATABASE_URL || '';
+  if (!url || /[?&]connection_limit=/.test(url)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}connection_limit=5`;
+}
+
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+
+  private keepAlive?: ReturnType<typeof setInterval>;
+
+  constructor() {
+    super({
+      datasources: { db: { url: prismaDatasourceUrl() } },
+    });
+  }
 
   async onModuleInit() {
     for (let attempt = 1; attempt <= MAX_CONNECT_RETRIES; attempt++) {
@@ -16,20 +30,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         if (attempt > 1) {
           this.logger.log(`Database connected on attempt ${attempt}`);
         }
+        this.startKeepAlive();
         const runEnsure = process.env.RUN_ENSURE_DDL !== 'false';
         if (runEnsure) {
-          await this.ensureSocialSettingTable();
-          await this.ensureIndiaStates();
-          await this.ensureCmsPages();
-          await this.ensureSystemSettingTable();
-          await this.ensurePaymentPlanTable();
-          await this.ensureBecomeTables();
-          await this.ensureBusinessVerificationColumns();
-          await this.ensureHomeBannerTable();
-          await this.ensureEventCoverageColumns();
-          await this.ensureUserProfileColumns();
-          await this.ensureListFilterIndexes();
-          await this.ensureDropCategorySlugs();
+          void this.ensureBootstrapSchema().catch((error) => {
+            this.logger.warn(
+              `Background schema ensure failed: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          });
         }
         return;
       } catch (error) {
@@ -49,6 +57,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         await new Promise((resolve) => setTimeout(resolve, CONNECT_RETRY_DELAY_MS));
       }
     }
+  }
+
+  private startKeepAlive() {
+    if (this.keepAlive) return;
+    this.keepAlive = setInterval(() => {
+      void this.$queryRaw`SELECT 1`.catch(() => undefined);
+    }, 15_000);
+    this.keepAlive.unref();
+  }
+
+  private async ensureBootstrapSchema() {
+    await this.ensureSocialSettingTable();
+    await this.ensureIndiaStates();
+    await this.ensureCmsPages();
+    await this.ensureSystemSettingTable();
+    await this.ensurePaymentPlanTable();
+    await this.ensureBecomeTables();
+    await this.ensureBusinessVerificationColumns();
+    await this.ensureHomeBannerTable();
+    await this.ensureEventCoverageColumns();
+    await this.ensureUserProfileColumns();
+    await this.ensureListFilterIndexes();
+    await this.ensureDropCategorySlugs();
   }
 
   /** Creates SocialSetting if missing (covers environments where db push hasn't been run yet). */
@@ -659,6 +690,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         CREATE INDEX IF NOT EXISTS "ServiceProvider_categoryId_subcategoryId_idx"
         ON "ServiceProvider"("categoryId", "subcategoryId")
       `);
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "User_roleId_stateId_idx" ON "User"("roleId", "stateId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "Payment_purpose_status_idx" ON "Payment"("purpose", "status")`,
+      );
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "MarketplaceProduct_adminFlag_deletedAt_stateId_idx"
+        ON "MarketplaceProduct"("adminFlag", "deletedAt", "stateId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "Enquiry_adminFlag_deletedAt_status_idx"
+        ON "Enquiry"("adminFlag", "deletedAt", "status")
+      `);
     } catch (error) {
       this.logger.warn(
         `Could not ensure list filter indexes: ${error instanceof Error ? error.message : String(error)}`,
@@ -680,6 +725,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleDestroy() {
+    if (this.keepAlive) clearInterval(this.keepAlive);
     await this.$disconnect();
   }
 }

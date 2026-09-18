@@ -48,7 +48,11 @@ const userInclude = {
 const userListInclude = {
   role: true,
   state: true,
-  disabilities: userInclude.disabilities,
+  disabilities: {
+    include: {
+      subcategory: { select: { id: true, name: true, categoryId: true } },
+    },
+  },
 } as const;
 
 type UserWithRelations = Prisma.UserGetPayload<{ include: typeof userInclude }>;
@@ -63,7 +67,10 @@ export class UsersService {
       id: d.subcategory.id,
       name: d.subcategory.name,
       categoryId: d.subcategory.categoryId,
-      categoryName: d.subcategory.category.name,
+      categoryName:
+        'category' in d.subcategory && d.subcategory.category
+          ? d.subcategory.category.name
+          : '',
     }));
 
     return {

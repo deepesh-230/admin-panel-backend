@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -11,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AUTH_TTL_MS, authCache } from '../common/utils/ttl-cache';
 import {
   assertSubcategoryIds,
   resolvePlaceProfileFields,
@@ -31,6 +33,8 @@ type SessionMeta = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
@@ -114,53 +118,39 @@ export class AuthService {
 
   private userInclude() {
     return {
-      role: { include: { permissions: { include: { permission: true } } } },
-      userStates: { include: { state: true } },
-      disabilities: {
-        include: {
-          subcategory: {
-            select: {
-              id: true,
-              name: true,
-              categoryId: true,
-              category: { select: { id: true, name: true } },
-            },
-          },
-        },
-      },
+      role: { include: { permissions: { include: { permission: { select: { code: true } } } } } },
+      userStates: { include: { state: { select: { id: true, name: true, code: true } } } },
     } as const;
   }
 
   private async issueTokens(userId: string, email: string, meta: SessionMeta = {}) {
     const payload = { sub: userId, email };
-
-    const accessToken = await this.jwt.signAsync(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET') || 'dev-access-secret',
-      expiresIn: 60 * 15,
-    });
-
     const refreshToken = randomBytes(48).toString('hex');
     const refreshDays = Number(this.config.get<string>('JWT_REFRESH_DAYS') || 7);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + refreshDays);
 
-    const storedRefresh = await this.prisma.refreshToken.create({
-      data: {
-        tokenHash: this.hashToken(refreshToken),
-        userId,
-        expiresAt,
-      },
-    });
-
-    await this.prisma.session.create({
-      data: {
-        userId,
-        refreshTokenId: storedRefresh.id,
-        userAgent: meta.userAgent,
-        ipAddress: meta.ipAddress,
-        expiresAt,
-      },
-    });
+    const [accessToken] = await Promise.all([
+      this.jwt.signAsync(payload, {
+        secret: this.config.get<string>('JWT_ACCESS_SECRET') || 'dev-access-secret',
+        expiresIn: 60 * 15,
+      }),
+      this.prisma.refreshToken.create({
+        data: {
+          tokenHash: this.hashToken(refreshToken),
+          userId,
+          expiresAt,
+          session: {
+            create: {
+              userId,
+              userAgent: meta.userAgent,
+              ipAddress: meta.ipAddress,
+              expiresAt,
+            },
+          },
+        },
+      }),
+    ]);
 
     return { accessToken, refreshToken, expiresIn: 900 };
   }
@@ -231,25 +221,139 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, meta: SessionMeta = {}) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
-      include: this.userInclude(),
-    });
+    const email = dto.email.toLowerCase();
+    const started = Date.now();
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        email: string;
+        passwordHash: string;
+        name: string | null;
+        phone: string | null;
+        location: string | null;
+        city: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        digipin: string | null;
+        pincode: string | null;
+        km: number | null;
+        ageRange: string | null;
+        isActive: boolean;
+        stateId: string | null;
+        role: RoleName;
+        permissions: unknown;
+        states: unknown;
+      }>
+    >`
+      SELECT
+        u.id,
+        u.email,
+        u."passwordHash",
+        u.name,
+        u.phone,
+        u.location,
+        u.city,
+        u.latitude,
+        u.longitude,
+        u.digipin,
+        u.pincode,
+        u.km,
+        u."ageRange",
+        u."isActive",
+        u."stateId",
+        r.name AS role,
+        COALESCE((
+          SELECT json_agg(p.code)
+          FROM "RolePermission" rp
+          JOIN "Permission" p ON p.id = rp."permissionId"
+          WHERE rp."roleId" = u."roleId"
+        ), json_build_array()) AS permissions,
+        COALESCE((
+          SELECT json_agg(json_build_object(
+            'id', s.id,
+            'name', s.name,
+            'code', s.code,
+            'isPrimary', us."isPrimary"
+          ))
+          FROM "UserState" us
+          JOIN "State" s ON s.id = us."stateId"
+          WHERE us."userId" = u.id
+        ), json_build_array()) AS states
+      FROM "User" u
+      INNER JOIN "Role" r ON r.id = u."roleId"
+      WHERE u.email = ${email}
+      LIMIT 1
+    `;
+    const userMs = Date.now() - started;
+    const row = rows[0];
 
-    if (!user || !user.isActive) {
+    if (!row || !row.isActive) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    const bcryptStarted = Date.now();
+    const valid = await bcrypt.compare(dto.password, row.passwordHash);
+    const bcryptMs = Date.now() - bcryptStarted;
     if (!valid) throw new UnauthorizedException('Invalid email or password');
 
-    const tokens = await this.issueTokens(user.id, user.email, meta);
+    const tokenStarted = Date.now();
+    const tokens = await this.issueTokens(row.id, row.email, meta);
+    const tokenMs = Date.now() - tokenStarted;
+
+    const permissions = Array.isArray(row.permissions)
+      ? (row.permissions as string[])
+      : [];
+    const states = Array.isArray(row.states)
+      ? (row.states as Array<{
+          id: string;
+          name: string;
+          code: string | null;
+          isPrimary: boolean;
+        }>)
+      : [];
+
+    authCache.set(
+      `auth:${row.id}`,
+      {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        role: row.role,
+        stateId: row.stateId,
+        permissions,
+      },
+      AUTH_TTL_MS,
+    );
+
+    this.logger.log(
+      `login user=${userMs}ms bcrypt=${bcryptMs}ms tokens=${tokenMs}ms total=${Date.now() - started}ms`,
+    );
 
     return {
       success: true,
       message: 'Logged in successfully',
       data: {
-        user: this.sanitizeUser(user),
+        user: {
+          id: row.id,
+          email: row.email,
+          name: row.name,
+          phone: row.phone,
+          location: row.location,
+          city: row.city,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          digipin: row.digipin,
+          pincode: row.pincode,
+          km: row.km,
+          ageRange: row.ageRange,
+          isActive: row.isActive,
+          stateId: row.stateId,
+          role: row.role,
+          permissions,
+          states,
+          disabilities: [],
+          disabilitySubcategoryIds: [],
+        },
         ...tokens,
       },
     };

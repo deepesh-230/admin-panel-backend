@@ -97,6 +97,7 @@ model User {
   @@index([roleId])
   @@index([stateId])
   @@index([isActive])
+  @@index([roleId, stateId])
 }
 
 /// App-user disability taxonomy: one user can have many subcategories
@@ -270,6 +271,7 @@ model Enquiry {
   @@index([marketplaceProductId])
   @@index([adminFlag])
   @@index([deletedAt])
+  @@index([adminFlag, deletedAt, status])
 }
 
 model Faq {
@@ -485,6 +487,7 @@ model MarketplaceProduct {
   @@index([adminFlag])
   @@index([deletedAt])
   @@index([createdAt])
+  @@index([adminFlag, deletedAt, stateId])
 }
 
 model MarketplaceParty {
@@ -592,6 +595,7 @@ model Payment {
 
   @@index([status])
   @@index([purpose])
+  @@index([purpose, status])
   @@index([paidAt])
   @@index([validUntil])
   @@index([userId])

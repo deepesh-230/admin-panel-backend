@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { catalogCache, STATES_TTL_MS } from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStateDto, UpdateStateDto } from './dto/state.dto';
 
@@ -13,6 +14,13 @@ export class StatesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(search?: string, isActive?: boolean) {
+    const cacheKey =
+      !search?.trim() && typeof isActive !== 'boolean' ? 'states:admin:all' : null;
+    if (cacheKey) {
+      const hit = catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(cacheKey);
+      if (hit) return hit;
+    }
+
     const where: Prisma.StateWhereInput = {};
 
     if (typeof isActive === 'boolean') {
@@ -26,10 +34,12 @@ export class StatesService {
       ];
     }
 
-    return this.prisma.state.findMany({
+    const rows = await this.prisma.state.findMany({
       where,
       orderBy: { name: 'asc' },
     });
+    if (cacheKey) catalogCache.set(cacheKey, rows, STATES_TTL_MS);
+    return rows;
   }
 
   async findOne(id: string) {
@@ -40,13 +50,16 @@ export class StatesService {
 
   async create(dto: CreateStateDto) {
     try {
-      return await this.prisma.state.create({
+      const created = await this.prisma.state.create({
         data: {
           name: dto.name,
           code: dto.code,
           isActive: dto.isActive ?? true,
         },
       });
+      catalogCache.delete('states:admin:all');
+      catalogCache.deletePrefix('states:');
+      return created;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -61,7 +74,7 @@ export class StatesService {
   async update(id: string, dto: UpdateStateDto) {
     await this.findOne(id);
     try {
-      return await this.prisma.state.update({
+      const updated = await this.prisma.state.update({
         where: { id },
         data: {
           ...(dto.name !== undefined && { name: dto.name }),
@@ -69,6 +82,8 @@ export class StatesService {
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         },
       });
+      catalogCache.delete('states:admin:all');
+      return updated;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -95,6 +110,10 @@ export class StatesService {
       );
     }
 
-    return this.prisma.state.delete({ where: { id } });
+    return this.prisma.state.delete({ where: { id } }).then((deleted) => {
+      catalogCache.delete('states:admin:all');
+      catalogCache.delete('states:public');
+      return deleted;
+    });
   }
 }
