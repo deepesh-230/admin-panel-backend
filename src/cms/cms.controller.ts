@@ -336,12 +336,23 @@ export class MarketplaceProductsController {
   findAll(
     @Query('search') search?: string,
     @Query('listingIntent') listingIntent?: string,
+    @Query('condition') condition?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNum = page && Number(page) >= 1 ? Number(page) : undefined;
     const limitNum = limit && Number(limit) >= 1 ? Number(limit) : undefined;
-    return this.marketplace.listAdmin(search, listingIntent, pageNum, limitNum);
+    return this.marketplace.listAdmin({
+      search,
+      listingIntent,
+      condition,
+      minPrice: minPrice != null && minPrice !== '' ? Number(minPrice) : undefined,
+      maxPrice: maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
+      page: pageNum,
+      limit: limitNum,
+    });
   }
 
   @Get(':id')

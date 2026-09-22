@@ -454,31 +454,42 @@ model Volunteer {
 }
 
 model MarketplaceProduct {
-  id             String                     @id @default(uuid())
-  name           String
-  actualPrice    String?
-  offerPrice     String?
-  phone          String?
-  listingIntent  String                     @default("sell")
-  sellerName     String?
-  description    String?
-  address        String?
-  color          String?
-  brand          String?
-  features       String?
-  gallery        String[]                   @default([])
-  location       String?
-  stateId        String?
-  createdById    String?
-  isActive       Boolean                    @default(true)
-  approvalStatus MarketplaceApprovalStatus  @default(PENDING)
-  adminFlag      AdminLifecycleFlag         @default(ACTIVE)
-  deletedAt      DateTime?
-  createdAt      DateTime                   @default(now())
-  updatedAt      DateTime                   @updatedAt
-  createdBy      User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  state          State?                     @relation(fields: [stateId], references: [id], onDelete: SetNull)
-  enquiries      Enquiry[]
+  id                 String                     @id @default(uuid())
+  name               String
+  actualPrice        String?
+  offerPrice         String?
+  /// Previous offerPrice when the selling price is updated (for strikethrough UI)
+  previousOfferPrice String?
+  /// Numeric parse of offerPrice for range filters
+  offerPriceValue    Float?
+  phone              String?
+  listingIntent      String                     @default("sell")
+  /// NEW | USED | FREE
+  condition          MarketplaceItemCondition?
+  quantity           Int                        @default(1)
+  saleStatus         MarketplaceSaleStatus      @default(NEWLY_ADDED)
+  soldAt             DateTime?
+  sellerName         String?
+  description        String?
+  address            String?
+  color              String?
+  brand              String?
+  features           String?
+  gallery            String[]                   @default([])
+  location           String?
+  latitude           Float?
+  longitude          Float?
+  stateId            String?
+  createdById        String?
+  isActive           Boolean                    @default(true)
+  approvalStatus     MarketplaceApprovalStatus  @default(PENDING)
+  adminFlag          AdminLifecycleFlag         @default(ACTIVE)
+  deletedAt          DateTime?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  createdBy          User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  state              State?                     @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  enquiries          Enquiry[]
 
   @@index([createdById])
   @@index([isActive])
@@ -488,6 +499,10 @@ model MarketplaceProduct {
   @@index([deletedAt])
   @@index([createdAt])
   @@index([adminFlag, deletedAt, stateId])
+  @@index([condition])
+  @@index([saleStatus])
+  @@index([offerPriceValue])
+  @@index([latitude, longitude])
 }
 
 model MarketplaceParty {
@@ -700,10 +715,14 @@ model UserBroadcast {
 }
 
 enum AgeRange {
-  UNDER_18
-  AGE_18_25
-  AGE_26_40
-  AGE_41_60
+  AGE_5_9
+  AGE_10_14
+  AGE_15_19
+  AGE_20_24
+  AGE_25_29
+  AGE_30_40
+  AGE_40_50
+  AGE_50_60
   AGE_60_PLUS
 }
 
@@ -745,6 +764,18 @@ enum MarketplaceApprovalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum MarketplaceItemCondition {
+  NEW
+  USED
+  FREE
+}
+
+enum MarketplaceSaleStatus {
+  NEWLY_ADDED
+  PENDING_SALE
+  SOLD
 }
 
 enum AdminLifecycleFlag {

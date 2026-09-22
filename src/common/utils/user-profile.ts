@@ -25,11 +25,15 @@ function normalizeStateName(name: string) {
 }
 
 export const AGE_RANGE_LABELS: Record<AgeRange, string> = {
-  UNDER_18: 'Under 18',
-  AGE_18_25: '18-25',
-  AGE_26_40: '26-40',
-  AGE_41_60: '41-60',
-  AGE_60_PLUS: '60+',
+  AGE_5_9: '5-9',
+  AGE_10_14: '10-14',
+  AGE_15_19: '15-19',
+  AGE_20_24: '20-24',
+  AGE_25_29: '25-29',
+  AGE_30_40: '30-40',
+  AGE_40_50: '40-50',
+  AGE_50_60: '50-60',
+  AGE_60_PLUS: 'above 60',
 };
 
 export async function findStateIdByName(db: Pick<Db, 'state'>, name: string) {

@@ -79,6 +79,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.ensureEventCoverageColumns();
     await this.ensureUserProfileColumns();
     await this.ensureListFilterIndexes();
+    await this.ensureMarketplaceSaleResaleColumns();
     await this.ensureDropCategorySlugs();
   }
 
@@ -602,9 +603,70 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       await this.$executeRawUnsafe(`
         DO $$ BEGIN
           CREATE TYPE "AgeRange" AS ENUM (
-            'UNDER_18', 'AGE_18_25', 'AGE_26_40', 'AGE_41_60', 'AGE_60_PLUS'
+            'AGE_5_9',
+            'AGE_10_14',
+            'AGE_15_19',
+            'AGE_20_24',
+            'AGE_25_29',
+            'AGE_30_40',
+            'AGE_40_50',
+            'AGE_50_60',
+            'AGE_60_PLUS'
           );
         EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      // Migrate legacy AgeRange values if the old enum still exists in use.
+      await this.$executeRawUnsafe(`
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM pg_type t
+            JOIN pg_enum e ON t.oid = e.enumtypid
+            WHERE t.typname = 'AgeRange' AND e.enumlabel = 'UNDER_18'
+          ) THEN
+            ALTER TABLE "User" ALTER COLUMN "ageRange" DROP DEFAULT;
+            ALTER TABLE "User" ALTER COLUMN "ageRange" TYPE TEXT USING "ageRange"::TEXT;
+            UPDATE "User" SET "ageRange" = CASE "ageRange"
+              WHEN 'UNDER_18' THEN 'AGE_15_19'
+              WHEN 'AGE_18_25' THEN 'AGE_20_24'
+              WHEN 'AGE_26_40' THEN 'AGE_30_40'
+              WHEN 'AGE_41_60' THEN 'AGE_50_60'
+              WHEN 'AGE_60_PLUS' THEN 'AGE_60_PLUS'
+              ELSE "ageRange"
+            END
+            WHERE "ageRange" IS NOT NULL;
+            DROP TYPE "AgeRange";
+            CREATE TYPE "AgeRange" AS ENUM (
+              'AGE_5_9',
+              'AGE_10_14',
+              'AGE_15_19',
+              'AGE_20_24',
+              'AGE_25_29',
+              'AGE_30_40',
+              'AGE_40_50',
+              'AGE_50_60',
+              'AGE_60_PLUS'
+            );
+            ALTER TABLE "User"
+              ALTER COLUMN "ageRange" TYPE "AgeRange"
+              USING (
+                CASE
+                  WHEN "ageRange" IN (
+                    'AGE_5_9',
+                    'AGE_10_14',
+                    'AGE_15_19',
+                    'AGE_20_24',
+                    'AGE_25_29',
+                    'AGE_30_40',
+                    'AGE_40_50',
+                    'AGE_50_60',
+                    'AGE_60_PLUS'
+                  ) THEN "ageRange"::"AgeRange"
+                  ELSE NULL
+                END
+              );
+          END IF;
+        END $$;
       `);
       await this.$executeRawUnsafe(`
         ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT
@@ -707,6 +769,61 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (error) {
       this.logger.warn(
         `Could not ensure list filter indexes: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureMarketplaceSaleResaleColumns() {
+    try {
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "MarketplaceItemCondition" AS ENUM ('NEW', 'USED', 'FREE');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          CREATE TYPE "MarketplaceSaleStatus" AS ENUM ('NEWLY_ADDED', 'PENDING_SALE', 'SOLD');
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "condition" "MarketplaceItemCondition"`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "previousOfferPrice" TEXT`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "offerPriceValue" DOUBLE PRECISION`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "quantity" INTEGER NOT NULL DEFAULT 1`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "saleStatus" "MarketplaceSaleStatus" NOT NULL DEFAULT 'NEWLY_ADDED'`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "soldAt" TIMESTAMP(3)`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "MarketplaceProduct" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "MarketplaceProduct_condition_idx" ON "MarketplaceProduct"("condition")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "MarketplaceProduct_saleStatus_idx" ON "MarketplaceProduct"("saleStatus")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "MarketplaceProduct_offerPriceValue_idx" ON "MarketplaceProduct"("offerPriceValue")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "MarketplaceProduct_latitude_longitude_idx" ON "MarketplaceProduct"("latitude", "longitude")`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure marketplace sale/resale columns: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

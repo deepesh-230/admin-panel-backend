@@ -160,8 +160,16 @@ export class PublicService {
     };
   }
 
-  listMarketplaceProducts(search?: string) {
-    return this.marketplace.listPublic(search);
+  listMarketplaceProducts(query?: {
+    search?: string;
+    condition?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  }) {
+    return this.marketplace.listPublic(query || {});
   }
 
   getMarketplaceProduct(id: string) {

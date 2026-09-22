@@ -497,6 +497,11 @@ export class BulkImportService {
     if (dryRun) return 'created';
 
     const intentRaw = pick(row, 'listingintent', 'listing_intent', 'intent').toLowerCase();
+    const conditionRaw = pick(row, 'condition').toUpperCase();
+    const condition =
+      conditionRaw === 'NEW' || conditionRaw === 'USED' || conditionRaw === 'FREE'
+        ? conditionRaw
+        : undefined;
     await this.prisma.marketplaceProduct.create({
       data: {
         name,
@@ -504,6 +509,7 @@ export class BulkImportService {
         offerPrice: pick(row, 'offerprice', 'offer_price', 'price') || undefined,
         phone: pick(row, 'phone') || undefined,
         listingIntent: intentRaw === 'buy' ? 'buy' : 'sell',
+        condition,
         sellerName: pick(row, 'sellername', 'seller_name', 'seller') || undefined,
         description: pick(row, 'description') || undefined,
         address: pick(row, 'address') || undefined,
@@ -628,6 +634,7 @@ export class BulkImportService {
           'offerPrice',
           'phone',
           'listingIntent',
+          'condition',
           'sellerName',
           'description',
           'address',
@@ -640,6 +647,7 @@ export class BulkImportService {
           '12000',
           '9876543210',
           'sell',
+          'USED',
           'John Doe',
           'Lightweight wheelchair',
           'Pune',

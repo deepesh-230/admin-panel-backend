@@ -3,7 +3,7 @@ import { RoleName } from '@prisma/client';
 import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { BroadcastsService } from '../cms/broadcasts.service';
-import { CreateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import { CreateMarketplaceProductDto, UpdateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
 import {
   CreateMyServiceProviderDto,
   UpdateMyServiceProviderDto,
@@ -160,6 +160,25 @@ export class ProfileController {
       select: { name: true },
     });
     return this.marketplace.createForUser(user.id, dbUser?.name, dto);
+  }
+
+  @Patch('marketplace/products/:id')
+  updateMarketplaceProduct(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateMarketplaceProductDto,
+  ) {
+    return this.marketplace.updateForUser(user.id, id, dto);
+  }
+
+  @Post('marketplace/products/:id/mark-sold')
+  markMarketplaceProductSold(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.marketplace.markSoldForUser(user.id, id);
+  }
+
+  @Delete('marketplace/products/:id')
+  removeMarketplaceProduct(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.marketplace.removeForUser(user.id, id, user.role);
   }
 
   @Get('service-providers')

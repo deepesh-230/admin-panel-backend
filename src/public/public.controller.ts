@@ -5,6 +5,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { parseStateIds } from '../common/utils/state-scope';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
+import { ListMarketplacePublicQueryDto } from '../profile/dto/create-marketplace-product.dto';
 import { PublicService } from './public.service';
 
 @Controller('public')
@@ -116,8 +117,8 @@ export class PublicController {
   }
 
   @Get('marketplace/products')
-  listMarketplaceProducts(@Query('search') search?: string) {
-    return this.publicService.listMarketplaceProducts(search);
+  listMarketplaceProducts(@Query() query: ListMarketplacePublicQueryDto) {
+    return this.publicService.listMarketplaceProducts(query);
   }
 
   @Get('marketplace/products/:id')

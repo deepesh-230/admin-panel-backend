@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -283,6 +284,7 @@ export class ListServiceProvidersQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0.1)
+  @Max(100)
   radius?: number;
 
   @IsOptional()
