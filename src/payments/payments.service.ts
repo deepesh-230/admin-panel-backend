@@ -333,4 +333,73 @@ export class PaymentsService {
     await this.prisma.payment.delete({ where: { id } });
     return { id, deleted: true };
   }
+
+  /**
+   * Highest-tier active SUCCESS sponsorship for a user (by userId or matching payer email).
+   */
+  async getActiveSponsorshipForUser(userId: string) {
+    const now = new Date();
+    const yearAgo = addDays(now, -365);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+    if (!user) return null;
+
+    const email = user.email?.trim();
+    const rows = await this.prisma.payment.findMany({
+      where: {
+        status: PaymentStatus.SUCCESS,
+        purpose: PaymentPurpose.SPONSORSHIP,
+        AND: [
+          {
+            OR: [
+              { userId: user.id },
+              ...(email
+                ? [{ payerEmail: { equals: email, mode: 'insensitive' as const } }]
+                : []),
+            ],
+          },
+          {
+            OR: [
+              { validUntil: { gte: now } },
+              { validUntil: null, paidAt: { gte: yearAgo } },
+            ],
+          },
+        ],
+      },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+      take: 50,
+    });
+
+    if (!rows.length) return null;
+
+    const rank: Record<string, number> = { silver: 1, gold: 2, platinum: 3 };
+    let best = rows[0];
+    let bestRank = rank[normalizePlanCode(best.planId)] ?? 0;
+    for (const row of rows) {
+      const r = rank[normalizePlanCode(row.planId)] ?? 0;
+      if (r > bestRank) {
+        best = row;
+        bestRank = r;
+      }
+    }
+
+    const planId = normalizePlanCode(best.planId) || null;
+    const paidAt = best.paidAt ?? best.createdAt;
+    let validUntil = best.validUntil;
+    if (!validUntil && paidAt) {
+      validUntil = await this.sponsorshipValidUntil(planId, paidAt);
+    }
+
+    return {
+      planId,
+      amount: Number(best.amount),
+      status: 'active' as const,
+      paidAt,
+      validUntil,
+      paymentId: best.paymentId,
+      orderId: best.orderId,
+    };
+  }
 }

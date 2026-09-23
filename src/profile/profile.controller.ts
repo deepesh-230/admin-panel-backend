@@ -11,6 +11,7 @@ import {
 import { SubmitBusinessVerificationDto } from './dto/submit-business-verification.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
+import { PaymentsService } from '../payments/payments.service';
 import { ServiceProvidersService } from '../service-providers/service-providers.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -30,9 +31,16 @@ export class ProfileController {
   constructor(
     private readonly marketplace: MarketplaceService,
     private readonly serviceProviders: ServiceProvidersService,
+    private readonly payments: PaymentsService,
     private readonly prisma: PrismaService,
     private readonly broadcasts: BroadcastsService,
   ) {}
+
+  @Get('sponsorship')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN, RoleName.ADMIN)
+  getSponsorship(@CurrentUser() user: AuthUser) {
+    return this.payments.getActiveSponsorshipForUser(user.id);
+  }
 
   @Patch()
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
