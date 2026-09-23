@@ -73,6 +73,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.ensureCmsPages();
     await this.ensureSystemSettingTable();
     await this.ensurePaymentPlanTable();
+    await this.ensurePaymentPayerNoteColumn();
     await this.ensureBecomeTables();
     await this.ensureBusinessVerificationColumns();
     await this.ensureHomeBannerTable();
@@ -314,6 +315,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (error) {
       this.logger.warn(
         `Could not ensure PaymentPlan table: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensurePaymentPayerNoteColumn() {
+    try {
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "payerNote" TEXT`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure Payment.payerNote column: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

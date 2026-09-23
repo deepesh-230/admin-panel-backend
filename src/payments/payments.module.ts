@@ -4,6 +4,8 @@ import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymentPlansController } from './payment-plans.controller';
 import { PaymentPlansService } from './payment-plans.service';
+import { RazorpayController } from './razorpay.controller';
+import { RazorpayService } from './razorpay.service';
 
 @Injectable()
 class PaymentPlansBootstrap implements OnModuleInit {
@@ -15,8 +17,8 @@ class PaymentPlansBootstrap implements OnModuleInit {
 }
 
 @Module({
-  controllers: [PaymentsController, PaymentPlansController],
-  providers: [PaymentsService, PaymentPlansService, PaymentPlansBootstrap],
-  exports: [PaymentsService, PaymentPlansService],
+  controllers: [PaymentsController, PaymentPlansController, RazorpayController],
+  providers: [PaymentsService, PaymentPlansService, PaymentPlansBootstrap, RazorpayService],
+  exports: [PaymentsService, PaymentPlansService, RazorpayService],
 })
 export class PaymentsModule {}

@@ -116,6 +116,12 @@ export class CreatePaymentDto {
   @MaxLength(2000)
   notes?: string;
 
+  /** Optional note from the payer (shown in admin payments list). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  payerNote?: string;
+
   @IsOptional()
   @IsDateString()
   paidAt?: string;
@@ -188,6 +194,11 @@ export class UpdatePaymentDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  payerNote?: string | null;
 
   @IsOptional()
   @IsDateString()

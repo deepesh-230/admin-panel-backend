@@ -77,6 +77,7 @@ export class PaymentsService {
       paymentId: row.paymentId,
       referenceNo: row.referenceNo,
       notes: row.notes,
+      payerNote: row.payerNote,
       paidAt: row.paidAt,
       validUntil: row.validUntil,
       createdAt: row.createdAt,
@@ -116,6 +117,7 @@ export class PaymentsService {
           { referenceNo: { contains: q, mode: 'insensitive' } },
           { planId: { contains: q, mode: 'insensitive' } },
           { notes: { contains: q, mode: 'insensitive' } },
+          { payerNote: { contains: q, mode: 'insensitive' } },
         ],
       });
     }
@@ -233,6 +235,7 @@ export class PaymentsService {
           paymentId: dto.paymentId,
           referenceNo: dto.referenceNo,
           notes: dto.notes,
+          payerNote: dto.payerNote,
           paidAt,
           validUntil,
         },
@@ -307,6 +310,7 @@ export class PaymentsService {
           ...(dto.paymentId !== undefined && { paymentId: dto.paymentId }),
           ...(dto.referenceNo !== undefined && { referenceNo: dto.referenceNo }),
           ...(dto.notes !== undefined && { notes: dto.notes }),
+          ...(dto.payerNote !== undefined && { payerNote: dto.payerNote }),
           ...(paidAt !== undefined && { paidAt }),
           ...(validUntil !== undefined && { validUntil }),
         },

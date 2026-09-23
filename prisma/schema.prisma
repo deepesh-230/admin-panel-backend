@@ -601,6 +601,8 @@ model Payment {
   paymentId   String?        @unique
   referenceNo String?
   notes       String?
+  /// Optional note entered by the payer (e.g. mobile sponsorship checkout).
+  payerNote   String?
   paidAt      DateTime?
   /// Sponsorship / subscription validity end (set on successful payment)
   validUntil  DateTime?
