@@ -22,9 +22,19 @@ import {
   UpdateServiceProviderDto,
 } from './dto/service-provider.dto';
 
+const subcategorySelect = { id: true, name: true, code: true, categoryId: true } as const;
+
+const providerSubcategoryInclude = {
+  subcategory: { select: subcategorySelect },
+} as const;
+
 const providerInclude = {
   category: { select: { id: true, name: true } },
-  subcategory: { select: { id: true, name: true, categoryId: true } },
+  subcategory: { select: subcategorySelect },
+  subcategories: {
+    include: providerSubcategoryInclude,
+    orderBy: { createdAt: 'asc' as const },
+  },
   state: { select: { id: true, name: true, code: true } },
   createdBy: { select: { id: true, name: true, email: true } },
   approvedBy: { select: { id: true, name: true, email: true } },
@@ -48,7 +58,11 @@ const providerInclude = {
 
 const providerListInclude = {
   category: { select: { id: true, name: true } },
-  subcategory: { select: { id: true, name: true, categoryId: true } },
+  subcategory: { select: subcategorySelect },
+  subcategories: {
+    include: providerSubcategoryInclude,
+    orderBy: { createdAt: 'asc' as const },
+  },
   state: { select: { id: true, name: true, code: true } },
   createdBy: { select: { id: true, name: true, email: true } },
   approvedBy: { select: { id: true, name: true, email: true } },
@@ -63,11 +77,17 @@ export class ServiceProvidersService {
   constructor(private prisma: PrismaService) {}
 
   private sanitize(provider: ProviderRow | ProviderListRow, distanceKm?: number | null) {
+    const linked =
+      'subcategories' in provider
+        ? provider.subcategories.map((link) => link.subcategory)
+        : [];
+    const primary = linked[0] ?? provider.subcategory ?? null;
     return {
       id: provider.id,
       name: provider.name,
       categoryId: provider.categoryId,
-      subcategoryId: provider.subcategoryId,
+      subcategoryId: primary?.id ?? provider.subcategoryId,
+      subcategoryIds: linked.map((s) => s.id),
       description: provider.description,
       phone: provider.phone,
       landline: provider.landline,
@@ -98,7 +118,8 @@ export class ServiceProvidersService {
       approvedById: provider.approvedById,
       approvedAt: provider.approvedAt,
       category: provider.category,
-      subcategory: provider.subcategory,
+      subcategory: primary,
+      subcategories: linked,
       state: provider.state,
       createdBy: provider.createdBy,
       approvedBy: provider.approvedBy,
@@ -123,22 +144,60 @@ export class ServiceProvidersService {
     };
   }
 
-  private async assertCategoryLinks(
-    categoryId: string,
-    subcategoryId?: string | null,
-  ) {
+  private normalizeSubcategoryIds(input: {
+    subcategoryId?: string | null;
+    subcategoryIds?: string[];
+  }): string[] {
+    if (input.subcategoryIds?.length) {
+      return [...new Set(input.subcategoryIds.filter(Boolean))];
+    }
+    if (input.subcategoryId) {
+      // Mobile may send comma-separated ids in the legacy field.
+      return [
+        ...new Set(
+          String(input.subcategoryId)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean),
+        ),
+      ];
+    }
+    return [];
+  }
+
+  private async assertCategoryLinks(categoryId: string, subcategoryIds: string[]) {
     const category = await this.prisma.category.findUnique({ where: { id: categoryId } });
     if (!category) throw new BadRequestException('Category not found');
 
-    if (subcategoryId) {
-      const subcategory = await this.prisma.subcategory.findUnique({
-        where: { id: subcategoryId },
-      });
-      if (!subcategory) throw new BadRequestException('Subcategory not found');
-      if (subcategory.categoryId !== categoryId) {
-        throw new BadRequestException('Subcategory does not belong to the selected category');
-      }
+    if (!subcategoryIds.length) return;
+
+    const rows = await this.prisma.subcategory.findMany({
+      where: { id: { in: subcategoryIds } },
+      select: { id: true, categoryId: true },
+    });
+    if (rows.length !== subcategoryIds.length) {
+      throw new BadRequestException('One or more subcategories were not found');
     }
+    if (rows.some((row) => row.categoryId !== categoryId)) {
+      throw new BadRequestException('Subcategory does not belong to the selected category');
+    }
+  }
+
+  private async syncProviderSubcategories(serviceProviderId: string, subcategoryIds: string[]) {
+    await this.prisma.serviceProviderSubcategory.deleteMany({
+      where: {
+        serviceProviderId,
+        ...(subcategoryIds.length ? { subcategoryId: { notIn: subcategoryIds } } : {}),
+      },
+    });
+    if (!subcategoryIds.length) return;
+    await this.prisma.serviceProviderSubcategory.createMany({
+      data: subcategoryIds.map((subcategoryId) => ({
+        serviceProviderId,
+        subcategoryId,
+      })),
+      skipDuplicates: true,
+    });
   }
 
   private async assertProviderAdminAccess(currentUser: AuthUser, providerId: string) {
@@ -214,7 +273,20 @@ export class ServiceProvidersService {
       where.category = { type: query.categoryType };
     }
     const subcategoryIds = parseStateIds(query.subcategoryId);
-    if (subcategoryIds.length) where.subcategoryId = { in: subcategoryIds };
+    if (subcategoryIds.length) {
+      const and = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+          ? [where.AND]
+          : [];
+      and.push({
+        OR: [
+          { subcategoryId: { in: subcategoryIds } },
+          { subcategories: { some: { subcategoryId: { in: subcategoryIds } } } },
+        ],
+      });
+      where.AND = and;
+    }
     if (query.city?.trim()) {
       where.city = { contains: query.city.trim(), mode: 'insensitive' };
     }
@@ -236,16 +308,30 @@ export class ServiceProvidersService {
         { about: { contains: text, mode: 'insensitive' } },
         { category: { name: { contains: text, mode: 'insensitive' } } },
         { subcategory: { name: { contains: text, mode: 'insensitive' } } },
+        {
+          subcategories: {
+            some: { subcategory: { name: { contains: text, mode: 'insensitive' } } },
+          },
+        },
       ];
       if (keywordSubIds.length) {
         or.push({ subcategoryId: { in: keywordSubIds } });
+        or.push({ subcategories: { some: { subcategoryId: { in: keywordSubIds } } } });
       }
       // If both search and keyword provided, also resolve keyword separately
       if (searchTerm && keywordTerm && keywordTerm !== searchTerm) {
         const extra = await this.resolveKeywordSubcategoryIds(keywordTerm);
-        if (extra.length) or.push({ subcategoryId: { in: extra } });
+        if (extra.length) {
+          or.push({ subcategoryId: { in: extra } });
+          or.push({ subcategories: { some: { subcategoryId: { in: extra } } } });
+        }
         or.push({
           subcategory: { name: { contains: keywordTerm, mode: 'insensitive' } },
+        });
+        or.push({
+          subcategories: {
+            some: { subcategory: { name: { contains: keywordTerm, mode: 'insensitive' } } },
+          },
         });
       }
       where.OR = or;
@@ -476,7 +562,13 @@ export class ServiceProvidersService {
     const state = await this.prisma.state.findUnique({ where: { id: stateId } });
     if (!state) throw new BadRequestException('State not found');
 
-    await this.assertCategoryLinks(dto.categoryId, dto.subcategoryId);
+    await this.assertCategoryLinks(
+      dto.categoryId,
+      this.normalizeSubcategoryIds(dto),
+    );
+
+    const subcategoryIds = this.normalizeSubcategoryIds(dto);
+    const primarySubcategoryId = subcategoryIds[0] ?? null;
 
     const approvalStatus =
       dto.approvalStatus ??
@@ -488,7 +580,7 @@ export class ServiceProvidersService {
       data: {
         name: dto.name.trim(),
         categoryId: dto.categoryId,
-        subcategoryId: dto.subcategoryId,
+        subcategoryId: primarySubcategoryId,
         description: dto.description,
         phone: dto.phone,
         landline: dto.landline,
@@ -515,7 +607,12 @@ export class ServiceProvidersService {
       include: providerInclude,
     });
 
-    return this.sanitize(provider);
+    await this.syncProviderSubcategories(provider.id, subcategoryIds);
+    const refreshed = await this.prisma.serviceProvider.findUniqueOrThrow({
+      where: { id: provider.id },
+      include: providerInclude,
+    });
+    return this.sanitize(refreshed);
   }
 
   async update(id: string, dto: UpdateServiceProviderDto, currentUser: AuthUser) {
@@ -531,9 +628,12 @@ export class ServiceProvidersService {
     }
 
     const nextCategoryId = dto.categoryId ?? existing.categoryId;
-    const nextSubcategoryId =
-      dto.subcategoryId === undefined ? existing.subcategoryId : dto.subcategoryId;
-    await this.assertCategoryLinks(nextCategoryId, nextSubcategoryId);
+    const subcategoryTouched =
+      dto.subcategoryIds !== undefined || dto.subcategoryId !== undefined;
+    const nextSubcategoryIds = subcategoryTouched
+      ? this.normalizeSubcategoryIds(dto)
+      : existing.subcategories.map((l) => l.subcategoryId);
+    await this.assertCategoryLinks(nextCategoryId, nextSubcategoryIds);
 
     let nextStateId = existing.stateId;
     if (dto.stateId) {
@@ -543,12 +643,16 @@ export class ServiceProvidersService {
       nextStateId = dto.stateId;
     }
 
+    const primarySubcategoryId = subcategoryTouched
+      ? (nextSubcategoryIds[0] ?? null)
+      : undefined;
+
     const provider = await this.prisma.serviceProvider.update({
       where: { id },
       data: {
         name: dto.name?.trim(),
         categoryId: dto.categoryId,
-        subcategoryId: dto.subcategoryId === undefined ? undefined : dto.subcategoryId,
+        subcategoryId: primarySubcategoryId,
         description: dto.description,
         phone: dto.phone,
         landline: dto.landline,
@@ -569,7 +673,15 @@ export class ServiceProvidersService {
       include: providerInclude,
     });
 
-    return this.sanitize(provider);
+    if (subcategoryTouched) {
+      await this.syncProviderSubcategories(id, nextSubcategoryIds);
+    }
+
+    const refreshed = await this.prisma.serviceProvider.findUniqueOrThrow({
+      where: { id: provider.id },
+      include: providerInclude,
+    });
+    return this.sanitize(refreshed);
   }
 
   async remove(id: string, currentUser: AuthUser) {
@@ -771,6 +883,7 @@ export class ServiceProvidersService {
       name: string;
       categoryId: string;
       subcategoryId?: string;
+      subcategoryIds?: string[];
       description?: string;
       phone?: string;
       landline?: string;
@@ -788,7 +901,8 @@ export class ServiceProvidersService {
       locationLabel?: string;
     },
   ) {
-    await this.assertCategoryLinks(data.categoryId, data.subcategoryId);
+    const subcategoryIds = this.normalizeSubcategoryIds(data);
+    await this.assertCategoryLinks(data.categoryId, subcategoryIds);
     const resolvedStateId = await this.resolveStateIdForUser(
       userId,
       data.stateId,
@@ -800,7 +914,7 @@ export class ServiceProvidersService {
       data: {
         name: data.name.trim(),
         categoryId: data.categoryId,
-        subcategoryId: data.subcategoryId,
+        subcategoryId: subcategoryIds[0] ?? null,
         description: data.description?.trim() || null,
         phone: data.phone?.trim() || null,
         landline: data.landline?.trim() || null,
@@ -822,7 +936,12 @@ export class ServiceProvidersService {
       include: providerInclude,
     });
 
-    return this.sanitize(provider);
+    await this.syncProviderSubcategories(provider.id, subcategoryIds);
+    const refreshed = await this.prisma.serviceProvider.findUniqueOrThrow({
+      where: { id: provider.id },
+      include: providerInclude,
+    });
+    return this.sanitize(refreshed);
   }
 
   async updateForUser(
@@ -832,6 +951,7 @@ export class ServiceProvidersService {
       name?: string;
       categoryId?: string;
       subcategoryId?: string | null;
+      subcategoryIds?: string[];
       description?: string;
       phone?: string;
       landline?: string;
@@ -851,9 +971,12 @@ export class ServiceProvidersService {
   ) {
     const existing = await this.assertUserOwnsProvider(userId, id);
     const nextCategoryId = data.categoryId ?? existing.categoryId;
-    const nextSubcategoryId =
-      data.subcategoryId === undefined ? existing.subcategoryId : data.subcategoryId;
-    await this.assertCategoryLinks(nextCategoryId, nextSubcategoryId);
+    const subcategoryTouched =
+      data.subcategoryIds !== undefined || data.subcategoryId !== undefined;
+    const nextSubcategoryIds = subcategoryTouched
+      ? this.normalizeSubcategoryIds(data)
+      : existing.subcategories.map((l) => l.subcategoryId);
+    await this.assertCategoryLinks(nextCategoryId, nextSubcategoryIds);
 
     let nextStateId = existing.stateId;
     if (
@@ -874,30 +997,32 @@ export class ServiceProvidersService {
       data: {
         ...(data.name !== undefined && { name: data.name.trim() }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
-        ...(data.subcategoryId !== undefined && { subcategoryId: data.subcategoryId }),
+        ...(subcategoryTouched && {
+          subcategoryId: nextSubcategoryIds[0] ?? null,
+        }),
         ...(data.description !== undefined && {
-          description: data.description?.trim() || null,
+          description: data.description.trim() || null,
         }),
-        ...(data.phone !== undefined && { phone: data.phone?.trim() || null }),
-        ...(data.landline !== undefined && { landline: data.landline?.trim() || null }),
+        ...(data.phone !== undefined && { phone: data.phone.trim() || null }),
+        ...(data.landline !== undefined && { landline: data.landline.trim() || null }),
         ...(data.email !== undefined && {
-          email: data.email?.trim().toLowerCase() || null,
+          email: data.email.trim().toLowerCase() || null,
         }),
-        ...(data.address !== undefined && { address: data.address?.trim() || null }),
-        ...(data.city !== undefined && { city: data.city?.trim() || null }),
+        ...(data.address !== undefined && { address: data.address.trim() || null }),
+        ...(data.city !== undefined && { city: data.city.trim() || null }),
         stateId: nextStateId,
         ...(data.latitude !== undefined && { latitude: data.latitude }),
         ...(data.longitude !== undefined && { longitude: data.longitude }),
         ...(data.googlePlaceId !== undefined && {
-          googlePlaceId: data.googlePlaceId?.trim() || null,
+          googlePlaceId: data.googlePlaceId.trim() || null,
         }),
-        ...(data.about !== undefined && { about: data.about?.trim() || null }),
-        ...(data.services !== undefined && { services: data.services?.trim() || null }),
+        ...(data.about !== undefined && { about: data.about.trim() || null }),
+        ...(data.services !== undefined && { services: data.services.trim() || null }),
         ...(data.coverPhotoUrl !== undefined && {
           coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
         }),
         ...(data.gallery !== undefined && { gallery: data.gallery }),
-        // Edits go back to pending review unless already rejected stays rejected? Plan: resubmit to pending
+        // Edits go back to pending review
         approvalStatus: ProviderApprovalStatus.PENDING_APPROVAL,
         approvedById: null,
         approvedAt: null,
@@ -907,7 +1032,15 @@ export class ServiceProvidersService {
       include: providerInclude,
     });
 
-    return this.sanitize(provider);
+    if (subcategoryTouched) {
+      await this.syncProviderSubcategories(id, nextSubcategoryIds);
+    }
+
+    const refreshed = await this.prisma.serviceProvider.findUniqueOrThrow({
+      where: { id: provider.id },
+      include: providerInclude,
+    });
+    return this.sanitize(refreshed);
   }
 
   async removeForUser(userId: string, id: string) {

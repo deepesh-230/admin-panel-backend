@@ -15,6 +15,19 @@ export function pick(row: Record<string, string>, ...keys: string[]): string {
   return '';
 }
 
+/** Split comma-delimited cell values; trim and drop empties. */
+export function splitDelimited(value: string | undefined): string[] {
+  if (!value?.trim()) return [];
+  return [
+    ...new Set(
+      value
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export function parseBool(value: string | undefined, fallback = true): boolean {
   if (!value) return fallback;
   const v = value.toLowerCase();

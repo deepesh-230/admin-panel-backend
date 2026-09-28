@@ -28,6 +28,9 @@ export type MarketplaceListQuery = {
   radius?: number;
   page?: number;
   limit?: number;
+  isActive?: boolean;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  saleStatus?: MarketplaceSaleStatus;
 };
 
 type MarketplaceWriteInput = {
@@ -102,7 +105,14 @@ export class MarketplaceService {
     const condition = normalizeCondition(query.condition);
     if (condition) where.condition = condition;
 
-    // Price is applied in-memory (offerPriceValue may be null on older rows).
+    // Prefer SQL on offerPriceValue when bounds are set (older nulls still excluded).
+    if (query.minPrice != null || query.maxPrice != null) {
+      const priceFilter: Prisma.FloatNullableFilter = { not: null };
+      if (query.minPrice != null) priceFilter.gte = query.minPrice;
+      if (query.maxPrice != null) priceFilter.lte = query.maxPrice;
+      where.offerPriceValue = priceFilter;
+    }
+
     // Geo bounding box here; haversine refines afterward.
     const hasGeo =
       query.latitude != null &&
@@ -167,6 +177,15 @@ export class MarketplaceService {
     if (intent === 'buy' || intent === 'sell') {
       where.listingIntent = intent;
     }
+    if (query.isActive != null) {
+      where.isActive = query.isActive;
+    }
+    if (query.approvalStatus) {
+      where.approvalStatus = query.approvalStatus;
+    }
+    if (query.saleStatus) {
+      where.saleStatus = query.saleStatus;
+    }
     if (query.search?.trim()) {
       const q = query.search.trim();
       where.OR = [
@@ -186,32 +205,45 @@ export class MarketplaceService {
       query.radius != null &&
       query.radius > 0;
 
-    if (!query.page && !hasGeo) {
-      const rows = await this.prisma.marketplaceProduct.findMany({
-        where,
-        include: adminProductInclude,
-        orderBy: { createdAt: 'desc' },
-      });
-      return this.applyPriceFilter(rows, query);
+    const page = query.page && query.page >= 1 ? query.page : 1;
+    const take = Math.min(query.limit || 20, 100);
+    const skip = (page - 1) * take;
+
+    // Admin list without geo: real DB pagination (price/condition already in WHERE).
+    if (!hasGeo) {
+      const [total, rows] = await this.prisma.$transaction([
+        this.prisma.marketplaceProduct.count({ where }),
+        this.prisma.marketplaceProduct.findMany({
+          where,
+          include: adminProductInclude,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+      ]);
+      return {
+        items: rows,
+        pagination: {
+          page,
+          limit: take,
+          total,
+          totalPages: Math.ceil(total / take) || 0,
+        },
+      };
     }
 
+    // Geo path still needs candidate load + haversine, then page in memory.
     const candidates = await this.prisma.marketplaceProduct.findMany({
       where,
       include: adminProductInclude,
       orderBy: { createdAt: 'desc' },
     });
-    const priced = this.applyPriceFilter(candidates, query);
-    const filtered = await this.applyHaversineFilter(priced, query);
-
-    if (!query.page) return filtered;
-
-    const take = Math.min(query.limit || 20, 100);
-    const skip = (query.page - 1) * take;
+    const filtered = await this.applyHaversineFilter(candidates, query);
     const items = filtered.slice(skip, skip + take);
     return {
       items,
       pagination: {
-        page: query.page,
+        page,
         limit: take,
         total: filtered.length,
         totalPages: Math.ceil(filtered.length / take) || 0,

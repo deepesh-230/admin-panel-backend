@@ -210,6 +210,7 @@ model ServiceProvider {
   subcategory    Subcategory?           @relation(fields: [subcategoryId], references: [id])
   admins         ServiceProviderAdmin[]
   enquiries      Enquiry[]
+  subcategories  ServiceProviderSubcategory[]
 
   @@index([stateId])
   @@index([categoryId])
@@ -222,6 +223,20 @@ model ServiceProvider {
   @@index([latitude, longitude])
   @@index([approvalStatus, isActive, stateId])
   @@index([categoryId, subcategoryId])
+}
+
+/// Many-to-many: one service provider can belong to multiple subcategories under its category
+model ServiceProviderSubcategory {
+  id                String          @id @default(uuid())
+  serviceProviderId String
+  subcategoryId     String
+  createdAt         DateTime        @default(now())
+  serviceProvider   ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  subcategory       Subcategory     @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceProviderId, subcategoryId])
+  @@index([subcategoryId])
+  @@index([serviceProviderId])
 }
 
 model ServiceProviderAdmin {
@@ -565,6 +580,7 @@ model Subcategory {
   updatedAt        DateTime          @updatedAt
   keywords         Keyword[]
   serviceProviders ServiceProvider[]
+  providerLinks    ServiceProviderSubcategory[]
   userDisabilities UserDisability[]
   category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 

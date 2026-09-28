@@ -12,6 +12,8 @@ class PaymentPlansBootstrap implements OnModuleInit {
   constructor(private readonly paymentPlans: PaymentPlansService) {}
 
   async onModuleInit() {
+    // Same gate as Prisma DDL ensure — skip on prod cold starts once migrations/seed are source of truth.
+    if (process.env.RUN_ENSURE_DDL === 'false') return;
     await this.paymentPlans.ensureDefaults();
   }
 }

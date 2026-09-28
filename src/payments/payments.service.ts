@@ -14,7 +14,7 @@ import {
 } from './dto/payment.dto';
 import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
 
-const paymentInclude = {
+const paymentListInclude = {
   user: {
     select: {
       id: true,
@@ -26,6 +26,9 @@ const paymentInclude = {
     },
   },
 } as const;
+
+/** Full include for single-record views / mutations. */
+const paymentInclude = paymentListInclude;
 
 type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof paymentInclude }>;
 
@@ -156,13 +159,30 @@ export class PaymentsService {
 
     if (and.length) where.AND = and;
 
-    const rows = await this.prisma.payment.findMany({
-      where,
-      include: paymentInclude,
-      orderBy: [{ createdAt: 'desc' }],
-    });
+    const page = query.page || 1;
+    const limit = Math.min(query.limit || 20, 100);
+    const skip = (page - 1) * limit;
 
-    return rows.map((row) => this.sanitize(row));
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.payment.count({ where }),
+      this.prisma.payment.findMany({
+        where,
+        include: paymentListInclude,
+        orderBy: [{ createdAt: 'desc' }],
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return {
+      items: rows.map((row) => this.sanitize(row)),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 0,
+      },
+    };
   }
 
   async getSummary() {
