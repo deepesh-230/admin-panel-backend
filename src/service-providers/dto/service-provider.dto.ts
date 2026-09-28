@@ -30,6 +30,12 @@ export class CreateServiceProviderDto {
   @IsUUID()
   subcategoryId?: string;
 
+  /** Preferred: multiple subcategories under the same category. */
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  subcategoryIds?: string[];
+
   @IsOptional()
   @IsString()
   @MaxLength(5000)
@@ -126,6 +132,11 @@ export class UpdateServiceProviderDto {
   @IsOptional()
   @IsUUID()
   subcategoryId?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  subcategoryIds?: string[];
 
   @IsOptional()
   @IsString()

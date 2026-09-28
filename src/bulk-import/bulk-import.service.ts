@@ -24,6 +24,7 @@ import {
   parseFloatSafe,
   parseIntSafe,
   pick,
+  splitDelimited,
 } from './bulk-import.utils';
 
 const MAX_ROWS = 500;
@@ -267,32 +268,62 @@ export class BulkImportService {
     contextSubcategoryId: string | undefined,
     cache: Map<string, string>,
   ): Promise<string | undefined> {
+    const ids = await this.resolveSubcategoryIds(row, categoryId, contextSubcategoryId, cache);
+    return ids[0];
+  }
+
+  private async resolveSubcategoryIds(
+    row: Record<string, string>,
+    categoryId: string,
+    contextSubcategoryId: string | undefined,
+    cache: Map<string, string>,
+  ): Promise<string[]> {
     const raw =
       pick(row, 'subcategoryid', 'subcategory_id') ||
       pick(row, 'subcategory') ||
       pick(row, 'subcat_custom') ||
       contextSubcategoryId ||
       '';
-    if (!raw) return undefined;
-    if (isUuid(raw)) return raw;
+    const tokens = splitDelimited(raw);
+    if (!tokens.length && contextSubcategoryId) tokens.push(contextSubcategoryId);
+    if (!tokens.length) return [];
 
-    const key = `${categoryId}::${raw.toLowerCase()}`;
-    if (cache.has(key)) return cache.get(key);
+    const resolved: string[] = [];
+    for (const token of tokens) {
+      if (isUuid(token)) {
+        const subcategory = await this.prisma.subcategory.findFirst({
+          where: { id: token, categoryId },
+        });
+        if (!subcategory) {
+          throw new BadRequestException(`Subcategory not found under category: ${token}`);
+        }
+        resolved.push(subcategory.id);
+        continue;
+      }
 
-    const subcategory = await this.prisma.subcategory.findFirst({
-      where: {
-        categoryId,
-        OR: [
-          { name: { equals: raw, mode: 'insensitive' } },
-          { code: { equals: raw, mode: 'insensitive' } },
-        ],
-      },
-    });
-    if (!subcategory) {
-      throw new BadRequestException(`Subcategory not found: ${raw}`);
+      const key = `${categoryId}::${token.toLowerCase()}`;
+      if (cache.has(key)) {
+        resolved.push(cache.get(key)!);
+        continue;
+      }
+
+      const subcategory = await this.prisma.subcategory.findFirst({
+        where: {
+          categoryId,
+          OR: [
+            { name: { equals: token, mode: 'insensitive' } },
+            { code: { equals: token, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (!subcategory) {
+        throw new BadRequestException(`Subcategory not found: ${token}`);
+      }
+      cache.set(key, subcategory.id);
+      resolved.push(subcategory.id);
     }
-    cache.set(key, subcategory.id);
-    return subcategory.id;
+
+    return [...new Set(resolved)];
   }
 
   private async resolveStateId(
@@ -438,12 +469,13 @@ export class BulkImportService {
     if (!name) throw new BadRequestException('name is required');
 
     const categoryId = await this.resolveCategoryId(row, undefined, categoryCache);
-    const subcategoryId = await this.resolveSubcategoryId(
+    const subcategoryIds = await this.resolveSubcategoryIds(
       row,
       categoryId,
       undefined,
       subcategoryCache,
     );
+    const subcategoryId = subcategoryIds[0];
     const stateId = await this.resolveStateId(row, user, stateCache);
 
     const statusRaw = pick(row, 'approvalstatus', 'approval_status', 'status').toUpperCase();
@@ -456,7 +488,7 @@ export class BulkImportService {
 
     if (dryRun) return 'created';
 
-    await this.prisma.serviceProvider.create({
+    const provider = await this.prisma.serviceProvider.create({
       data: {
         name,
         categoryId,
@@ -464,7 +496,9 @@ export class BulkImportService {
         stateId,
         description: pick(row, 'description') || undefined,
         phone: pick(row, 'phone') || undefined,
-        landline: pick(row, 'landline') || undefined,
+        landline:
+          pick(row, 'landline', 'landline number', 'landlinenumber', 'landline_number') ||
+          undefined,
         email: pick(row, 'email') || undefined,
         website: pick(row, 'website') || undefined,
         address: pick(row, 'address') || undefined,
@@ -484,6 +518,16 @@ export class BulkImportService {
           approvalStatus === ProviderApprovalStatus.APPROVED ? new Date() : undefined,
       },
     });
+
+    if (subcategoryIds.length) {
+      await this.prisma.serviceProviderSubcategory.createMany({
+        data: subcategoryIds.map((id) => ({
+          serviceProviderId: provider.id,
+          subcategoryId: id,
+        })),
+        skipDuplicates: true,
+      });
+    }
     return 'created';
   }
 
@@ -600,6 +644,7 @@ export class BulkImportService {
           'city',
           'address',
           'phone',
+          'landline',
           'email',
           'website',
           'description',
@@ -612,11 +657,12 @@ export class BulkImportService {
         sample: [
           'ABC Clinic',
           'Physiotherapy',
-          'Pediatric PT',
+          'Pediatric PT, Geriatric PT',
           'Maharashtra',
           'Mumbai',
           '123 Main St',
           '9876543210',
+          '02212345678',
           'info@abc.com',
           'https://abc.com',
           'Full-service clinic',

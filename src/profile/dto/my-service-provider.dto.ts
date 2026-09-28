@@ -22,8 +22,14 @@ export class CreateMyServiceProviderDto {
   categoryId!: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  /** Single UUID or comma-separated UUIDs (legacy mobile). Prefer subcategoryIds. */
   subcategoryId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  subcategoryIds?: string[];
 
   @IsOptional()
   @IsString()
@@ -113,8 +119,14 @@ export class UpdateMyServiceProviderDto {
   categoryId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  /** Single UUID, null, or comma-separated UUIDs (legacy mobile). Prefer subcategoryIds. */
   subcategoryId?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  subcategoryIds?: string[];
 
   @IsOptional()
   @IsString()

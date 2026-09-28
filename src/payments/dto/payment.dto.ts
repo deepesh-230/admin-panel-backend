@@ -3,10 +3,12 @@ import {
   IsEmail,
   IsEnum,
   IsIn,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -47,6 +49,19 @@ export class ListPaymentsQueryDto {
   @IsOptional()
   @IsIn(['active', 'inactive'])
   validity?: 'active' | 'inactive';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number = 20;
 }
 
 export class CreatePaymentDto {

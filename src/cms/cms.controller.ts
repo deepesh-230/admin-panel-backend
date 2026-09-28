@@ -8,7 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { RoleName } from '@prisma/client';
+import { MarketplaceSaleStatus, RoleName } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
@@ -16,6 +16,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CmsModel, CmsService } from './cms.service';
 import { BroadcastsService } from './broadcasts.service';
 import { MarketplaceService } from '../marketplace/marketplace.service';
+
+const MARKETPLACE_SALE_STATUSES = new Set<string>(Object.values(MarketplaceSaleStatus));
 
 function resourceController(
   path: string,
@@ -341,9 +343,22 @@ export class MarketplaceProductsController {
     @Query('maxPrice') maxPrice?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('isActive') isActive?: string,
+    @Query('approvalStatus') approvalStatus?: string,
+    @Query('saleStatus') saleStatus?: string,
   ) {
-    const pageNum = page && Number(page) >= 1 ? Number(page) : undefined;
-    const limitNum = limit && Number(limit) >= 1 ? Number(limit) : undefined;
+    const pageNum = page && Number(page) >= 1 ? Number(page) : 1;
+    const limitNum = limit && Number(limit) >= 1 ? Number(limit) : 20;
+    const approval =
+      approvalStatus === 'PENDING' ||
+      approvalStatus === 'APPROVED' ||
+      approvalStatus === 'REJECTED'
+        ? approvalStatus
+        : undefined;
+    const sale =
+      saleStatus?.trim() && MARKETPLACE_SALE_STATUSES.has(saleStatus.trim())
+        ? (saleStatus.trim() as MarketplaceSaleStatus)
+        : undefined;
     return this.marketplace.listAdmin({
       search,
       listingIntent,
@@ -352,6 +367,10 @@ export class MarketplaceProductsController {
       maxPrice: maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
       page: pageNum,
       limit: limitNum,
+      isActive:
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      approvalStatus: approval,
+      saleStatus: sale,
     });
   }
 

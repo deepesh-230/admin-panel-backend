@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveJwtAccessSecret } from '../common/utils/jwt-access-secret';
 import { AUTH_TTL_MS, authCache } from '../common/utils/ttl-cache';
 import {
   assertSubcategoryIds,
@@ -140,7 +141,7 @@ export class AuthService {
 
     const [accessToken] = await Promise.all([
       this.jwt.signAsync(payload, {
-        secret: this.config.get<string>('JWT_ACCESS_SECRET') || 'dev-access-secret',
+        secret: resolveJwtAccessSecret(this.config),
         expiresIn: 60 * 15,
       }),
       this.prisma.refreshToken.create({

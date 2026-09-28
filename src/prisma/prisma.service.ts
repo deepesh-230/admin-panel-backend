@@ -733,6 +733,54 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         CREATE INDEX IF NOT EXISTS "UserDisability_userId_idx"
         ON "UserDisability"("userId")
       `);
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "ServiceProviderSubcategory" (
+          "id" TEXT NOT NULL,
+          "serviceProviderId" TEXT NOT NULL,
+          "subcategoryId" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "ServiceProviderSubcategory_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "ServiceProviderSubcategory"
+            ADD CONSTRAINT "ServiceProviderSubcategory_serviceProviderId_fkey"
+            FOREIGN KEY ("serviceProviderId") REFERENCES "ServiceProvider"("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "ServiceProviderSubcategory"
+            ADD CONSTRAINT "ServiceProviderSubcategory_subcategoryId_fkey"
+            FOREIGN KEY ("subcategoryId") REFERENCES "Subcategory"("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$;
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE UNIQUE INDEX IF NOT EXISTS "ServiceProviderSubcategory_serviceProviderId_subcategoryId_key"
+        ON "ServiceProviderSubcategory"("serviceProviderId", "subcategoryId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProviderSubcategory_subcategoryId_idx"
+        ON "ServiceProviderSubcategory"("subcategoryId")
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProviderSubcategory_serviceProviderId_idx"
+        ON "ServiceProviderSubcategory"("serviceProviderId")
+      `);
+      await this.$executeRawUnsafe(`
+        INSERT INTO "ServiceProviderSubcategory" ("id", "serviceProviderId", "subcategoryId", "createdAt")
+        SELECT gen_random_uuid()::text, sp."id", sp."subcategoryId", CURRENT_TIMESTAMP
+        FROM "ServiceProvider" sp
+        WHERE sp."subcategoryId" IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM "ServiceProviderSubcategory" link
+            WHERE link."serviceProviderId" = sp."id"
+              AND link."subcategoryId" = sp."subcategoryId"
+          )
+      `);
     } catch (error) {
       this.logger.warn(
         `Could not ensure user profile columns: ${error instanceof Error ? error.message : String(error)}`,
