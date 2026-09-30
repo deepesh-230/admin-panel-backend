@@ -5,10 +5,40 @@ import { INDIA_STATES } from '../states/india-states';
 const MAX_CONNECT_RETRIES = 6;
 const CONNECT_RETRY_DELAY_MS = 5000;
 
+/**
+ * Tune DATABASE_URL for Prisma + hosted poolers.
+ * Supabase Session pooler (:5432) caps concurrent clients (~15) — exhausting it
+ * causes intermittent 500s that the browser often labels as "CORS error".
+ * Prefer Transaction pooler (:6543) with pgbouncer=true for the Nest app.
+ */
 function prismaDatasourceUrl() {
-  const url = process.env.DATABASE_URL || '';
-  if (!url || /[?&]connection_limit=/.test(url)) return url;
-  return `${url}${url.includes('?') ? '&' : '?'}connection_limit=5`;
+  let url = process.env.DATABASE_URL || '';
+  if (!url) return url;
+
+  const isSupabasePooler = /pooler\.supabase\.com/i.test(url);
+  const isSessionPort = /:5432(\/|\?|$)/.test(url);
+  const isTxnPort = /:6543(\/|\?|$)/.test(url);
+
+  if (isSupabasePooler && isSessionPort) {
+    // Prefer transaction mode when still pointing at session port.
+    url = url.replace(':5432', ':6543');
+  }
+
+  const params = new URLSearchParams(url.includes('?') ? url.slice(url.indexOf('?') + 1) : '');
+  const base = url.includes('?') ? url.slice(0, url.indexOf('?')) : url;
+
+  if ((isSupabasePooler && (isTxnPort || isSessionPort)) || /:6543(\/|\?|$)/.test(url)) {
+    if (!params.has('pgbouncer')) params.set('pgbouncer', 'true');
+  }
+  if (!params.has('connection_limit')) {
+    // One Prisma client per Nest process; keep pool tiny on shared poolers.
+    params.set('connection_limit', isSupabasePooler ? '1' : '5');
+  }
+  if (!params.has('pool_timeout')) params.set('pool_timeout', '20');
+  if (!params.has('connect_timeout')) params.set('connect_timeout', '15');
+
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
 }
 
 @Injectable()
@@ -24,6 +54,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
+    const resolved = prismaDatasourceUrl();
+    if (/pooler\.supabase\.com:5432/i.test(process.env.DATABASE_URL || '')) {
+      this.logger.warn(
+        'DATABASE_URL uses Supabase Session pooler (:5432). Auto-switching Prisma to Transaction pooler (:6543) to avoid EMAXCONNSESSION / intermittent CORS failures.',
+      );
+    }
+    this.logger.log(
+      `Prisma datasource: ${resolved.replace(/:[^:@/]+@/, ':***@')}`,
+    );
+
     for (let attempt = 1; attempt <= MAX_CONNECT_RETRIES; attempt++) {
       try {
         await this.$connect();
@@ -42,11 +82,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         return;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        const retryable = message.includes("Can't reach database server") || message.includes('P1001');
+        const retryable =
+          message.includes("Can't reach database server") ||
+          message.includes('P1001') ||
+          message.includes('EMAXCONN') ||
+          message.includes('max clients');
 
         if (!retryable || attempt === MAX_CONNECT_RETRIES) {
           this.logger.error(
-            'Database connection failed. If using Neon, wake the project in the Neon console or use the pooled connection string.',
+            'Database connection failed. For Supabase use the Transaction pooler (port 6543) with pgbouncer=true; avoid Session pooler (:5432) for the Nest app.',
           );
           throw error;
         }
@@ -61,9 +105,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   private startKeepAlive() {
     if (this.keepAlive) return;
+    // Longer interval + tiny pool: avoid holding Session-pooler slots.
     this.keepAlive = setInterval(() => {
       void this.$queryRaw`SELECT 1`.catch(() => undefined);
-    }, 15_000);
+    }, 60_000);
     this.keepAlive.unref();
   }
 
