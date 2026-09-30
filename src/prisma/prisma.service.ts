@@ -82,6 +82,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.ensureListFilterIndexes();
     await this.ensureMarketplaceSaleResaleColumns();
     await this.ensureDropCategorySlugs();
+    await this.ensureDeviceTokenTable();
   }
 
   /** Creates SocialSetting if missing (covers environments where db push hasn't been run yet). */
@@ -898,6 +899,45 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     } catch (error) {
       this.logger.warn(
         `Could not drop category/subcategory slug columns: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async ensureDeviceTokenTable() {
+    try {
+      await this.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "DeviceToken" (
+          "id" TEXT NOT NULL,
+          "userId" TEXT NOT NULL,
+          "token" TEXT NOT NULL,
+          "platform" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "DeviceToken_pkey" PRIMARY KEY ("id")
+        )
+      `);
+      await this.$executeRawUnsafe(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "DeviceToken_token_key" ON "DeviceToken"("token")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "DeviceToken_userId_idx" ON "DeviceToken"("userId")`,
+      );
+      await this.$executeRawUnsafe(
+        `CREATE INDEX IF NOT EXISTS "DeviceToken_platform_idx" ON "DeviceToken"("platform")`,
+      );
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "DeviceToken"
+            ADD CONSTRAINT "DeviceToken_userId_fkey"
+            FOREIGN KEY ("userId") REFERENCES "User"("id")
+            ON DELETE CASCADE ON UPDATE CASCADE;
+        EXCEPTION
+          WHEN duplicate_object THEN NULL;
+        END $$;
+      `);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure DeviceToken table: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

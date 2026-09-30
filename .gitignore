@@ -8,3 +8,7 @@ node_modules
 api/nest
 dist
 *.tsbuildinfo
+
+# Firebase / local secrets
+secrets/
+*.firebase-adminsdk*.json
