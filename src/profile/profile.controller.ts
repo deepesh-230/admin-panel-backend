@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { BroadcastsService } from '../cms/broadcasts.service';
 import { CreateMarketplaceProductDto, UpdateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import { RegisterDeviceTokenDto } from './dto/device-token.dto';
 import {
   CreateMyServiceProviderDto,
   UpdateMyServiceProviderDto,
@@ -12,6 +13,7 @@ import { SubmitBusinessVerificationDto } from './dto/submit-business-verificatio
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PushService } from '../push/push.service';
 import { ServiceProvidersService } from '../service-providers/service-providers.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -34,6 +36,7 @@ export class ProfileController {
     private readonly payments: PaymentsService,
     private readonly prisma: PrismaService,
     private readonly broadcasts: BroadcastsService,
+    private readonly push: PushService,
   ) {}
 
   @Get('sponsorship')
@@ -240,5 +243,23 @@ export class ProfileController {
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
   markBroadcastRead(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.broadcasts.markRead(user.id, id);
+  }
+
+  @Post('device-tokens')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
+  registerDeviceToken(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RegisterDeviceTokenDto,
+  ) {
+    return this.push.registerToken(user.id, dto.token, dto.platform);
+  }
+
+  @Delete('device-tokens')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
+  removeDeviceToken(
+    @CurrentUser() user: AuthUser,
+    @Query('token') token?: string,
+  ) {
+    return this.push.removeToken(user.id, token);
   }
 }

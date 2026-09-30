@@ -1,16 +1,23 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { BroadcastContentType, RoleName } from '@prisma/client';
+import { PushService } from '../push/push.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type BroadcastResult = {
   recipientCount: number;
   broadcastAt: Date;
   message: string;
+  push?: { successCount: number; failureCount: number; skipped: boolean };
 };
 
 @Injectable()
 export class BroadcastsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(BroadcastsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   private async notifyEndUsers(params: {
     contentType: BroadcastContentType;
@@ -29,11 +36,12 @@ export class BroadcastsService {
     });
 
     const broadcastAt = new Date();
+    const userIds = endUsers.map((user) => user.id);
 
-    if (endUsers.length > 0) {
+    if (userIds.length > 0) {
       await this.prisma.userBroadcast.createMany({
-        data: endUsers.map((user) => ({
-          userId: user.id,
+        data: userIds.map((userId) => ({
+          userId,
           contentType: params.contentType,
           jobAlertId: params.jobAlertId,
           usefulLinkId: params.usefulLinkId,
@@ -44,6 +52,34 @@ export class BroadcastsService {
       });
     }
 
+    let push: BroadcastResult['push'];
+    if (userIds.length > 0) {
+      try {
+        push = await this.push.sendToUserIds(userIds, {
+          title: params.title,
+          body: params.body,
+          data: {
+            contentType: params.contentType,
+            ...(params.jobAlertId ? { jobAlertId: params.jobAlertId } : {}),
+            ...(params.usefulLinkId ? { usefulLinkId: params.usefulLinkId } : {}),
+            ...(params.url ? { url: params.url } : {}),
+          },
+        });
+      } catch (error) {
+        this.logger.error(
+          `Push fan-out failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        push = { successCount: 0, failureCount: 0, skipped: true };
+      }
+    }
+
+    this.logger.log(
+      `Broadcast ${params.contentType} → recipients=${endUsers.length}` +
+        (push
+          ? ` push success=${push.successCount} fail=${push.failureCount} skipped=${push.skipped}`
+          : ' push=n/a'),
+    );
+
     return {
       recipientCount: endUsers.length,
       broadcastAt,
@@ -51,6 +87,7 @@ export class BroadcastsService {
         endUsers.length > 0
           ? `Broadcast sent to ${endUsers.length} app user(s)`
           : 'No active app users to notify',
+      push,
     };
   }
 
