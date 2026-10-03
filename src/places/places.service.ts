@@ -172,4 +172,75 @@ export class PlacesService {
     placesCache.set(cacheKey, result, PLACES_TTL_MS);
     return result;
   }
+
+  /**
+   * Resolve lat/lng from a free-text address (India). Returns null when nothing matches.
+   */
+  async geocode(query: string): Promise<{
+    latitude: number;
+    longitude: number;
+    address?: string;
+    city?: string;
+    stateName?: string;
+    pincode?: string;
+  } | null> {
+    const trimmed = query.trim();
+    if (trimmed.length < 3) return null;
+
+    const cacheKey = `geo:${trimmed.toLowerCase()}`;
+    const cached = placesCache.get<{
+      latitude: number;
+      longitude: number;
+      address?: string;
+      city?: string;
+      stateName?: string;
+      pincode?: string;
+    } | null>(cacheKey);
+    if (cached !== undefined) return cached;
+
+    const params = new URLSearchParams({
+      address: trimmed,
+      key: this.getApiKey(),
+      components: 'country:IN',
+    });
+
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?${params}`,
+    );
+    if (!response.ok) {
+      placesCache.set(cacheKey, null, PLACES_TTL_MS);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      status: string;
+      results?: {
+        formatted_address?: string;
+        geometry?: { location?: { lat: number; lng: number } };
+        address_components?: AddressComponent[];
+      }[];
+    };
+
+    const first = data.results?.[0];
+    const location = first?.geometry?.location;
+    if (data.status !== 'OK' || !location) {
+      placesCache.set(cacheKey, null, PLACES_TTL_MS);
+      return null;
+    }
+
+    const components = first?.address_components || [];
+    const result = {
+      latitude: location.lat,
+      longitude: location.lng,
+      address: first?.formatted_address,
+      city:
+        this.component(components, 'locality') ||
+        this.component(components, 'sublocality_level_1', 'sublocality', 'neighborhood') ||
+        undefined,
+      stateName: this.component(components, 'administrative_area_level_1'),
+      pincode: this.component(components, 'postal_code'),
+    };
+    placesCache.set(cacheKey, result, PLACES_TTL_MS);
+    return result;
+  }
 }

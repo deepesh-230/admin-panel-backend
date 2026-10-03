@@ -15,6 +15,7 @@ import {
   resolveScopedStateId,
 } from '../common/utils/state-scope';
 import { normalizeBusinessCode } from '../common/utils/business-code';
+import { PlacesService } from '../places/places.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { BulkImportEntity, BulkImportResult } from './bulk-import.types';
 import {
@@ -44,7 +45,10 @@ const ENTITY_PERMISSION: Record<BulkImportEntity, string> = {
 
 @Injectable()
 export class BulkImportService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private places: PlacesService,
+  ) {}
 
   async import(
     entity: BulkImportEntity,
@@ -488,6 +492,23 @@ export class BulkImportService {
 
     if (dryRun) return 'created';
 
+    const address = pick(row, 'address') || undefined;
+    const city = pick(row, 'city') || undefined;
+    let latitude = parseFloatSafe(pick(row, 'latitude', 'lat'));
+    let longitude = parseFloatSafe(pick(row, 'longitude', 'lng', 'lon'));
+
+    if (latitude == null || longitude == null) {
+      const stateLabel = pick(row, 'state', 'statename', 'state_name');
+      const geoQuery = [address, city, stateLabel, 'India'].filter(Boolean).join(', ');
+      if (geoQuery.length >= 3) {
+        const geo = await this.places.geocode(geoQuery);
+        if (geo) {
+          latitude = latitude ?? geo.latitude;
+          longitude = longitude ?? geo.longitude;
+        }
+      }
+    }
+
     const provider = await this.prisma.serviceProvider.create({
       data: {
         name,
@@ -501,10 +522,10 @@ export class BulkImportService {
           undefined,
         email: pick(row, 'email') || undefined,
         website: pick(row, 'website') || undefined,
-        address: pick(row, 'address') || undefined,
-        city: pick(row, 'city') || undefined,
-        latitude: parseFloatSafe(pick(row, 'latitude', 'lat')),
-        longitude: parseFloatSafe(pick(row, 'longitude', 'lng', 'lon')),
+        address,
+        city,
+        latitude,
+        longitude,
         googlePlaceId: pick(row, 'googleplaceid', 'google_place_id') || undefined,
         about: pick(row, 'about') || undefined,
         services: pick(row, 'services') || undefined,
