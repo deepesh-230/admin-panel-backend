@@ -108,6 +108,18 @@ export class PushService implements OnModuleInit {
     return { removed: true };
   }
 
+  /** Mint a Firebase Auth custom token so the mobile app can use Firestore securely. */
+  async createCustomToken(userId: string) {
+    if (!this.ready) {
+      throw new Error(
+        'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_PATH to enable chat.',
+      );
+    }
+    const { getAuth } = await import('firebase-admin/auth');
+    const token = await getAuth().createCustomToken(userId);
+    return { token };
+  }
+
   async sendToUserIds(userIds: string[], payload: PushPayload) {
     if (!this.ready || userIds.length === 0) {
       return { successCount: 0, failureCount: 0, skipped: !this.ready };

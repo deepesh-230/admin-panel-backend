@@ -262,4 +262,10 @@ export class ProfileController {
   ) {
     return this.push.removeToken(user.id, token);
   }
+
+  @Post('firebase-token')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
+  createFirebaseToken(@CurrentUser() user: AuthUser) {
+    return this.push.createCustomToken(user.id);
+  }
 }
