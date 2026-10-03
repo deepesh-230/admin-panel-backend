@@ -1,9 +1,32 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { INDIA_STATES } from '../states/india-states';
 
-const MAX_CONNECT_RETRIES = 6;
-const CONNECT_RETRY_DELAY_MS = 5000;
+const MAX_CONNECT_RETRIES = 2;
+const CONNECT_RETRY_DELAY_MS = 1000;
+
+/** Log every query when true/1/all; otherwise only slow ones. */
+function dbLogAllQueries() {
+  const v = (process.env.DB_LOG_QUERIES || '').trim().toLowerCase();
+  return v === 'true' || v === '1' || v === 'all' || v === 'yes';
+}
+
+/** Queries at or above this duration (ms) are always logged. Default 100. */
+function dbSlowQueryMs() {
+  const n = Number(process.env.DB_LOG_SLOW_MS);
+  return Number.isFinite(n) && n >= 0 ? n : 100;
+}
+
+function dbLogQueryParams() {
+  const v = (process.env.DB_LOG_QUERY_PARAMS || '').trim().toLowerCase();
+  return v === 'true' || v === '1' || v === 'yes';
+}
+
+function shortenSql(sql: string, max = 400) {
+  const oneLine = sql.replace(/\s+/g, ' ').trim();
+  if (oneLine.length <= max) return oneLine;
+  return `${oneLine.slice(0, max)}…`;
+}
 
 /**
  * Tune DATABASE_URL for Prisma + hosted poolers.
@@ -32,17 +55,20 @@ function prismaDatasourceUrl() {
   }
   if (!params.has('connection_limit')) {
     // One Prisma client per Nest process; keep pool tiny on shared poolers.
-    params.set('connection_limit', isSupabasePooler ? '1' : '5');
+    params.set('connection_limit', isSupabasePooler ? '3' : '5');
   }
-  if (!params.has('pool_timeout')) params.set('pool_timeout', '20');
-  if (!params.has('connect_timeout')) params.set('connect_timeout', '15');
+  if (!params.has('pool_timeout')) params.set('pool_timeout', '5');
+  if (!params.has('connect_timeout')) params.set('connect_timeout', '5');
 
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient<Prisma.PrismaClientOptions, 'query'>
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
 
   private keepAlive?: ReturnType<typeof setInterval>;
@@ -50,6 +76,34 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super({
       datasources: { db: { url: prismaDatasourceUrl() } },
+      log: [
+        { emit: 'event', level: 'query' },
+        { emit: 'stdout', level: 'warn' },
+        { emit: 'stdout', level: 'error' },
+      ],
+    });
+    this.registerQueryLogger();
+  }
+
+  private registerQueryLogger() {
+    const logAll = dbLogAllQueries();
+    const slowMs = dbSlowQueryMs();
+    const withParams = dbLogQueryParams();
+
+    this.$on('query', (e: Prisma.QueryEvent) => {
+      const duration = e.duration;
+      const isKeepAlive = /^\s*SELECT\s+1\s*$/i.test(e.query);
+      if (isKeepAlive && !logAll) return;
+
+      if (!logAll && duration < slowMs) return;
+
+      const sql = shortenSql(e.query);
+      const params =
+        withParams && e.params && e.params !== '[]' ? ` params=${e.params}` : '';
+      const line = `query ${duration}ms — ${sql}${params}`;
+
+      if (duration >= 2000) this.logger.warn(line);
+      else this.logger.log(line);
     });
   }
 
@@ -62,6 +116,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
     this.logger.log(
       `Prisma datasource: ${resolved.replace(/:[^:@/]+@/, ':***@')}`,
+    );
+    this.logger.log(
+      `DB query log: ${dbLogAllQueries() ? 'all queries' : `slow ≥${dbSlowQueryMs()}ms`} (set DB_LOG_QUERIES=true for all; DB_LOG_SLOW_MS to change threshold)`,
     );
 
     for (let attempt = 1; attempt <= MAX_CONNECT_RETRIES; attempt++) {
