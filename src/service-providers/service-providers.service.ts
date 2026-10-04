@@ -394,7 +394,7 @@ export class ServiceProvidersService {
               ? ({ category: { name: sortOrder } } as Prisma.ServiceProviderOrderByWithRelationInput)
               : ({ [sortBy]: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput);
 
-      const [rows, total] = await this.prisma.$transaction([
+      const [rows, total] = await Promise.all([
         this.prisma.serviceProvider.findMany({
           where,
           include: providerListInclude,

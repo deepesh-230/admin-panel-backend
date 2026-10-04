@@ -47,7 +47,7 @@ export class SubcategoriesService {
               ? { isActive: sortOrder }
               : { sortOrder };
 
-    const [total, items] = await this.prisma.$transaction([
+    const [total, items] = await Promise.all([
       this.prisma.subcategory.count({ where }),
       this.prisma.subcategory.findMany({
         where,

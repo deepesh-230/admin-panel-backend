@@ -211,7 +211,7 @@ export class MarketplaceService {
 
     // Admin list without geo: real DB pagination (price/condition already in WHERE).
     if (!hasGeo) {
-      const [total, rows] = await this.prisma.$transaction([
+      const [total, rows] = await Promise.all([
         this.prisma.marketplaceProduct.count({ where }),
         this.prisma.marketplaceProduct.findMany({
           where,
