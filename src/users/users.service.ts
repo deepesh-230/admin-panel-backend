@@ -195,7 +195,7 @@ export class UsersService {
           ? { state: { name: sortOrder } }
           : { [sortBy]: sortOrder };
 
-    const [total, users] = await this.prisma.$transaction([
+    const [total, users] = await Promise.all([
       this.prisma.user.count({ where }),
       this.prisma.user.findMany({
         where,

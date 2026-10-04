@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Module } from '@nestjs/common';
+import { shouldRunEnsureDdl } from '../prisma/prisma.service';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymentPlansController } from './payment-plans.controller';
@@ -12,8 +13,7 @@ class PaymentPlansBootstrap implements OnModuleInit {
   constructor(private readonly paymentPlans: PaymentPlansService) {}
 
   async onModuleInit() {
-    // Same gate as Prisma DDL ensure — skip on prod cold starts once migrations/seed are source of truth.
-    if (process.env.RUN_ENSURE_DDL === 'false') return;
+    if (!shouldRunEnsureDdl()) return;
     await this.paymentPlans.ensureDefaults();
   }
 }

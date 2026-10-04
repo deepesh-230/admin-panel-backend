@@ -57,7 +57,7 @@ export class EnquiriesService {
 
     const take = Math.min(limit || 20, 100);
     const skip = (page - 1) * take;
-    const [items, total] = await this.prisma.$transaction([
+    const [items, total] = await Promise.all([
       this.prisma.enquiry.findMany({
         where,
         include: enquiryInclude,

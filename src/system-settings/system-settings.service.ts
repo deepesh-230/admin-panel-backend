@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService, shouldRunEnsureDdl } from '../prisma/prisma.service';
 import {
   DEFAULT_SYSTEM_SETTINGS,
   SYSTEM_SETTING_KEYS,
@@ -13,7 +13,7 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    await this.ensureDefaults();
+    if (shouldRunEnsureDdl()) await this.ensureDefaults();
     // Run once shortly after boot, then hourly.
     setTimeout(() => {
       void this.runJobAlertLifecycle().catch((err) => {
