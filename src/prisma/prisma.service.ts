@@ -203,8 +203,33 @@ export class PrismaService
     await this.ensureUserProfileColumns();
     await this.ensureListFilterIndexes();
     await this.ensureMarketplaceSaleResaleColumns();
+    await this.ensureBlogArticleColumns();
     await this.ensureDropCategorySlugs();
     await this.ensureDeviceTokenTable();
+  }
+
+  /** Article/blog extras: gallery images + additional links. */
+  private async ensureBlogArticleColumns() {
+    try {
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "Blog" ADD COLUMN IF NOT EXISTS "images" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]
+      `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "Blog" ADD COLUMN IF NOT EXISTS "additionalLinks" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]
+      `);
+      // Backfill gallery from legacy single image when empty
+      await this.$executeRawUnsafe(`
+        UPDATE "Blog"
+        SET "images" = ARRAY["image"]
+        WHERE "image" IS NOT NULL
+          AND "image" <> ''
+          AND (cardinality("images") = 0 OR "images" IS NULL)
+      `);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure Blog article columns: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   /** Creates SocialSetting if missing (covers environments where db push hasn't been run yet). */

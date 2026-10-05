@@ -151,13 +151,23 @@ export class BulkImportService {
           isActive: parseBool(pick(r, 'isactive', 'active'), true),
         }));
       case 'blogs':
-        return this.importCms('blog', row, dryRun, ['title'], (r) => ({
-          title: pick(r, 'title'),
-          shortDescription: pick(r, 'shortdescription', 'short_description') || undefined,
-          description: pick(r, 'description') || undefined,
-          image: pick(r, 'image', 'imageurl', 'image_url') || undefined,
-          isActive: parseBool(pick(r, 'isactive', 'active'), true),
-        }));
+        return this.importCms('blog', row, dryRun, ['title'], (r) => {
+          const images = splitDelimited(
+            pick(r, 'images', 'gallery') || pick(r, 'image', 'imageurl', 'image_url'),
+          );
+          const additionalLinks = splitDelimited(
+            pick(r, 'additionallinks', 'additional_links', 'links'),
+          );
+          return {
+            title: pick(r, 'title'),
+            shortDescription: pick(r, 'shortdescription', 'short_description') || undefined,
+            description: pick(r, 'description') || undefined,
+            image: images[0] || pick(r, 'image', 'imageurl', 'image_url') || undefined,
+            images,
+            additionalLinks,
+            isActive: parseBool(pick(r, 'isactive', 'active'), true),
+          };
+        });
       case 'job-alerts':
         return this.importCms('jobAlert', row, dryRun, ['title'], (r) => {
           const postDate = pick(r, 'postdate', 'post_date') || undefined;
@@ -736,8 +746,24 @@ export class BulkImportService {
         ],
       },
       blogs: {
-        columns: ['title', 'shortDescription', 'description', 'image', 'isActive'],
-        sample: ['Awareness day', 'Short summary', 'Full article text', '', 'true'],
+        columns: [
+          'title',
+          'shortDescription',
+          'description',
+          'image',
+          'images',
+          'additionalLinks',
+          'isActive',
+        ],
+        sample: [
+          'Awareness day',
+          'Short summary',
+          '<p>Full article with <a href="https://example.com">a link</a>.</p>',
+          '',
+          'https://example.com/a.jpg|https://example.com/b.jpg',
+          'https://example.gov.in|https://example.org/help',
+          'true',
+        ],
       },
       'job-alerts': {
         columns: ['title', 'description', 'postDate', 'lastDate', 'isActive'],

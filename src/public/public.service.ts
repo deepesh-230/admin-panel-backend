@@ -168,6 +168,7 @@ export class PublicService {
     latitude?: number;
     longitude?: number;
     radius?: number;
+    listingIntent?: string;
   }) {
     return this.marketplace.listPublic(query || {});
   }

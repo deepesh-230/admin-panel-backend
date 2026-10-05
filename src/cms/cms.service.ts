@@ -124,13 +124,49 @@ export class CmsService {
     return row;
   }
 
+  private asUrlList(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return [
+      ...new Set(
+        value
+          .map((item) => String(item ?? '').trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  private sanitizeBlogData(data: Record<string, unknown>) {
+    const out: Record<string, unknown> = { ...data };
+
+    if ('additionalLinks' in data) {
+      out.additionalLinks = this.asUrlList(data.additionalLinks);
+    }
+
+    if ('images' in data) {
+      const images = this.asUrlList(data.images);
+      out.images = images;
+      if (!('image' in data) || !String(data.image || '').trim()) {
+        out.image = images[0] || null;
+      }
+    } else if ('image' in data) {
+      const image = String(data.image || '').trim();
+      out.image = image || null;
+      if (image) out.images = [image];
+      else if (!('images' in out)) out.images = [];
+    }
+
+    return out;
+  }
+
   create(model: CmsModel, data: Record<string, unknown>) {
-    return this.client(model).create({ data });
+    const payload = model === 'blog' ? this.sanitizeBlogData(data) : data;
+    return this.client(model).create({ data: payload });
   }
 
   async update(model: CmsModel, id: string, data: Record<string, unknown>) {
     await this.findOne(model, id);
-    return this.client(model).update({ where: { id }, data });
+    const payload = model === 'blog' ? this.sanitizeBlogData(data) : data;
+    return this.client(model).update({ where: { id }, data: payload });
   }
 
   async remove(model: CmsModel, id: string) {
