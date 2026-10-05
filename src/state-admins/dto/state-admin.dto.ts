@@ -1,4 +1,6 @@
+import { Transform } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsEmail,
@@ -6,9 +8,13 @@ import {
   IsString,
   IsUUID,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateStateAdminDto {
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail()
   email!: string;
 
@@ -24,12 +30,14 @@ export class CreateStateAdminDto {
   @IsString()
   phone?: string;
 
+  /** Legacy single-state field; prefer stateIds. */
   @IsOptional()
   @IsUUID()
   stateId?: string;
 
-  @IsOptional()
+  @ValidateIf((o: CreateStateAdminDto) => !o.stateId)
   @IsArray()
+  @ArrayMinSize(1, { message: 'Assign at least one state' })
   @IsUUID(undefined, { each: true })
   stateIds?: string[];
 }
@@ -49,6 +57,7 @@ export class UpdateStateAdminDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: 'Assign at least one state' })
   @IsUUID(undefined, { each: true })
   stateIds?: string[];
 

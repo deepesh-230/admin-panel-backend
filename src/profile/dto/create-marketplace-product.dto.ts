@@ -234,4 +234,9 @@ export class ListMarketplacePublicQueryDto {
   @Min(0.1)
   @Max(100)
   radius?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['sell', 'buy', 'SELL', 'BUY'])
+  listingIntent?: string;
 }

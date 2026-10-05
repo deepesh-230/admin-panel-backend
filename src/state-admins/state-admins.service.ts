@@ -122,8 +122,9 @@ export class StateAdminsService {
   }
 
   async create(dto: CreateStateAdminDto) {
+    const email = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
     if (existing) throw new ConflictException('Email already registered');
 
@@ -138,7 +139,7 @@ export class StateAdminsService {
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         passwordHash,
         name: dto.name,
         phone: dto.phone,

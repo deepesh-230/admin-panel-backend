@@ -365,6 +365,10 @@ model Blog {
   shortDescription String?
   description      String?
   image            String?
+  /// Optional gallery (first image is also mirrored to `image` for older clients)
+  images           String[] @default([])
+  /// Extra URLs shown as a list (added via + in admin)
+  additionalLinks  String[] @default([])
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

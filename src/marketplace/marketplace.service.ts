@@ -485,6 +485,11 @@ export class MarketplaceService {
       ...this.buildPriceGeoWhere(normalized),
     };
 
+    const intent = normalized.listingIntent?.trim().toLowerCase();
+    if (intent === 'buy' || intent === 'sell') {
+      where.listingIntent = intent;
+    }
+
     if (normalized.search?.trim()) {
       const q = normalized.search.trim();
       where.AND = [
