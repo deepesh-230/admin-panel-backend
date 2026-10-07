@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BecomeTarget, CategoryType, EnquiryStatus } from '@prisma/client';
+import { BecomeTarget, CategoryType, EnquiryStatus, AdminLifecycleFlag } from '@prisma/client';
 import { BecomeService } from '../become/become.service';
 import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { CategoriesService } from '../categories/categories.service';
@@ -16,7 +16,7 @@ import {
 } from '../system-settings/system-setting.defaults';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
-import { coverageVisibilityWhere } from '../common/coverage';
+import { coverageVisibilityWhere, eventCoverageVisibilityWhere } from '../common/coverage';
 import { CATALOG_TTL_MS, STATES_TTL_MS, catalogCache } from '../common/utils/ttl-cache';
 
 @Injectable()
@@ -109,6 +109,27 @@ export class PublicService {
 
   listJobAlerts() {
     return this.systemSettings.listPublicJobAlerts();
+  }
+
+  /** Upcoming / ongoing active events visible for the viewer's coverage. */
+  listEvents(viewer?: { stateId?: string; city?: string }) {
+    const now = new Date();
+    return this.prisma.event.findMany({
+      where: {
+        isActive: true,
+        adminFlag: { not: AdminLifecycleFlag.DELETE },
+        deletedAt: null,
+        AND: [
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+          eventCoverageVisibilityWhere(viewer),
+        ],
+      },
+      include: {
+        coverageState: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: { startsAt: 'asc' },
+      take: 100,
+    });
   }
 
   async listPaymentPlans() {

@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsNumber,
   IsOptional,
@@ -196,6 +197,11 @@ export class UpdateMarketplaceProductDto {
   @IsArray()
   @IsString({ each: true })
   gallery?: string[];
+
+  /** Soft deactivate / reactivate own sale listing. */
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class ListMarketplacePublicQueryDto {

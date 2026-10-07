@@ -58,6 +58,7 @@ export class AuthService {
     email: string;
     name: string | null;
     phone: string | null;
+    image?: string | null;
     location: string | null;
     city: string | null;
     latitude: number | null;
@@ -94,6 +95,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      image: user.image ?? null,
       location: user.location,
       city: user.city,
       latitude: user.latitude,
@@ -129,6 +131,18 @@ export class AuthService {
     return {
       role: { include: { permissions: { include: { permission: { select: { code: true } } } } } },
       userStates: { include: { state: { select: { id: true, name: true, code: true } } } },
+      disabilities: {
+        include: {
+          subcategory: {
+            select: {
+              id: true,
+              name: true,
+              categoryId: true,
+              category: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
     } as const;
   }
 
@@ -249,9 +263,11 @@ export class AuthService {
         ageRange: string | null;
         isActive: boolean;
         stateId: string | null;
+        image: string | null;
         role: RoleName;
         permissions: unknown;
         states: unknown;
+        disabilities: unknown;
       }>
     >`
       SELECT
@@ -260,6 +276,7 @@ export class AuthService {
         u."passwordHash",
         u.name,
         u.phone,
+        u.image,
         u.location,
         u.city,
         u.latitude,
@@ -287,7 +304,19 @@ export class AuthService {
           FROM "UserState" us
           JOIN "State" s ON s.id = us."stateId"
           WHERE us."userId" = u.id
-        ), json_build_array()) AS states
+        ), json_build_array()) AS states,
+        COALESCE((
+          SELECT json_agg(json_build_object(
+            'id', sc.id,
+            'name', sc.name,
+            'categoryId', sc."categoryId",
+            'categoryName', c.name
+          ))
+          FROM "UserDisability" ud
+          JOIN "Subcategory" sc ON sc.id = ud."subcategoryId"
+          JOIN "Category" c ON c.id = sc."categoryId"
+          WHERE ud."userId" = u.id
+        ), json_build_array()) AS disabilities
       FROM "User" u
       INNER JOIN "Role" r ON r.id = u."roleId"
       WHERE u.email = ${email}
@@ -318,6 +347,14 @@ export class AuthService {
           name: string;
           code: string | null;
           isPrimary: boolean;
+        }>)
+      : [];
+    const disabilities = Array.isArray(row.disabilities)
+      ? (row.disabilities as Array<{
+          id: string;
+          name: string;
+          categoryId: string;
+          categoryName: string;
         }>)
       : [];
 
@@ -352,6 +389,7 @@ export class AuthService {
           email: row.email,
           name: row.name,
           phone: row.phone,
+          image: row.image,
           location: row.location,
           city: row.city,
           latitude: row.latitude,
@@ -366,8 +404,8 @@ export class AuthService {
           role: row.role,
           permissions,
           states,
-          disabilities: [],
-          disabilitySubcategoryIds: [],
+          disabilities,
+          disabilitySubcategoryIds: disabilities.map((d) => d.id),
         },
         ...tokens,
       },

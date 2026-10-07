@@ -68,6 +68,15 @@ export class PublicController {
     return this.publicService.listJobAlerts();
   }
 
+  @Get('events')
+  @Header('Cache-Control', 'public, max-age=60')
+  listEvents(
+    @Query('stateId') stateId?: string,
+    @Query('city') city?: string,
+  ) {
+    return this.publicService.listEvents({ stateId, city });
+  }
+
   @Get('payment-plans')
   listPaymentPlans() {
     return this.publicService.listPaymentPlans();

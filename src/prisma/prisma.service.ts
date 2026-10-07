@@ -833,6 +833,9 @@ export class PrismaService
         ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "city" TEXT
       `);
       await this.$executeRawUnsafe(`
+        ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "image" TEXT
+      `);
+      await this.$executeRawUnsafe(`
         ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "ageRange" "AgeRange"
       `);
       await this.$executeRawUnsafe(

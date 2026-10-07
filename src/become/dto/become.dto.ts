@@ -136,3 +136,13 @@ export class UpdateBecomeApplicationDto {
   @IsUUID()
   stateId?: string;
 }
+
+export class PromoteVolunteerToStateAdminDto {
+  @IsUUID()
+  stateId!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  adminNote?: string | null;
+}

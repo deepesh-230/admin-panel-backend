@@ -54,6 +54,10 @@ export class UpdateProfileDto {
   km?: number;
 
   @IsOptional()
+  @IsString()
+  image?: string | null;
+
+  @IsOptional()
   @IsEnum(AgeRange)
   ageRange?: AgeRange | null;
 

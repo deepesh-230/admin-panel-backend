@@ -18,6 +18,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { BecomeService } from './become.service';
 import {
   CreateBecomeQuestionDto,
+  PromoteVolunteerToStateAdminDto,
   UpdateBecomeApplicationDto,
   UpdateBecomeQuestionDto,
 } from './dto/become.dto';
@@ -89,5 +90,15 @@ export class BecomeApplicationsController {
   @Permissions('cms.write')
   update(@Param('id') id: string, @Body() dto: UpdateBecomeApplicationDto) {
     return this.become.updateApplication(id, dto);
+  }
+
+  /** After a volunteer app is approved, promote that user to state admin for a chosen state. */
+  @Post(':id/promote-state-admin')
+  @Permissions('cms.write')
+  promoteStateAdmin(
+    @Param('id') id: string,
+    @Body() dto: PromoteVolunteerToStateAdminDto,
+  ) {
+    return this.become.promoteVolunteerToStateAdmin(id, dto);
   }
 }

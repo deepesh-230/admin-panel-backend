@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { PushModule } from '../push/push.module';
 import {
   BecomeApplicationsController,
   BecomeQuestionsController,
@@ -7,7 +8,7 @@ import {
 import { BecomeService } from './become.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, PushModule],
   controllers: [BecomeQuestionsController, BecomeApplicationsController],
   providers: [BecomeService],
   exports: [BecomeService],

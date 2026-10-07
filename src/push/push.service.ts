@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { BroadcastContentType } from '@prisma/client';
 import { cert, getApps, initializeApp, type ServiceAccount } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { PrismaService } from '../prisma/prisma.service';
@@ -118,6 +119,55 @@ export class PushService implements OnModuleInit {
     const { getAuth } = await import('firebase-admin/auth');
     const token = await getAuth().createCustomToken(userId);
     return { token };
+  }
+
+  /**
+   * Inbox row + FCM for submission approvals (providers, marketplace, become apps).
+   * Failures are logged and do not throw — approval itself must still succeed.
+   */
+  async notifyApproval(
+    userIds: string[],
+    title: string,
+    body?: string,
+    extraData?: Record<string, string>,
+  ) {
+    const unique = [...new Set(userIds.map((id) => id?.trim()).filter(Boolean))];
+    if (unique.length === 0) {
+      return { successCount: 0, failureCount: 0, skipped: true };
+    }
+
+    try {
+      await this.prisma.userBroadcast.createMany({
+        data: unique.map((userId) => ({
+          userId,
+          contentType: BroadcastContentType.APPROVAL,
+          title,
+          body: body ?? null,
+        })),
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create approval inbox rows: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    try {
+      return await this.sendToUserIds(unique, {
+        title,
+        body,
+        data: {
+          contentType: BroadcastContentType.APPROVAL,
+          ...(extraData || {}),
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Approval push failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return { successCount: 0, failureCount: 0, skipped: true };
+    }
   }
 
   async sendToUserIds(userIds: string[], payload: PushPayload) {

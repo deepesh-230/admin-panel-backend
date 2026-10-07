@@ -11,9 +11,12 @@ import {
   RoleName,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
+import { invalidateAuthCache } from '../common/utils/ttl-cache';
 import {
   CreateBecomeApplicationDto,
   CreateBecomeQuestionDto,
+  PromoteVolunteerToStateAdminDto,
   UpdateBecomeApplicationDto,
   UpdateBecomeQuestionDto,
 } from './dto/become.dto';
@@ -31,7 +34,10 @@ function optionsFromJson(value: Prisma.JsonValue | null | undefined): string[] {
 
 @Injectable()
 export class BecomeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly push: PushService,
+  ) {}
 
   private serializeQuestion(row: {
     id: string;
@@ -236,6 +242,12 @@ export class BecomeService {
     if (user.role.name === RoleName.ADMIN) {
       throw new BadRequestException('Cannot change role of a Central Admin account');
     }
+    if (
+      application.target === BecomeTarget.STATE_ADMIN &&
+      user.role.name === RoleName.STATE_ADMIN
+    ) {
+      // Already a state admin — still allow state reassignment below.
+    }
 
     const role = await this.prisma.role.findUniqueOrThrow({
       where: { name: roleName },
@@ -300,16 +312,36 @@ export class BecomeService {
         });
       }
     });
+
+    return { userId: user.id, roleName, stateId: nextStateId };
+  }
+
+  private async revokeMobileSessions(userId: string) {
+    await Promise.all([
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      this.prisma.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+    invalidateAuthCache(userId);
   }
 
   async updateApplication(id: string, dto: UpdateBecomeApplicationDto) {
     const existing = await this.getApplication(id);
 
+    let promotedUserId: string | null = null;
+    let promotedRole: RoleName | null = null;
     if (dto.status === BecomeApplicationStatus.APPROVED) {
-      await this.promoteApplicantOnApproval(existing, dto.stateId);
+      const result = await this.promoteApplicantOnApproval(existing, dto.stateId);
+      promotedUserId = result?.userId ?? null;
+      promotedRole = result?.roleName ?? null;
     }
 
-    return this.prisma.becomeApplication.update({
+    const updated = await this.prisma.becomeApplication.update({
       where: { id },
       data: {
         ...(dto.status !== undefined && { status: dto.status }),
@@ -332,6 +364,139 @@ export class BecomeService {
         },
       },
     });
+
+    const becameApproved =
+      dto.status === BecomeApplicationStatus.APPROVED &&
+      existing.status !== BecomeApplicationStatus.APPROVED;
+    if (becameApproved) {
+      const recipientId =
+        promotedUserId || updated.userId || updated.user?.id || existing.userId;
+      if (recipientId) {
+        const roleLabel = String(updated.target).replace(/_/g, ' ').toLowerCase();
+        const isStateAdmin = promotedRole === RoleName.STATE_ADMIN;
+        if (isStateAdmin) {
+          await this.revokeMobileSessions(recipientId);
+          void this.push.notifyApproval(
+            [recipientId],
+            'You are now a State Admin',
+            'Your state admin application was approved. Sign in to the admin dashboard with the same email and password. You have been signed out of the mobile app.',
+            { action: 'STATE_ADMIN_PROMOTED', forceLogout: '1' },
+          );
+        } else {
+          void this.push.notifyApproval(
+            [recipientId],
+            'Application approved',
+            `Your application to become ${roleLabel} has been approved.`,
+            { action: 'BECOME_APPROVED', target: updated.target },
+          );
+        }
+      }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Second step after volunteer approval: assign a state and promote the user to STATE_ADMIN.
+   * Revokes mobile sessions so the app signs them out (dashboard-only role).
+   */
+  async promoteVolunteerToStateAdmin(
+    id: string,
+    dto: PromoteVolunteerToStateAdminDto,
+  ) {
+    const existing = await this.getApplication(id);
+    if (existing.target !== BecomeTarget.VOLUNTEER) {
+      throw new BadRequestException(
+        'Only an approved volunteer application can be promoted to state admin',
+      );
+    }
+    if (existing.status !== BecomeApplicationStatus.APPROVED) {
+      throw new BadRequestException(
+        'Approve the volunteer application first, then promote to state admin',
+      );
+    }
+
+    const linkedUser =
+      (existing.userId
+        ? await this.prisma.user.findUnique({
+            where: { id: existing.userId },
+            include: { role: true },
+          })
+        : null) ??
+      (await this.prisma.user.findUnique({
+        where: { email: existing.email.trim().toLowerCase() },
+        include: { role: true },
+      }));
+    if (linkedUser?.role.name === RoleName.STATE_ADMIN) {
+      throw new BadRequestException('This user is already a state admin');
+    }
+    if (linkedUser?.role.name === RoleName.ADMIN) {
+      throw new BadRequestException('Cannot change role of a Central Admin account');
+    }
+
+    const stateId = dto.stateId?.trim();
+    if (!stateId) {
+      throw new BadRequestException('State is required to make this user a state admin');
+    }
+
+    const result = await this.promoteApplicantOnApproval(
+      { ...existing, target: BecomeTarget.STATE_ADMIN },
+      stateId,
+    );
+    if (!result?.userId) {
+      throw new BadRequestException('Could not resolve the applicant user account');
+    }
+
+    const note =
+      dto.adminNote?.trim() ||
+      existing.adminNote ||
+      'Promoted from approved volunteer to state admin';
+
+    // Audit row so mobile/admin show an approved state-admin application.
+    const stateAdminApp = await this.prisma.becomeApplication.create({
+      data: {
+        target: BecomeTarget.STATE_ADMIN,
+        status: BecomeApplicationStatus.APPROVED,
+        name: existing.name,
+        email: existing.email,
+        phone: existing.phone,
+        userId: result.userId,
+        adminNote: note,
+      },
+      include: {
+        answers: { orderBy: { createdAt: 'asc' } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            stateId: true,
+            state: { select: { id: true, name: true } },
+            role: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    if (dto.adminNote !== undefined) {
+      await this.prisma.becomeApplication.update({
+        where: { id: existing.id },
+        data: { adminNote: note },
+      });
+    }
+
+    await this.revokeMobileSessions(result.userId);
+
+    const stateName = stateAdminApp.user?.state?.name;
+    void this.push.notifyApproval(
+      [result.userId],
+      'You are now a State Admin',
+      `You have been promoted to state admin${stateName ? ` for ${stateName}` : ''}. Sign in to the admin dashboard with the same email and password. You have been signed out of the mobile app.`,
+      { action: 'STATE_ADMIN_PROMOTED', forceLogout: '1' },
+    );
+
+    return stateAdminApp;
   }
 
   async listMine(params: { userId?: string; email?: string }) {
