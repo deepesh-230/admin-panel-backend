@@ -12,6 +12,7 @@ import {
 } from '@prisma/client';
 import { boundingBox, haversineKm } from '../common/utils/geo';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 
 const adminProductInclude = {
   createdBy: { select: { id: true, name: true, email: true } },
@@ -98,7 +99,10 @@ function applySoldFromQuantity(
 
 @Injectable()
 export class MarketplaceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   private buildPriceGeoWhere(query: MarketplaceListQuery): Prisma.MarketplaceProductWhereInput {
     const where: Prisma.MarketplaceProductWhereInput = {};
@@ -323,11 +327,23 @@ export class MarketplaceService {
   async updateAdmin(id: string, data: MarketplaceWriteInput) {
     const existing = await this.findAdmin(id);
     const payload = this.buildUpdatePayload(existing, data);
-    return this.prisma.marketplaceProduct.update({
+    const updated = await this.prisma.marketplaceProduct.update({
       where: { id },
       data: payload,
       include: adminProductInclude,
     });
+
+    const becameApproved =
+      data.approvalStatus === 'APPROVED' && existing.approvalStatus !== 'APPROVED';
+    if (becameApproved && existing.createdById) {
+      void this.push.notifyApproval(
+        [existing.createdById],
+        'Sale listing approved',
+        `"${updated.name}" is now approved and visible in Sale.`,
+      );
+    }
+
+    return updated;
   }
 
   private buildUpdatePayload(
@@ -480,7 +496,7 @@ export class MarketplaceService {
       isActive: true,
       deletedAt: null,
       adminFlag: { not: 'DELETE' },
-      approvalStatus: { in: ['APPROVED', 'PENDING'] },
+      approvalStatus: 'APPROVED',
       saleStatus: { in: [MarketplaceSaleStatus.NEWLY_ADDED, MarketplaceSaleStatus.PENDING_SALE] },
       ...this.buildPriceGeoWhere(normalized),
     };
@@ -506,6 +522,7 @@ export class MarketplaceService {
 
     const rows = await this.prisma.marketplaceProduct.findMany({
       where,
+      include: { state: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
     });
     const priced = this.applyPriceFilter(rows, normalized);
@@ -519,7 +536,9 @@ export class MarketplaceService {
         isActive: true,
         deletedAt: null,
         adminFlag: { not: 'DELETE' },
+        approvalStatus: 'APPROVED',
       },
+      include: { state: { select: { id: true, name: true } } },
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
@@ -560,6 +579,34 @@ export class MarketplaceService {
 
   async updateForUser(userId: string, id: string, data: MarketplaceWriteInput) {
     const existing = await this.findForUser(userId, id);
+    const contentKeys: (keyof MarketplaceWriteInput)[] = [
+      'name',
+      'actualPrice',
+      'offerPrice',
+      'phone',
+      'sellerName',
+      'description',
+      'address',
+      'color',
+      'brand',
+      'features',
+      'location',
+      'latitude',
+      'longitude',
+      'gallery',
+      'stateId',
+      'listingIntent',
+      'condition',
+      'quantity',
+      'saleStatus',
+    ];
+    const contentChanged = contentKeys.some((key) => data[key] !== undefined);
+    if (data.isActive !== undefined && !contentChanged) {
+      return this.prisma.marketplaceProduct.update({
+        where: { id },
+        data: { isActive: Boolean(data.isActive) },
+      });
+    }
     const payload = this.buildUpdatePayload(existing, data);
     return this.prisma.marketplaceProduct.update({
       where: { id },

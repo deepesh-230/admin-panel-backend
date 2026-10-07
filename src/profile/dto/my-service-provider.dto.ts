@@ -1,6 +1,7 @@
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsNumber,
   IsOptional,
@@ -201,4 +202,9 @@ export class UpdateMyServiceProviderDto {
   @IsString()
   @MaxLength(500)
   locationLabel?: string;
+
+  /** Soft deactivate / reactivate own listing. */
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

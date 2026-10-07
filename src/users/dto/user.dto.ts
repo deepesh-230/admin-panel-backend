@@ -71,6 +71,10 @@ export class CreateUserDto {
   disabilitySubcategoryIds?: string[];
 
   @IsOptional()
+  @IsString()
+  image?: string | null;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }
@@ -124,6 +128,10 @@ export class UpdateUserDto {
   @IsArray()
   @IsUUID(undefined, { each: true })
   disabilitySubcategoryIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  image?: string | null;
 
   @IsOptional()
   @IsBoolean()

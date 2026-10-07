@@ -58,6 +58,8 @@ model User {
   passwordHash             String
   name                     String?
   phone                    String?
+  /// Profile photo URL (uploaded via /uploads)
+  image                    String?
   location                 String?
   latitude                 Float?
   longitude                Float?
@@ -852,6 +854,7 @@ enum PaymentPurpose {
 enum BroadcastContentType {
   JOB_ALERT
   USEFUL_LINK
+  APPROVAL
 }
 
 enum BecomeTarget {

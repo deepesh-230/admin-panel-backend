@@ -15,6 +15,7 @@ import {
 } from '../common/utils/state-scope';
 import { haversineKm, boundingBox } from '../common/utils/geo';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 import {
   AssignProviderAdminDto,
   CreateServiceProviderDto,
@@ -74,7 +75,10 @@ type ProviderListRow = Prisma.ServiceProviderGetPayload<{ include: typeof provid
 
 @Injectable()
 export class ServiceProvidersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   private sanitize(provider: ProviderRow | ProviderListRow, distanceKm?: number | null) {
     const linked =
@@ -713,6 +717,17 @@ export class ServiceProvidersService {
       },
       include: providerInclude,
     });
+
+    const recipientIds = [
+      existing.createdById,
+      ...existing.admins.map((admin) => admin.userId),
+    ].filter((uid): uid is string => Boolean(uid));
+    void this.push.notifyApproval(
+      recipientIds,
+      'Service provider approved',
+      `"${provider.name}" is now live on Divyaang Disha.`,
+    );
+
     return this.sanitize(provider);
   }
 
@@ -967,9 +982,44 @@ export class ServiceProvidersService {
       coverPhotoUrl?: string | null;
       gallery?: string[];
       locationLabel?: string;
+      isActive?: boolean;
     },
   ) {
     const existing = await this.assertUserOwnsProvider(userId, id);
+
+    const contentKeys = [
+      'name',
+      'categoryId',
+      'subcategoryId',
+      'subcategoryIds',
+      'description',
+      'phone',
+      'landline',
+      'email',
+      'address',
+      'city',
+      'stateId',
+      'latitude',
+      'longitude',
+      'googlePlaceId',
+      'about',
+      'services',
+      'coverPhotoUrl',
+      'gallery',
+      'locationLabel',
+    ] as const;
+    const contentChanged = contentKeys.some((key) => data[key] !== undefined);
+    const onlyActiveToggle = data.isActive !== undefined && !contentChanged;
+
+    if (onlyActiveToggle) {
+      const provider = await this.prisma.serviceProvider.update({
+        where: { id },
+        data: { isActive: Boolean(data.isActive) },
+        include: providerInclude,
+      });
+      return this.sanitize(provider);
+    }
+
     const nextCategoryId = data.categoryId ?? existing.categoryId;
     const subcategoryTouched =
       data.subcategoryIds !== undefined || data.subcategoryId !== undefined;
@@ -1022,12 +1072,12 @@ export class ServiceProvidersService {
           coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
         }),
         ...(data.gallery !== undefined && { gallery: data.gallery }),
-        // Edits go back to pending review
+        // Content edits go back to pending review
         approvalStatus: ProviderApprovalStatus.PENDING_APPROVAL,
         approvedById: null,
         approvedAt: null,
         rejectedReason: null,
-        isActive: true,
+        isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       },
       include: providerInclude,
     });

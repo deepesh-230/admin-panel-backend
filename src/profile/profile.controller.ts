@@ -70,6 +70,7 @@ export class ProfileController {
           phone: dto.phone,
           km: dto.km,
           ageRange: dto.ageRange === undefined ? undefined : dto.ageRange,
+          ...(dto.image !== undefined ? { image: dto.image } : {}),
           ...place,
         },
         include: {
@@ -139,6 +140,7 @@ export class ProfileController {
         email: updated.email,
         name: updated.name,
         phone: updated.phone,
+        image: updated.image,
         location: updated.location,
         city: updated.city,
         latitude: updated.latitude,

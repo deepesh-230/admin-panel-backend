@@ -53,13 +53,13 @@ export function sanitizeCoverage(data: CoverageInput) {
   };
 }
 
-/** Prisma OR clause so users only see listings that match their location. */
-export function coverageVisibilityWhere(
+/** Shared OR clauses so users only see listings that match their location. */
+export function coverageVisibilityClauses(
   viewer?: ViewerLocation | null,
-): Prisma.HomeBannerWhereInput {
+): Array<Record<string, unknown>> {
   const stateId = viewer?.stateId?.trim();
   const city = viewer?.city?.trim();
-  const clauses: Prisma.HomeBannerWhereInput[] = [
+  const clauses: Array<Record<string, unknown>> = [
     { coverageFlag: CoverageFlag.NATIONAL },
   ];
   if (stateId) {
@@ -75,5 +75,18 @@ export function coverageVisibilityWhere(
       ...(stateId ? { coverageStateId: stateId } : {}),
     });
   }
-  return { OR: clauses };
+  return clauses;
+}
+
+/** Prisma OR clause for HomeBanner (and any model with the same coverage fields). */
+export function coverageVisibilityWhere(
+  viewer?: ViewerLocation | null,
+): Prisma.HomeBannerWhereInput {
+  return { OR: coverageVisibilityClauses(viewer) as Prisma.HomeBannerWhereInput[] };
+}
+
+export function eventCoverageVisibilityWhere(
+  viewer?: ViewerLocation | null,
+): Prisma.EventWhereInput {
+  return { OR: coverageVisibilityClauses(viewer) as Prisma.EventWhereInput[] };
 }
