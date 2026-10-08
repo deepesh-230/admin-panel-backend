@@ -248,10 +248,23 @@ export class EnquiriesService {
     if (providerId) {
       const provider = await this.prisma.serviceProvider.findUnique({
         where: { id: providerId },
-        select: { id: true, stateId: true },
+        select: {
+          id: true,
+          stateId: true,
+          businessVerificationStatus: true,
+        },
       });
       if (!provider) throw new NotFoundException('Service provider not found');
       stateId = provider.stateId;
+
+      // Unverified businesses: enquiry goes to central/state admin, not provider admin.
+      if (
+        provider.businessVerificationStatus !== 'VERIFIED' &&
+        currentUser.role !== RoleName.SERVICE_PROVIDER_ADMIN
+      ) {
+        if (kind === 'PROVIDER') kind = 'STATE_ADMIN';
+        providerId = null;
+      }
     }
 
     return { kind, providerId, stateId };

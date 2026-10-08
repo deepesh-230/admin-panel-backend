@@ -4,8 +4,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  /// Direct (non-pooler) URL for prisma db push / migrate — avoids PgBouncer "prepared statement already exists".
+  directUrl = env("DIRECT_URL")
 }
 
 model Role {
@@ -216,6 +218,9 @@ model ServiceProvider {
   panId          String?
   verificationSubmittedAt DateTime?
   verificationNote        String?
+  /// Denormalized active sponsorship for list ranking (highest tier).
+  sponsorPlanId  String?
+  sponsoredUntil DateTime?
   createdById    String?
   approvedById   String?
   approvedAt     DateTime?
@@ -229,6 +234,7 @@ model ServiceProvider {
   admins         ServiceProviderAdmin[]
   enquiries      Enquiry[]
   subcategories  ServiceProviderSubcategory[]
+  sponsorships   ProviderSponsorship[]
 
   @@index([stateId])
   @@index([categoryId])
@@ -241,6 +247,8 @@ model ServiceProvider {
   @@index([latitude, longitude])
   @@index([approvalStatus, isActive, stateId])
   @@index([categoryId, subcategoryId])
+  @@index([sponsoredUntil])
+  @@index([sponsorPlanId])
 }
 
 /// Many-to-many: one service provider can belong to multiple subcategories under its category
@@ -641,12 +649,15 @@ model Payment {
   notes       String?
   /// Optional note entered by the payer (e.g. mobile sponsorship checkout).
   payerNote   String?
+  /// JSON array of serviceProviderIds selected at sponsorship checkout.
+  serviceProviderIds Json?
   paidAt      DateTime?
   /// Sponsorship / subscription validity end (set on successful payment)
   validUntil  DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  providerSponsorships ProviderSponsorship[]
 
   @@index([status])
   @@index([purpose])
@@ -655,6 +666,33 @@ model Payment {
   @@index([validUntil])
   @@index([userId])
   @@index([createdAt])
+}
+
+enum ProviderSponsorshipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+/// Links a sponsorship payment to one or more service providers (multi-select Get Featured).
+model ProviderSponsorship {
+  id                String                     @id @default(uuid())
+  serviceProviderId String
+  paymentId         String
+  planId            String
+  startsAt          DateTime                   @default(now())
+  validUntil        DateTime
+  status            ProviderSponsorshipStatus  @default(ACTIVE)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  serviceProvider   ServiceProvider            @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  payment           Payment                    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([serviceProviderId, validUntil])
+  @@index([validUntil])
+  @@index([paymentId])
+  @@index([status])
+  @@index([planId])
 }
 
 /** Configurable sponsorship / payment plans (Silver, Gold, Platinum). */
