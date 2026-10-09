@@ -37,6 +37,11 @@ export class CreatePublicEnquiryDto {
   @IsUUID()
   marketplaceProductId?: string;
 
+  /** Service-provider enquiry — when set, routing uses business verification status. */
+  @IsOptional()
+  @IsUUID()
+  providerId?: string;
+
   @IsOptional()
   @IsString()
   category?: string;

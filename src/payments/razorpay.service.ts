@@ -5,7 +5,13 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
+import {
+  PaymentPurpose,
+  PaymentStatus,
+  Prisma,
+  ProviderApprovalStatus,
+  ProviderSponsorshipStatus,
+} from '@prisma/client';
 import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,6 +28,17 @@ function normalizePlanCode(planId: string) {
 
 function rupeesToPaise(amountRupees: number) {
   return Math.round(amountRupees * 100);
+}
+
+const TIER_RANK: Record<string, number> = {
+  silver: 1,
+  gold: 2,
+  platinum: 3,
+};
+
+function parseProviderIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((id): id is string => typeof id === 'string' && id.length > 0);
 }
 
 @Injectable()
@@ -69,6 +86,104 @@ export class RazorpayService {
     return addPlanDuration(paidAt, value, unit);
   }
 
+  /** Ensure user owns/admins each provider and they are approved + active. */
+  private async assertSponsorableProviders(userId: string, providerIds: string[]) {
+    const uniqueIds = [...new Set(providerIds.map((id) => id.trim()).filter(Boolean))];
+    if (!uniqueIds.length) {
+      throw new BadRequestException('Select at least one business to sponsor');
+    }
+
+    const rows = await this.prisma.serviceProvider.findMany({
+      where: {
+        id: { in: uniqueIds },
+        OR: [{ createdById: userId }, { admins: { some: { userId } } }],
+      },
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+        approvalStatus: true,
+      },
+    });
+
+    if (rows.length !== uniqueIds.length) {
+      throw new BadRequestException(
+        'One or more selected businesses were not found or are not yours',
+      );
+    }
+
+    const ineligible = rows.filter(
+      (r) => !r.isActive || r.approvalStatus !== ProviderApprovalStatus.APPROVED,
+    );
+    if (ineligible.length) {
+      throw new BadRequestException(
+        `Only approved active businesses can be sponsored: ${ineligible.map((r) => r.name).join(', ')}`,
+      );
+    }
+
+    return uniqueIds;
+  }
+
+  /** Refresh denormalized sponsor fields from active sponsorships (highest tier). */
+  async refreshProviderSponsorFields(serviceProviderId: string) {
+    const now = new Date();
+    const active = await this.prisma.providerSponsorship.findMany({
+      where: {
+        serviceProviderId,
+        status: ProviderSponsorshipStatus.ACTIVE,
+        validUntil: { gte: now },
+      },
+      select: { planId: true, validUntil: true },
+    });
+
+    if (!active.length) {
+      await this.prisma.serviceProvider.update({
+        where: { id: serviceProviderId },
+        data: { sponsorPlanId: null, sponsoredUntil: null },
+      });
+      return;
+    }
+
+    let best = active[0];
+    for (const row of active.slice(1)) {
+      const br = TIER_RANK[normalizePlanCode(best.planId)] ?? 0;
+      const rr = TIER_RANK[normalizePlanCode(row.planId)] ?? 0;
+      if (rr > br || (rr === br && row.validUntil > best.validUntil)) {
+        best = row;
+      }
+    }
+
+    await this.prisma.serviceProvider.update({
+      where: { id: serviceProviderId },
+      data: {
+        sponsorPlanId: normalizePlanCode(best.planId),
+        sponsoredUntil: best.validUntil,
+      },
+    });
+  }
+
+  private async activateProviderSponsorships(
+    paymentId: string,
+    planId: string,
+    providerIds: string[],
+    validUntil: Date,
+    paidAt: Date,
+  ) {
+    for (const serviceProviderId of providerIds) {
+      await this.prisma.providerSponsorship.create({
+        data: {
+          serviceProviderId,
+          paymentId,
+          planId,
+          startsAt: paidAt,
+          validUntil,
+          status: ProviderSponsorshipStatus.ACTIVE,
+        },
+      });
+      await this.refreshProviderSponsorFields(serviceProviderId);
+    }
+  }
+
   async createOrder(dto: CreateRazorpayOrderDto) {
     const planCode = normalizePlanCode(dto.planId);
     const plan = await this.prisma.paymentPlan.findFirst({
@@ -78,12 +193,10 @@ export class RazorpayService {
       throw new NotFoundException(`Payment plan "${planCode}" not found or inactive`);
     }
 
-    const amountRupees = Number(plan.amount);
-    if (!Number.isFinite(amountRupees) || amountRupees <= 0) {
+    const unitAmount = Number(plan.amount);
+    if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
       throw new BadRequestException('Plan amount is invalid');
     }
-    const amountPaise = rupeesToPaise(amountRupees);
-    const currency = (plan.currency || 'INR').toUpperCase();
 
     let userId: string | undefined;
     if (dto.userId?.trim()) {
@@ -93,6 +206,18 @@ export class RazorpayService {
       });
       if (user) userId = user.id;
     }
+    if (!userId) {
+      throw new BadRequestException('userId is required to sponsor businesses');
+    }
+
+    const serviceProviderIds = await this.assertSponsorableProviders(
+      userId,
+      dto.serviceProviderIds || [],
+    );
+
+    const amountRupees = unitAmount * serviceProviderIds.length;
+    const amountPaise = rupeesToPaise(amountRupees);
+    const currency = (plan.currency || 'INR').toUpperCase();
 
     const razorpay = this.getClient();
     const receipt = `sp_${planCode}_${Date.now()}`.slice(0, 40);
@@ -106,7 +231,8 @@ export class RazorpayService {
         notes: {
           planId: planCode,
           purpose: PaymentPurpose.SPONSORSHIP,
-          ...(userId ? { userId } : {}),
+          userId,
+          providerCount: String(serviceProviderIds.length),
         },
       })) as { id: string; amount: number | string; currency: string };
     } catch (error) {
@@ -130,8 +256,9 @@ export class RazorpayService {
         planId: planCode,
         gateway: 'razorpay',
         orderId: order.id,
-        notes: `Razorpay order ${order.id}`,
+        notes: `Razorpay order ${order.id}; ${serviceProviderIds.length} business(es)`,
         payerNote,
+        serviceProviderIds,
       },
     });
 
@@ -143,6 +270,8 @@ export class RazorpayService {
       currency,
       planId: planCode,
       paymentRecordId: payment.id,
+      serviceProviderIds,
+      unitAmountRupees: unitAmount,
     };
   }
 
@@ -177,6 +306,7 @@ export class RazorpayService {
         paymentId: payment.paymentId,
         paidAt: payment.paidAt,
         validUntil: payment.validUntil,
+        serviceProviderIds: parseProviderIds(payment.serviceProviderIds),
       };
     }
 
@@ -205,7 +335,6 @@ export class RazorpayService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        // Same Razorpay paymentId already recorded (retry) — return existing success row
         const existing = await this.prisma.payment.findUnique({
           where: { paymentId: dto.razorpayPaymentId },
         });
@@ -219,10 +348,33 @@ export class RazorpayService {
             paymentId: existing.paymentId,
             paidAt: existing.paidAt,
             validUntil: existing.validUntil,
+            serviceProviderIds: parseProviderIds(existing.serviceProviderIds),
           };
         }
       }
       throw error;
+    }
+
+    if (
+      payment.purpose === PaymentPurpose.SPONSORSHIP &&
+      payment.planId &&
+      validUntil
+    ) {
+      const providerIds = parseProviderIds(payment.serviceProviderIds);
+      if (providerIds.length) {
+        const existingLinks = await this.prisma.providerSponsorship.count({
+          where: { paymentId: payment.id },
+        });
+        if (!existingLinks) {
+          await this.activateProviderSponsorships(
+            payment.id,
+            normalizePlanCode(payment.planId),
+            providerIds,
+            validUntil,
+            paidAt,
+          );
+        }
+      }
     }
 
     return {
@@ -234,6 +386,7 @@ export class RazorpayService {
       paymentId: updated.paymentId,
       paidAt: updated.paidAt,
       validUntil: updated.validUntil,
+      serviceProviderIds: parseProviderIds(updated.serviceProviderIds),
     };
   }
 

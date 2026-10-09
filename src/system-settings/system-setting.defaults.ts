@@ -7,7 +7,7 @@ export type SystemSettingKey =
   (typeof SYSTEM_SETTING_KEYS)[keyof typeof SYSTEM_SETTING_KEYS];
 
 export const DEFAULT_SPONSORSHIP_PLANS_HEADER =
-  'Choose a plan at your convenience. This is a sponsorship (like a donation). After payment, a starred icon is enabled on your profile.';
+  'Choose businesses to feature, then pick a plan. Amount is plan price × businesses selected. Sponsored businesses show a star badge and appear at the top of search results.';
 
 export const DEFAULT_SYSTEM_SETTINGS: {
   key: SystemSettingKey;

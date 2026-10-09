@@ -25,6 +25,15 @@ const paymentListInclude = {
       state: { select: { id: true, name: true, code: true } },
     },
   },
+  providerSponsorships: {
+    select: {
+      id: true,
+      planId: true,
+      validUntil: true,
+      status: true,
+      serviceProvider: { select: { id: true, name: true } },
+    },
+  },
 } as const;
 
 /** Full include for single-record views / mutations. */
@@ -81,11 +90,32 @@ export class PaymentsService {
       referenceNo: row.referenceNo,
       notes: row.notes,
       payerNote: row.payerNote,
+      serviceProviderIds: Array.isArray(row.serviceProviderIds)
+        ? (row.serviceProviderIds as string[])
+        : [],
       paidAt: row.paidAt,
       validUntil: row.validUntil,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       user: row.user,
+      providerSponsorships:
+        'providerSponsorships' in row && Array.isArray(row.providerSponsorships)
+          ? row.providerSponsorships.map(
+              (link: {
+                id: string;
+                planId: string;
+                validUntil: Date;
+                status: string;
+                serviceProvider: { id: string; name: string } | null;
+              }) => ({
+                id: link.id,
+                planId: link.planId,
+                validUntil: link.validUntil,
+                status: link.status,
+                serviceProvider: link.serviceProvider,
+              }),
+            )
+          : undefined,
     };
   }
 

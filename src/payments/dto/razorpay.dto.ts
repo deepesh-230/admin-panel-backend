@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateRazorpayOrderDto {
   /** Plan code: silver | gold | platinum */
@@ -9,6 +17,13 @@ export class CreateRazorpayOrderDto {
   @IsOptional()
   @IsUUID()
   userId?: string;
+
+  /** Businesses to sponsor — amount = plan × count. Required for Get Featured. */
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  serviceProviderIds!: string[];
 
   @IsOptional()
   @IsString()

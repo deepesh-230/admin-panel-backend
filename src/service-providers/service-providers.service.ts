@@ -118,6 +118,13 @@ export class ServiceProvidersService {
       panId: provider.panId,
       verificationSubmittedAt: provider.verificationSubmittedAt,
       verificationNote: provider.verificationNote,
+      sponsorPlanId: provider.sponsorPlanId ?? null,
+      sponsoredUntil: provider.sponsoredUntil ?? null,
+      isSponsored: Boolean(
+        provider.sponsoredUntil &&
+          provider.sponsoredUntil.getTime() >= Date.now() &&
+          provider.sponsorPlanId,
+      ),
       createdById: provider.createdById,
       approvedById: provider.approvedById,
       approvedAt: provider.approvedAt,
@@ -169,6 +176,90 @@ export class ServiceProvidersService {
     return [];
   }
 
+  /** Normalize optional business IDs from admin create/update. Empty string → null. */
+  private normalizeBusinessIds(input: {
+    mcaId?: string | null;
+    din?: string | null;
+    gstin?: string | null;
+    nmcId?: string | null;
+    panId?: string | null;
+  }) {
+    const mcaId =
+      input.mcaId === undefined
+        ? undefined
+        : input.mcaId?.trim().toUpperCase() || null;
+    const din =
+      input.din === undefined ? undefined : input.din?.trim().toUpperCase() || null;
+    const gstin =
+      input.gstin === undefined
+        ? undefined
+        : input.gstin?.trim().toUpperCase() || null;
+    const nmcId =
+      input.nmcId === undefined
+        ? undefined
+        : input.nmcId?.trim().toUpperCase() || null;
+    const panId =
+      input.panId === undefined
+        ? undefined
+        : input.panId?.trim().toUpperCase() || null;
+
+    if (
+      gstin &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)
+    ) {
+      throw new BadRequestException('Invalid GSTIN format');
+    }
+    if (panId && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panId)) {
+      throw new BadRequestException('Invalid PAN format');
+    }
+
+    return { mcaId, din, gstin, nmcId, panId };
+  }
+
+  private businessVerificationPatch(
+    ids: {
+      mcaId?: string | null;
+      din?: string | null;
+      gstin?: string | null;
+      nmcId?: string | null;
+      panId?: string | null;
+    },
+    currentStatus?: BusinessVerificationStatus,
+  ) {
+    const touched =
+      ids.mcaId !== undefined ||
+      ids.din !== undefined ||
+      ids.gstin !== undefined ||
+      ids.nmcId !== undefined ||
+      ids.panId !== undefined;
+    if (!touched) return {};
+
+    const hasAny = Boolean(ids.mcaId || ids.din || ids.gstin || ids.nmcId || ids.panId);
+    const patch: Prisma.ServiceProviderUncheckedUpdateInput = {
+      mcaId: ids.mcaId,
+      din: ids.din,
+      gstin: ids.gstin,
+      nmcId: ids.nmcId,
+      panId: ids.panId,
+    };
+
+    if (
+      hasAny &&
+      (!currentStatus ||
+        currentStatus === BusinessVerificationStatus.NOT_INITIATED ||
+        currentStatus === BusinessVerificationStatus.REJECTED)
+    ) {
+      patch.businessVerificationStatus = BusinessVerificationStatus.IN_PROGRESS;
+      patch.verificationSubmittedAt = new Date();
+      patch.verificationNote = null;
+    } else if (!hasAny && currentStatus === BusinessVerificationStatus.IN_PROGRESS) {
+      patch.businessVerificationStatus = BusinessVerificationStatus.NOT_INITIATED;
+      patch.verificationSubmittedAt = null;
+    }
+
+    return patch;
+  }
+
   private async assertCategoryLinks(categoryId: string, subcategoryIds: string[]) {
     const category = await this.prisma.category.findUnique({ where: { id: categoryId } });
     if (!category) throw new BadRequestException('Category not found');
@@ -182,9 +273,8 @@ export class ServiceProvidersService {
     if (rows.length !== subcategoryIds.length) {
       throw new BadRequestException('One or more subcategories were not found');
     }
-    if (rows.some((row) => row.categoryId !== categoryId)) {
-      throw new BadRequestException('Subcategory does not belong to the selected category');
-    }
+    // Subcategories may span multiple categories when the form allows multi-category selection.
+    // Primary categoryId is still stored on the provider row for listing/filtering.
   }
 
   private async syncProviderSubcategories(serviceProviderId: string, subcategoryIds: string[]) {
@@ -389,14 +479,20 @@ export class ServiceProvidersService {
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     if (!hasGeo) {
-      const orderBy =
+      const secondaryOrder: Prisma.ServiceProviderOrderByWithRelationInput =
         sortBy === 'distance'
-          ? ({ createdAt: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput)
+          ? { createdAt: sortOrder }
           : sortBy === 'state'
-            ? ({ state: { name: sortOrder } } as Prisma.ServiceProviderOrderByWithRelationInput)
+            ? { state: { name: sortOrder } }
             : sortBy === 'category'
-              ? ({ category: { name: sortOrder } } as Prisma.ServiceProviderOrderByWithRelationInput)
+              ? { category: { name: sortOrder } }
               : ({ [sortBy]: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput);
+
+      // Sponsored businesses first (active sponsoredUntil), then caller sort.
+      const orderBy: Prisma.ServiceProviderOrderByWithRelationInput[] = [
+        { sponsoredUntil: { sort: 'desc', nulls: 'last' } },
+        secondaryOrder,
+      ];
 
       const [rows, total] = await Promise.all([
         this.prisma.serviceProvider.findMany({
@@ -443,10 +539,21 @@ export class ServiceProvidersService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        sponsorPlanId: true,
+        sponsoredUntil: true,
         state: { select: { name: true } },
         category: { select: { name: true } },
       },
     });
+
+    const nowMs = Date.now();
+    const tierRank = (planId: string | null | undefined) => {
+      const code = (planId || '').toLowerCase();
+      if (code === 'platinum') return 3;
+      if (code === 'gold') return 2;
+      if (code === 'silver') return 1;
+      return 0;
+    };
 
     const withDistance = candidates
       .map((row) => {
@@ -456,11 +563,16 @@ export class ServiceProvidersService {
           row.latitude as number,
           row.longitude as number,
         );
-        return { row, distanceKm };
+        const sponsored =
+          row.sponsoredUntil != null && row.sponsoredUntil.getTime() >= nowMs;
+        return { row, distanceKm, sponsored, tier: sponsored ? tierRank(row.sponsorPlanId) : 0 };
       })
       .filter((item) => item.distanceKm <= radiusKm);
 
     withDistance.sort((a, b) => {
+      if (a.sponsored !== b.sponsored) return a.sponsored ? -1 : 1;
+      if (a.tier !== b.tier) return b.tier - a.tier;
+
       if (sortBy === 'name' || sortBy === 'city') {
         const av = String(a.row[sortBy] || '');
         const bv = String(b.row[sortBy] || '');
@@ -573,6 +685,10 @@ export class ServiceProvidersService {
 
     const subcategoryIds = this.normalizeSubcategoryIds(dto);
     const primarySubcategoryId = subcategoryIds[0] ?? null;
+    const bizIds = this.normalizeBusinessIds(dto);
+    const hasBizIds = Boolean(
+      bizIds.mcaId || bizIds.din || bizIds.gstin || bizIds.nmcId || bizIds.panId,
+    );
 
     const approvalStatus =
       dto.approvalStatus ??
@@ -602,6 +718,15 @@ export class ServiceProvidersService {
         gallery: dto.gallery || [],
         isActive: dto.isActive ?? true,
         approvalStatus,
+        mcaId: bizIds.mcaId ?? null,
+        din: bizIds.din ?? null,
+        gstin: bizIds.gstin ?? null,
+        nmcId: bizIds.nmcId ?? null,
+        panId: bizIds.panId ?? null,
+        businessVerificationStatus: hasBizIds
+          ? BusinessVerificationStatus.IN_PROGRESS
+          : BusinessVerificationStatus.NOT_INITIATED,
+        verificationSubmittedAt: hasBizIds ? new Date() : undefined,
         createdById: currentUser.id,
         approvedById:
           approvalStatus === ProviderApprovalStatus.APPROVED ? currentUser.id : undefined,
@@ -651,6 +776,8 @@ export class ServiceProvidersService {
       ? (nextSubcategoryIds[0] ?? null)
       : undefined;
 
+    const bizIds = this.normalizeBusinessIds(dto);
+
     const provider = await this.prisma.serviceProvider.update({
       where: { id },
       data: {
@@ -673,6 +800,7 @@ export class ServiceProvidersService {
         coverPhotoUrl: dto.coverPhotoUrl === undefined ? undefined : dto.coverPhotoUrl,
         gallery: dto.gallery,
         isActive: dto.isActive,
+        ...this.businessVerificationPatch(bizIds, existing.businessVerificationStatus),
       },
       include: providerInclude,
     });
@@ -696,10 +824,10 @@ export class ServiceProvidersService {
 
   async approve(id: string, currentUser: AuthUser) {
     const existing = await this.getScopedOrThrow(id, currentUser);
-    if (
-      existing.businessVerificationStatus !== BusinessVerificationStatus.IN_PROGRESS &&
-      existing.businessVerificationStatus !== BusinessVerificationStatus.VERIFIED
-    ) {
+    const hasBusinessIds = Boolean(
+      existing.mcaId || existing.din || existing.gstin || existing.nmcId || existing.panId,
+    );
+    if (!hasBusinessIds) {
       throw new BadRequestException(
         'User has not submitted business verification yet. Wait for MCA/DIN/GSTIN/NMC/PAN details.',
       );
@@ -828,7 +956,10 @@ export class ServiceProvidersService {
           ],
         },
         include: providerInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          { sponsoredUntil: { sort: 'desc', nulls: 'last' } },
+          { createdAt: 'desc' },
+        ],
       })
       .then((rows) => rows.map((row) => this.sanitize(row)));
   }

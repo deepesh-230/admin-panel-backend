@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BecomeTarget, CategoryType, EnquiryStatus, AdminLifecycleFlag } from '@prisma/client';
+import {
+  BecomeTarget,
+  BusinessVerificationStatus,
+  CategoryType,
+  EnquiryStatus,
+  AdminLifecycleFlag,
+} from '@prisma/client';
 import { BecomeService } from '../become/become.service';
 import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { CategoriesService } from '../categories/categories.service';
@@ -208,21 +214,59 @@ export class PublicService {
       year: 'numeric',
     });
 
+    let kind: string = dto.marketplaceProductId ? 'PRODUCT' : 'USER';
+    let providerId: string | null = null;
+    let stateId: string | null = null;
+    let product = dto.product;
+    let category = dto.category || 'Marketplace';
+    let subCategory = dto.subCategory || 'Sale';
+    let message = dto.message;
+
+    if (dto.providerId) {
+      const provider = await this.prisma.serviceProvider.findUnique({
+        where: { id: dto.providerId },
+        select: {
+          id: true,
+          name: true,
+          stateId: true,
+          businessVerificationStatus: true,
+          category: { select: { name: true } },
+        },
+      });
+      if (!provider) throw new NotFoundException('Service provider not found');
+
+      const verified =
+        provider.businessVerificationStatus === BusinessVerificationStatus.VERIFIED;
+      // Verified → provider admin inbox. Unverified → central + state admin (no providerId).
+      providerId = verified ? provider.id : null;
+      stateId = provider.stateId;
+      kind = verified ? 'PROVIDER' : 'STATE_ADMIN';
+      product = product?.trim() || provider.name;
+      category = dto.category || provider.category?.name || 'Provider';
+      subCategory = dto.subCategory || 'Service';
+      if (!verified) {
+        const note = `[Routed to central/state admin — business not verified: ${provider.name}]`;
+        message = message?.trim() ? `${message.trim()}\n\n${note}` : note;
+      }
+    }
+
     return this.prisma.enquiry.create({
       data: {
         sNo: nextSNo,
-        category: dto.category || 'Marketplace',
-        subCategory: dto.subCategory || 'Sale',
-        product: dto.product,
+        category,
+        subCategory,
+        product,
         name: dto.name,
         email: dto.email,
         phone: dto.phone,
-        message: dto.message,
+        message,
         date,
         createdBy: dto.createdBy,
-        kind: dto.marketplaceProductId ? 'PRODUCT' : 'USER',
+        kind,
         status: EnquiryStatus.NEW,
         marketplaceProductId: dto.marketplaceProductId,
+        providerId,
+        stateId,
       },
     });
   }
