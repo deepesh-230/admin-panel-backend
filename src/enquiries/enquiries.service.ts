@@ -10,7 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEnquiryDto, UpdateEnquiryDto } from './dto/enquiry.dto';
 
 const enquiryInclude = {
-  provider: { select: { id: true, name: true, stateId: true } },
+  provider: { select: { id: true, name: true, stateId: true, createdById: true } },
+  marketplaceProduct: { select: { id: true, name: true, createdById: true } },
   state: { select: { id: true, name: true, code: true } },
 } as const;
 
@@ -151,8 +152,17 @@ export class EnquiriesService {
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
       const ids = assignedStateIds(currentUser);
-      if (!ids.length) return { id: { in: [] } };
-      return { stateId: { in: ids } };
+      // State pool + listings this user previously owned (after role conversion).
+      const ownership: Prisma.EnquiryWhereInput[] = [
+        { marketplaceProduct: { createdById: currentUser.id } },
+        { provider: { createdById: currentUser.id } },
+      ];
+      if (!ids.length) {
+        return { OR: ownership };
+      }
+      return {
+        OR: [{ stateId: { in: ids } }, ...ownership],
+      };
     }
 
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {
@@ -169,16 +179,24 @@ export class EnquiriesService {
 
   private async assertCanAccess(
     currentUser: AuthUser,
-    enquiry: { kind: string; providerId: string | null; stateId: string | null },
+    enquiry: {
+      kind: string;
+      providerId: string | null;
+      stateId: string | null;
+      provider?: { createdById: string | null } | null;
+      marketplaceProduct?: { createdById: string | null } | null;
+    },
   ) {
     if (currentUser.role === RoleName.ADMIN) return;
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
       const ids = assignedStateIds(currentUser);
-      if (!enquiry.stateId || !ids.includes(enquiry.stateId)) {
-        throw new ForbiddenException('You can only access enquiries in your assigned state');
-      }
-      return;
+      if (enquiry.stateId && ids.includes(enquiry.stateId)) return;
+      if (enquiry.marketplaceProduct?.createdById === currentUser.id) return;
+      if (enquiry.provider?.createdById === currentUser.id) return;
+      throw new ForbiddenException(
+        'You can only access enquiries in your assigned state or for your listings',
+      );
     }
 
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {

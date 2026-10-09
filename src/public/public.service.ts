@@ -23,6 +23,7 @@ import {
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
 import { coverageVisibilityWhere, eventCoverageVisibilityWhere } from '../common/coverage';
+import { providerChatCapability } from '../common/utils/chat-capability';
 import { CATALOG_TTL_MS, STATES_TTL_MS, catalogCache } from '../common/utils/ttl-cache';
 
 @Injectable()
@@ -222,6 +223,34 @@ export class PublicService {
     let subCategory = dto.subCategory || 'Sale';
     let message = dto.message;
 
+    if (dto.marketplaceProductId) {
+      const listing = await this.prisma.marketplaceProduct.findUnique({
+        where: { id: dto.marketplaceProductId },
+        select: {
+          id: true,
+          name: true,
+          stateId: true,
+          createdById: true,
+          createdBy: {
+            select: {
+              id: true,
+              isActive: true,
+              stateId: true,
+              role: { select: { name: true } },
+            },
+          },
+        },
+      });
+      if (!listing) throw new NotFoundException('Marketplace product not found');
+
+      kind = 'PRODUCT';
+      product = product?.trim() || listing.name;
+      // Prefer listing state, else owner's primary state — needed for STATE_ADMIN inbox.
+      stateId = listing.stateId || listing.createdBy?.stateId || null;
+      category = dto.category || 'Marketplace';
+      subCategory = dto.subCategory || 'Sale';
+    }
+
     if (dto.providerId) {
       const provider = await this.prisma.serviceProvider.findUnique({
         where: { id: dto.providerId },
@@ -230,22 +259,62 @@ export class PublicService {
           name: true,
           stateId: true,
           businessVerificationStatus: true,
+          createdBy: {
+            select: {
+              id: true,
+              isActive: true,
+              role: { select: { name: true } },
+            },
+          },
           category: { select: { name: true } },
+          admins: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  isActive: true,
+                  role: { select: { name: true } },
+                },
+              },
+            },
+          },
         },
       });
       if (!provider) throw new NotFoundException('Service provider not found');
 
       const verified =
         provider.businessVerificationStatus === BusinessVerificationStatus.VERIFIED;
-      // Verified → provider admin inbox. Unverified → central + state admin (no providerId).
-      providerId = verified ? provider.id : null;
+      const chat = providerChatCapability(
+        provider.admins.map((a) => ({
+          isPrimary: a.isPrimary,
+          user: {
+            id: a.user.id,
+            isActive: a.user.isActive,
+            role: a.user.role.name,
+          },
+        })),
+        provider.createdBy
+          ? {
+              id: provider.createdBy.id,
+              isActive: provider.createdBy.isActive,
+              role: provider.createdBy.role.name,
+            }
+          : null,
+      );
+
+      // Verified + chat-capable peer → SPA inbox. Otherwise → state/central admin.
+      const routeToProvider = verified && chat.chatEnabled;
+      providerId = routeToProvider ? provider.id : null;
       stateId = provider.stateId;
-      kind = verified ? 'PROVIDER' : 'STATE_ADMIN';
+      kind = routeToProvider ? 'PROVIDER' : 'STATE_ADMIN';
       product = product?.trim() || provider.name;
       category = dto.category || provider.category?.name || 'Provider';
       subCategory = dto.subCategory || 'Service';
-      if (!verified) {
-        const note = `[Routed to central/state admin — business not verified: ${provider.name}]`;
+      if (!routeToProvider) {
+        const reason = !verified
+          ? `business not verified: ${provider.name}`
+          : `no chat-capable provider admin: ${provider.name}`;
+        const note = `[Routed to central/state admin — ${reason}]`;
         message = message?.trim() ? `${message.trim()}\n\n${note}` : note;
       }
     }

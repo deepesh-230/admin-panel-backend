@@ -122,6 +122,50 @@ export class PushService implements OnModuleInit {
   }
 
   /**
+   * When a user becomes dashboard-only (STATE_ADMIN / ADMIN), freeze threads
+   * where they are the chat peer so buyers cannot keep messaging into the void.
+   */
+  async markConversationsPeerUnavailable(userId: string) {
+    if (!this.ready || !userId?.trim()) return { updated: 0, skipped: !this.ready };
+    try {
+      const { getFirestore } = await import('firebase-admin/firestore');
+      const db = getFirestore();
+      const snap = await db
+        .collection('conversations')
+        .where('peerId', '==', userId)
+        .get();
+      if (snap.empty) return { updated: 0, skipped: false };
+
+      let updated = 0;
+      const docs = snap.docs;
+      for (let i = 0; i < docs.length; i += 400) {
+        const chunk = docs.slice(i, i + 400);
+        const batch = db.batch();
+        for (const docSnap of chunk) {
+          batch.update(docSnap.ref, {
+            status: 'peer_unavailable',
+            peerUnavailableAt: new Date(),
+            updatedAt: new Date(),
+          });
+          updated += 1;
+        }
+        await batch.commit();
+      }
+      this.logger.log(
+        `Marked ${updated} conversation(s) peer_unavailable for user ${userId}`,
+      );
+      return { updated, skipped: false };
+    } catch (error) {
+      this.logger.error(
+        `Failed to freeze chats for ${userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return { updated: 0, skipped: true };
+    }
+  }
+
+  /**
    * Inbox row + FCM for submission approvals (providers, marketplace, become apps).
    * Failures are logged and do not throw — approval itself must still succeed.
    */

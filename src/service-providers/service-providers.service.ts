@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, ProviderApprovalStatus, RoleName, BusinessVerificationStatus } from '@prisma/client';
+import { providerChatCapability } from '../common/utils/chat-capability';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import {
   assertStateAccess,
@@ -37,7 +38,15 @@ const providerInclude = {
     orderBy: { createdAt: 'asc' as const },
   },
   state: { select: { id: true, name: true, code: true } },
-  createdBy: { select: { id: true, name: true, email: true } },
+  createdBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isActive: true,
+      role: { select: { name: true } },
+    },
+  },
   approvedBy: { select: { id: true, name: true, email: true } },
   admins: {
     include: {
@@ -65,7 +74,15 @@ const providerListInclude = {
     orderBy: { createdAt: 'asc' as const },
   },
   state: { select: { id: true, name: true, code: true } },
-  createdBy: { select: { id: true, name: true, email: true } },
+  createdBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isActive: true,
+      role: { select: { name: true } },
+    },
+  },
   approvedBy: { select: { id: true, name: true, email: true } },
   _count: { select: { admins: true } },
 } as const;
@@ -86,6 +103,39 @@ export class ServiceProvidersService {
         ? provider.subcategories.map((link) => link.subcategory)
         : [];
     const primary = linked[0] ?? provider.subcategory ?? null;
+
+    const createdByRole =
+      provider.createdBy && 'role' in provider.createdBy && provider.createdBy.role
+        ? typeof provider.createdBy.role === 'string'
+          ? provider.createdBy.role
+          : provider.createdBy.role.name
+        : null;
+    const createdByActive =
+      provider.createdBy && 'isActive' in provider.createdBy
+        ? Boolean(provider.createdBy.isActive)
+        : true;
+    const adminPeers =
+      'admins' in provider
+        ? provider.admins.map((a) => ({
+            isPrimary: a.isPrimary,
+            user: {
+              id: a.user.id,
+              isActive: a.user.isActive,
+              role: a.user.role.name,
+            },
+          }))
+        : [];
+    const chat = providerChatCapability(
+      adminPeers,
+      provider.createdBy
+        ? {
+            id: provider.createdBy.id,
+            isActive: createdByActive,
+            role: createdByRole,
+          }
+        : null,
+    );
+
     return {
       id: provider.id,
       name: provider.name,
@@ -132,7 +182,15 @@ export class ServiceProvidersService {
       subcategory: primary,
       subcategories: linked,
       state: provider.state,
-      createdBy: provider.createdBy,
+      createdBy: provider.createdBy
+        ? {
+            id: provider.createdBy.id,
+            name: provider.createdBy.name,
+            email: provider.createdBy.email,
+            isActive: createdByActive,
+            role: createdByRole,
+          }
+        : null,
       approvedBy: provider.approvedBy,
       admins: ('admins' in provider ? provider.admins : []).map((a) => ({
         id: a.id,
@@ -149,6 +207,9 @@ export class ServiceProvidersService {
         createdAt: a.createdAt,
       })),
       adminCount: provider._count.admins,
+      chatEnabled: chat.chatEnabled,
+      chatPeerId: chat.chatPeerId,
+      enquiryOnlyReason: chat.enquiryOnlyReason,
       distanceKm: distanceKm ?? null,
       createdAt: provider.createdAt,
       updatedAt: provider.updatedAt,
