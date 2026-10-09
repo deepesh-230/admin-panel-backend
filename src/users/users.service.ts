@@ -23,6 +23,7 @@ import {
 } from '../common/utils/user-profile';
 import { invalidateAuthCache } from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 import {
   CreateUserDto,
   ListUsersQueryDto,
@@ -62,7 +63,10 @@ type UserListRow = Prisma.UserGetPayload<{ include: typeof userListInclude }>;
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   private sanitize(user: UserWithRelations | UserListRow) {
     const disabilities = (user.disabilities || []).map((d) => ({
@@ -420,6 +424,21 @@ export class UsersService {
     });
 
     invalidateAuthCache(id);
+
+    const becameDashboardOnly =
+      dto.role === RoleName.STATE_ADMIN || dto.role === RoleName.ADMIN;
+    if (becameDashboardOnly) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await this.prisma.session.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      void this.push.markConversationsPeerUnavailable(id);
+    }
+
     return this.sanitize(user);
   }
 

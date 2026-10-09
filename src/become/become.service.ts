@@ -376,6 +376,7 @@ export class BecomeService {
         const isStateAdmin = promotedRole === RoleName.STATE_ADMIN;
         if (isStateAdmin) {
           await this.revokeMobileSessions(recipientId);
+          void this.push.markConversationsPeerUnavailable(recipientId);
           void this.push.notifyApproval(
             [recipientId],
             'You are now a State Admin',
@@ -487,6 +488,7 @@ export class BecomeService {
     }
 
     await this.revokeMobileSessions(result.userId);
+    void this.push.markConversationsPeerUnavailable(result.userId);
 
     const stateName = stateAdminApp.user?.state?.name;
     void this.push.notifyApproval(

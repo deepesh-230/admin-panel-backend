@@ -10,12 +10,26 @@ import {
   Prisma,
   RoleName,
 } from '@prisma/client';
+import { productChatCapability } from '../common/utils/chat-capability';
 import { boundingBox, haversineKm } from '../common/utils/geo';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 
 const adminProductInclude = {
   createdBy: { select: { id: true, name: true, email: true } },
+} as const;
+
+const publicProductInclude = {
+  state: { select: { id: true, name: true } },
+  createdBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isActive: true,
+      role: { select: { name: true } },
+    },
+  },
 } as const;
 
 export type MarketplaceListQuery = {
@@ -529,6 +543,18 @@ export class MarketplaceService {
     return this.applyHaversineFilter(priced, normalized);
   }
 
+  private withChatCapability<T extends { createdBy?: Parameters<typeof productChatCapability>[0] }>(
+    product: T,
+  ) {
+    const capability = productChatCapability(product.createdBy ?? null);
+    return {
+      ...product,
+      chatEnabled: capability.chatEnabled,
+      chatPeerId: capability.chatPeerId,
+      enquiryOnlyReason: capability.enquiryOnlyReason,
+    };
+  }
+
   async findPublic(id: string) {
     const product = await this.prisma.marketplaceProduct.findFirst({
       where: {
@@ -538,10 +564,10 @@ export class MarketplaceService {
         adminFlag: { not: 'DELETE' },
         approvalStatus: 'APPROVED',
       },
-      include: { state: { select: { id: true, name: true } } },
+      include: publicProductInclude,
     });
     if (!product) throw new NotFoundException('Product not found');
-    return product;
+    return this.withChatCapability(product);
   }
 
   listForUser(userId: string) {
