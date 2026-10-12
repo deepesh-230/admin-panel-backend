@@ -9,7 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import {
@@ -20,14 +23,29 @@ import {
 import { EnquiriesService } from './enquiries.service';
 
 @Controller('enquiries')
-@Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN, RoleName.VOLUNTEER)
+@Roles(
+  RoleName.ADMIN,
+  RoleName.STATE_ADMIN,
+  RoleName.SERVICE_PROVIDER_ADMIN,
+  RoleName.VOLUNTEER,
+)
 export class EnquiriesController {
   constructor(private readonly enquiriesService: EnquiriesService) {}
 
   @Get()
   @Permissions('enquiries.read')
-  findAll(@CurrentUser() user: AuthUser, @Query() query: ListEnquiriesQueryDto) {
-    return this.enquiriesService.findAll(user, query.search, query.kind, query.status, query.page, query.limit);
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListEnquiriesQueryDto,
+  ) {
+    return this.enquiriesService.findAll(
+      user,
+      query.search,
+      query.kind,
+      query.status,
+      query.page,
+      query.limit,
+    );
   }
 
   @Get(':id')

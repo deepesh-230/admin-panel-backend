@@ -8,7 +8,10 @@ import { Prisma, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { invalidateAuthCache } from '../common/utils/ttl-cache';
-import { CreateStateAdminDto, UpdateStateAdminDto } from './dto/state-admin.dto';
+import {
+  CreateStateAdminDto,
+  UpdateStateAdminDto,
+} from './dto/state-admin.dto';
 
 const stateAdminInclude = {
   role: true,
@@ -16,14 +19,25 @@ const stateAdminInclude = {
   userStates: { include: { state: true } },
 } as const;
 
-type StateAdminRow = Prisma.UserGetPayload<{ include: typeof stateAdminInclude }>;
+type StateAdminRow = Prisma.UserGetPayload<{
+  include: typeof stateAdminInclude;
+}>;
 
 @Injectable()
 export class StateAdminsService {
   constructor(private prisma: PrismaService) {}
 
-  private uniqueStateIds(dto: { stateId?: string; stateIds?: string[] }): string[] {
-    return [...new Set([...(dto.stateIds || []), dto.stateId].filter((id): id is string => Boolean(id)))];
+  private uniqueStateIds(dto: {
+    stateId?: string;
+    stateIds?: string[];
+  }): string[] {
+    return [
+      ...new Set(
+        [...(dto.stateIds || []), dto.stateId].filter((id): id is string =>
+          Boolean(id),
+        ),
+      ),
+    ];
   }
 
   private sanitize(user: StateAdminRow) {
@@ -33,7 +47,13 @@ export class StateAdminsService {
       code: us.state.code,
       isPrimary: us.isPrimary,
     }));
-    const stateIds = [...new Set([user.stateId, ...states.map((s) => s.id)].filter((id): id is string => Boolean(id)))];
+    const stateIds = [
+      ...new Set(
+        [user.stateId, ...states.map((s) => s.id)].filter((id): id is string =>
+          Boolean(id),
+        ),
+      ),
+    ];
     return {
       id: user.id,
       email: user.email,
@@ -54,7 +74,9 @@ export class StateAdminsService {
     if (!ids.length) {
       throw new BadRequestException('Assign at least one state');
     }
-    const states = await this.prisma.state.findMany({ where: { id: { in: ids } } });
+    const states = await this.prisma.state.findMany({
+      where: { id: { in: ids } },
+    });
     if (states.length !== ids.length) {
       const found = new Set(states.map((s) => s.id));
       const missing = ids.filter((id) => !found.has(id));
@@ -63,7 +85,11 @@ export class StateAdminsService {
     return ids;
   }
 
-  private async replaceUserStates(tx: Prisma.TransactionClient, userId: string, stateIds: string[]) {
+  private async replaceUserStates(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    stateIds: string[],
+  ) {
     await tx.userState.deleteMany({ where: { userId } });
     if (!stateIds.length) return;
     await tx.userState.createMany({
@@ -75,7 +101,11 @@ export class StateAdminsService {
     });
   }
 
-  async findAll(filters: { search?: string; stateId?: string; isActive?: boolean }) {
+  async findAll(filters: {
+    search?: string;
+    stateId?: string;
+    isActive?: boolean;
+  }) {
     const where: Prisma.UserWhereInput = {
       role: { name: RoleName.STATE_ADMIN },
     };
@@ -86,7 +116,8 @@ export class StateAdminsService {
         { userStates: { some: { stateId: filters.stateId } } },
       ];
     }
-    if (typeof filters.isActive === 'boolean') where.isActive = filters.isActive;
+    if (typeof filters.isActive === 'boolean')
+      where.isActive = filters.isActive;
 
     if (filters.search?.trim()) {
       const q = filters.search.trim();
@@ -117,7 +148,8 @@ export class StateAdminsService {
       where: { id, role: { name: RoleName.STATE_ADMIN } },
       include: stateAdminInclude,
     });
-    if (!user) throw new NotFoundException(`State admin with ID ${id} not found`);
+    if (!user)
+      throw new NotFoundException(`State admin with ID ${id} not found`);
     return this.sanitize(user);
   }
 
@@ -162,7 +194,8 @@ export class StateAdminsService {
     const existing = await this.prisma.user.findFirst({
       where: { id, role: { name: RoleName.STATE_ADMIN } },
     });
-    if (!existing) throw new NotFoundException(`State admin with ID ${id} not found`);
+    if (!existing)
+      throw new NotFoundException(`State admin with ID ${id} not found`);
 
     const nextStateIds =
       dto.stateIds !== undefined || dto.stateId !== undefined
@@ -205,7 +238,8 @@ export class StateAdminsService {
     const existing = await this.prisma.user.findFirst({
       where: { id, role: { name: RoleName.STATE_ADMIN } },
     });
-    if (!existing) throw new NotFoundException(`State admin with ID ${id} not found`);
+    if (!existing)
+      throw new NotFoundException(`State admin with ID ${id} not found`);
 
     await this.prisma.user.delete({ where: { id } });
     invalidateAuthCache(id);

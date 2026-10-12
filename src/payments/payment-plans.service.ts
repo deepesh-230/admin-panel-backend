@@ -6,7 +6,10 @@ import {
 import { PaymentPlanDurationUnit, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_PAYMENT_PLANS } from './payment-plan.defaults';
-import { CreatePaymentPlanDto, UpdatePaymentPlanDto } from './dto/payment-plan.dto';
+import {
+  CreatePaymentPlanDto,
+  UpdatePaymentPlanDto,
+} from './dto/payment-plan.dto';
 
 @Injectable()
 export class PaymentPlansService {
@@ -14,15 +17,20 @@ export class PaymentPlansService {
 
   async ensureDefaults() {
     // Legacy code rename first so custom diamond amounts are preserved
-    const diamond = await this.prisma.paymentPlan.findUnique({ where: { code: 'diamond' } });
-    const platinum = await this.prisma.paymentPlan.findUnique({ where: { code: 'platinum' } });
+    const diamond = await this.prisma.paymentPlan.findUnique({
+      where: { code: 'diamond' },
+    });
+    const platinum = await this.prisma.paymentPlan.findUnique({
+      where: { code: 'platinum' },
+    });
     if (diamond && !platinum) {
       await this.prisma.paymentPlan.update({
         where: { id: diamond.id },
         data: {
           code: 'platinum',
           name: 'Platinum',
-          description: diamond.description || 'Top support with a Platinum star.',
+          description:
+            diamond.description || 'Top support with a Platinum star.',
         },
       });
     } else if (diamond && platinum) {
@@ -92,7 +100,9 @@ export class PaymentPlansService {
   async create(dto: CreatePaymentPlanDto) {
     const code = dto.code.trim().toLowerCase();
     if (!/^[a-z0-9_-]+$/.test(code)) {
-      throw new BadRequestException('Plan code must be lowercase letters, numbers, _ or -');
+      throw new BadRequestException(
+        'Plan code must be lowercase letters, numbers, _ or -',
+      );
     }
     try {
       const row = await this.prisma.paymentPlan.create({
@@ -126,15 +136,25 @@ export class PaymentPlansService {
       const row = await this.prisma.paymentPlan.update({
         where: { id },
         data: {
-          ...(dto.code !== undefined && { code: dto.code.trim().toLowerCase() }),
+          ...(dto.code !== undefined && {
+            code: dto.code.trim().toLowerCase(),
+          }),
           ...(dto.name !== undefined && { name: dto.name.trim() }),
-          ...(dto.amount !== undefined && { amount: new Prisma.Decimal(dto.amount) }),
-          ...(dto.currency !== undefined && { currency: dto.currency.trim() || 'INR' }),
+          ...(dto.amount !== undefined && {
+            amount: new Prisma.Decimal(dto.amount),
+          }),
+          ...(dto.currency !== undefined && {
+            currency: dto.currency.trim() || 'INR',
+          }),
           ...(dto.description !== undefined && {
             description: dto.description?.trim() || null,
           }),
-          ...(dto.durationValue !== undefined && { durationValue: dto.durationValue }),
-          ...(dto.durationUnit !== undefined && { durationUnit: dto.durationUnit }),
+          ...(dto.durationValue !== undefined && {
+            durationValue: dto.durationValue,
+          }),
+          ...(dto.durationUnit !== undefined && {
+            durationUnit: dto.durationUnit,
+          }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
         },

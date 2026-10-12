@@ -11,7 +11,10 @@ import {
 import { RoleName } from '@prisma/client';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CreateStateAdminDto, UpdateStateAdminDto } from './dto/state-admin.dto';
+import {
+  CreateStateAdminDto,
+  UpdateStateAdminDto,
+} from './dto/state-admin.dto';
 import { StateAdminsService } from './state-admins.service';
 
 @Controller('state-admins')

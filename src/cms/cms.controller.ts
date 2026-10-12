@@ -17,14 +17,18 @@ import { CmsModel, CmsService } from './cms.service';
 import { BroadcastsService } from './broadcasts.service';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 
-const MARKETPLACE_SALE_STATUSES = new Set<string>(Object.values(MarketplaceSaleStatus));
+const MARKETPLACE_SALE_STATUSES = new Set<string>(
+  Object.values(MarketplaceSaleStatus),
+);
 
 function resourceController(
   path: string,
   model: CmsModel,
   permission: 'cms' | 'volunteers' | 'marketplace',
   searchFields: string[],
-  extraWhere?: (query: Record<string, string | undefined>) => Record<string, unknown>,
+  extraWhere?: (
+    query: Record<string, string | undefined>,
+  ) => Record<string, unknown>,
   roles: RoleName[] = [RoleName.ADMIN, RoleName.STATE_ADMIN],
 ) {
   @Controller(path)
@@ -34,10 +38,7 @@ function resourceController(
 
     @Get()
     @Permissions(`${permission}.read`)
-    findAll(
-      @Query('search') search?: string,
-      @Query('kind') kind?: string,
-    ) {
+    findAll(@Query('search') search?: string, @Query('kind') kind?: string) {
       const where = extraWhere?.({ kind }) ?? {};
       return this.cms.findAll(model, search, searchFields, where);
     }
@@ -195,17 +196,19 @@ export class HelpTicketsController {
   }
 }
 
-export class CmsPagesController extends resourceController('pages', 'cmsPage', 'cms', [
-  'title',
-  'slug',
-  'content',
-]) {}
+export class CmsPagesController extends resourceController(
+  'pages',
+  'cmsPage',
+  'cms',
+  ['title', 'slug', 'content'],
+) {}
 
-export class BlogsController extends resourceController('blogs', 'blog', 'cms', [
-  'title',
-  'shortDescription',
-  'description',
-]) {}
+export class BlogsController extends resourceController(
+  'blogs',
+  'blog',
+  'cms',
+  ['title', 'shortDescription', 'description'],
+) {}
 
 @Controller('home-banners')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
@@ -219,11 +222,18 @@ export class HomeBannersController {
     @Query('coverageFlag') coverageFlag?: string,
   ) {
     const where: Record<string, unknown> = {};
-    const flag = String(coverageFlag || '').trim().toUpperCase();
+    const flag = String(coverageFlag || '')
+      .trim()
+      .toUpperCase();
     if (flag === 'NATIONAL' || flag === 'STATE' || flag === 'LOCAL') {
       where.coverageFlag = flag;
     }
-    return this.cms.findAll('homeBanner', search, ['title', 'url', 'coverageCity'], where);
+    return this.cms.findAll(
+      'homeBanner',
+      search,
+      ['title', 'url', 'coverageCity'],
+      where,
+    );
   }
 
   @Get(':id')
@@ -363,8 +373,10 @@ export class MarketplaceProductsController {
       search,
       listingIntent,
       condition,
-      minPrice: minPrice != null && minPrice !== '' ? Number(minPrice) : undefined,
-      maxPrice: maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
+      minPrice:
+        minPrice != null && minPrice !== '' ? Number(minPrice) : undefined,
+      maxPrice:
+        maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
       page: pageNum,
       limit: limitNum,
       isActive:
@@ -383,7 +395,9 @@ export class MarketplaceProductsController {
   @Post()
   @Permissions('marketplace.write')
   create(@Body() body: Record<string, unknown>) {
-    return this.marketplace.createAdmin(body as Parameters<MarketplaceService['createAdmin']>[0]);
+    return this.marketplace.createAdmin(
+      body as Parameters<MarketplaceService['createAdmin']>[0],
+    );
   }
 
   @Patch(':id')

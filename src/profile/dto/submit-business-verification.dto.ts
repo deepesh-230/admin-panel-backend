@@ -1,4 +1,10 @@
-import { IsOptional, IsString, Matches, MaxLength, ValidateIf } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
 
 /** At least one ID must be non-empty (enforced in service). */
 export class SubmitBusinessVerificationDto {

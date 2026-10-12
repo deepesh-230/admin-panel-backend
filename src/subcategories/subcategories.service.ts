@@ -35,7 +35,8 @@ export class SubcategoriesService {
       ];
     }
 
-    const sortOrder: Prisma.SortOrder = query.sortOrder === 'desc' ? 'desc' : 'asc';
+    const sortOrder: Prisma.SortOrder =
+      query.sortOrder === 'desc' ? 'desc' : 'asc';
     const orderBy: Prisma.SubcategoryOrderByWithRelationInput =
       query.sortBy === 'category'
         ? { category: { name: sortOrder } }
@@ -96,10 +97,15 @@ export class SubcategoriesService {
       where: { id: dto.categoryId },
     });
     if (!category) {
-      throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
+      throw new NotFoundException(
+        `Category with ID ${dto.categoryId} not found`,
+      );
     }
 
-    const code = normalizeBusinessCode(dto.code, { required: true, field: 'code' });
+    const code = normalizeBusinessCode(dto.code, {
+      required: true,
+      field: 'code',
+    });
 
     try {
       const row = await this.prisma.subcategory.create({
@@ -120,9 +126,7 @@ export class SubcategoriesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException(
-          'Subcategory name or code already exists',
-        );
+        throw new ConflictException('Subcategory name or code already exists');
       }
       throw error;
     }
@@ -136,7 +140,9 @@ export class SubcategoriesService {
         where: { id: dto.categoryId },
       });
       if (!category) {
-        throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
+        throw new NotFoundException(
+          `Category with ID ${dto.categoryId} not found`,
+        );
       }
     }
 
@@ -152,7 +158,9 @@ export class SubcategoriesService {
           ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
           ...(dto.name !== undefined && { name: dto.name }),
           ...(code !== undefined && { code }),
-          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
         },
@@ -165,9 +173,7 @@ export class SubcategoriesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException(
-          'Subcategory name or code already exists',
-        );
+        throw new ConflictException('Subcategory name or code already exists');
       }
       throw error;
     }

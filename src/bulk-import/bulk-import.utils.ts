@@ -1,4 +1,6 @@
-export function normalizeRow(raw: Record<string, string>): Record<string, string> {
+export function normalizeRow(
+  raw: Record<string, string>,
+): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (value === undefined || value === null) continue;

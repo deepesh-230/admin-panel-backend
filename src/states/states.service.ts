@@ -15,9 +15,14 @@ export class StatesService {
 
   async findAll(search?: string, isActive?: boolean) {
     const cacheKey =
-      !search?.trim() && typeof isActive !== 'boolean' ? 'states:admin:all' : null;
+      !search?.trim() && typeof isActive !== 'boolean'
+        ? 'states:admin:all'
+        : null;
     if (cacheKey) {
-      const hit = catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(cacheKey);
+      const hit =
+        catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(
+          cacheKey,
+        );
       if (hit) return hit;
     }
 

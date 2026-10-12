@@ -50,7 +50,8 @@ export class VolunteerAdminsService {
       role: { name: RoleName.VOLUNTEER },
     };
 
-    if (typeof filters.isActive === 'boolean') where.isActive = filters.isActive;
+    if (typeof filters.isActive === 'boolean')
+      where.isActive = filters.isActive;
 
     if (filters.search?.trim()) {
       const q = filters.search.trim();
@@ -75,7 +76,8 @@ export class VolunteerAdminsService {
       where: { id, role: { name: RoleName.VOLUNTEER } },
       include: volunteerAdminInclude,
     });
-    if (!user) throw new NotFoundException(`Volunteer account with ID ${id} not found`);
+    if (!user)
+      throw new NotFoundException(`Volunteer account with ID ${id} not found`);
     return this.sanitize(user);
   }
 
@@ -109,7 +111,8 @@ export class VolunteerAdminsService {
     const existing = await this.prisma.user.findFirst({
       where: { id, role: { name: RoleName.VOLUNTEER } },
     });
-    if (!existing) throw new NotFoundException(`Volunteer account with ID ${id} not found`);
+    if (!existing)
+      throw new NotFoundException(`Volunteer account with ID ${id} not found`);
 
     const passwordHash = dto.password
       ? await bcrypt.hash(dto.password, 12)
@@ -133,7 +136,8 @@ export class VolunteerAdminsService {
     const existing = await this.prisma.user.findFirst({
       where: { id, role: { name: RoleName.VOLUNTEER } },
     });
-    if (!existing) throw new NotFoundException(`Volunteer account with ID ${id} not found`);
+    if (!existing)
+      throw new NotFoundException(`Volunteer account with ID ${id} not found`);
 
     await this.prisma.user.delete({ where: { id } });
     return { id, deleted: true };

@@ -53,10 +53,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     const stateIds = [
       ...new Set(
-        [
-          user.stateId,
-          ...user.userStates.map((us) => us.stateId),
-        ].filter((id): id is string => Boolean(id)),
+        [user.stateId, ...user.userStates.map((us) => us.stateId)].filter(
+          (id): id is string => Boolean(id),
+        ),
       ),
     ];
 

@@ -22,9 +22,16 @@ import {
 } from '../system-settings/system-setting.defaults';
 import { CreatePublicEnquiryDto } from './dto/create-public-enquiry.dto';
 import { CreatePublicHelpTicketDto } from './dto/create-public-help-ticket.dto';
-import { coverageVisibilityWhere, eventCoverageVisibilityWhere } from '../common/coverage';
+import {
+  coverageVisibilityWhere,
+  eventCoverageVisibilityWhere,
+} from '../common/coverage';
 import { providerChatCapability } from '../common/utils/chat-capability';
-import { CATALOG_TTL_MS, STATES_TTL_MS, catalogCache } from '../common/utils/ttl-cache';
+import {
+  CATALOG_TTL_MS,
+  STATES_TTL_MS,
+  catalogCache,
+} from '../common/utils/ttl-cache';
 
 @Injectable()
 export class PublicService {
@@ -42,7 +49,8 @@ export class PublicService {
 
   listCategories(type?: CategoryType) {
     const key = `categories:public:${type ?? 'any'}`;
-    const hit = catalogCache.get<Awaited<ReturnType<CategoriesService['findAll']>>>(key);
+    const hit =
+      catalogCache.get<Awaited<ReturnType<CategoriesService['findAll']>>>(key);
     if (hit) return Promise.resolve(hit);
     return this.categories.findAll(undefined, true, type).then((rows) => {
       catalogCache.set(key, rows, CATALOG_TTL_MS);
@@ -68,7 +76,8 @@ export class PublicService {
 
   listStates() {
     const key = 'states:public';
-    const hit = catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(key);
+    const hit =
+      catalogCache.get<Awaited<ReturnType<StatesService['findAll']>>>(key);
     if (hit) return Promise.resolve(hit);
     return this.states.findAll(undefined, true).then((rows) => {
       catalogCache.set(key, rows, STATES_TTL_MS);
@@ -77,13 +86,20 @@ export class PublicService {
   }
 
   listFaqs() {
-    return this.cms.findAll('faq', undefined, ['title', 'description'], { isActive: true });
+    return this.cms.findAll('faq', undefined, ['title', 'description'], {
+      isActive: true,
+    });
   }
 
   listBlogs() {
-    return this.cms.findAll('blog', undefined, ['title', 'shortDescription', 'description'], {
-      isActive: true,
-    });
+    return this.cms.findAll(
+      'blog',
+      undefined,
+      ['title', 'shortDescription', 'description'],
+      {
+        isActive: true,
+      },
+    );
   }
 
   async getBlog(id: string) {
@@ -151,11 +167,15 @@ export class PublicService {
   }
 
   listUsefulLinks() {
-    return this.cms.findAll('usefulLink', undefined, ['title', 'url'], { isActive: true });
+    return this.cms.findAll('usefulLink', undefined, ['title', 'url'], {
+      isActive: true,
+    });
   }
 
   listSocialSettings() {
-    return this.cms.findAll('socialSetting', undefined, ['name', 'code'], { isActive: true });
+    return this.cms.findAll('socialSetting', undefined, ['name', 'code'], {
+      isActive: true,
+    });
   }
 
   async getPageBySlug(slug: string) {
@@ -206,7 +226,9 @@ export class PublicService {
   }
 
   async createEnquiry(dto: CreatePublicEnquiryDto) {
-    const last = await this.prisma.enquiry.findFirst({ orderBy: { sNo: 'desc' } });
+    const last = await this.prisma.enquiry.findFirst({
+      orderBy: { sNo: 'desc' },
+    });
     const nextSNo = (last?.sNo ?? 0) + 1;
     const now = new Date();
     const date = now.toLocaleDateString('en-GB', {
@@ -241,7 +263,8 @@ export class PublicService {
           },
         },
       });
-      if (!listing) throw new NotFoundException('Marketplace product not found');
+      if (!listing)
+        throw new NotFoundException('Marketplace product not found');
 
       kind = 'PRODUCT';
       product = product?.trim() || listing.name;
@@ -283,7 +306,8 @@ export class PublicService {
       if (!provider) throw new NotFoundException('Service provider not found');
 
       const verified =
-        provider.businessVerificationStatus === BusinessVerificationStatus.VERIFIED;
+        provider.businessVerificationStatus ===
+        BusinessVerificationStatus.VERIFIED;
       const chat = providerChatCapability(
         provider.admins.map((a) => ({
           isPrimary: a.isPrimary,

@@ -58,7 +58,10 @@ export async function resolveStateId(
   return undefined;
 }
 
-export async function assertSubcategoryIds(db: Pick<Db, 'subcategory'>, ids: string[]) {
+export async function assertSubcategoryIds(
+  db: Pick<Db, 'subcategory'>,
+  ids: string[],
+) {
   const unique = [...new Set(ids.filter(Boolean))];
   if (!unique.length) return unique;
   const rows = await db.subcategory.findMany({
@@ -102,14 +105,21 @@ export async function resolvePlaceProfileFields(
 ) {
   const stateId =
     input.stateId !== undefined || input.stateName
-      ? await resolveStateId(db, { stateId: input.stateId, stateName: input.stateName })
+      ? await resolveStateId(db, {
+          stateId: input.stateId,
+          stateName: input.stateName,
+        })
       : undefined;
 
-  const shouldRecomputeDigipin = input.latitude !== undefined && input.longitude !== undefined;
+  const shouldRecomputeDigipin =
+    input.latitude !== undefined && input.longitude !== undefined;
   const digipinFields = shouldRecomputeDigipin
     ? resolveDigipinFields(input.latitude, input.longitude, input.pincode)
     : input.pincode !== undefined
-      ? { digipin: undefined as string | undefined, pincode: input.pincode.trim() || null }
+      ? {
+          digipin: undefined as string | undefined,
+          pincode: input.pincode.trim() || null,
+        }
       : {};
 
   return {
@@ -117,8 +127,12 @@ export async function resolvePlaceProfileFields(
     ...(input.city !== undefined ? { city: input.city } : {}),
     ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
     ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
-    ...(digipinFields.pincode !== undefined ? { pincode: digipinFields.pincode } : {}),
-    ...(digipinFields.digipin !== undefined ? { digipin: digipinFields.digipin } : {}),
+    ...(digipinFields.pincode !== undefined
+      ? { pincode: digipinFields.pincode }
+      : {}),
+    ...(digipinFields.digipin !== undefined
+      ? { digipin: digipinFields.digipin }
+      : {}),
     ...(stateId !== undefined ? { stateId } : {}),
   };
 }

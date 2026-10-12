@@ -60,7 +60,9 @@ export class PlacesService {
       // Same default used by the mobile app for local development
       'AIzaSyCMpzC9h1qmCRgC6SYHVzKhn4vFHztXp-A';
     if (!key.trim()) {
-      throw new ServiceUnavailableException('Google Maps API key is not configured');
+      throw new ServiceUnavailableException(
+        'Google Maps API key is not configured',
+      );
     }
     return key.trim();
   }
@@ -78,7 +80,8 @@ export class PlacesService {
   }
 
   private component(components: AddressComponent[], ...types: string[]) {
-    return components.find((c) => types.some((t) => c.types.includes(t)))?.long_name;
+    return components.find((c) => types.some((t) => c.types.includes(t)))
+      ?.long_name;
   }
 
   async autocomplete(query: string) {
@@ -86,7 +89,8 @@ export class PlacesService {
     if (trimmed.length < 2) return [];
 
     const cacheKey = `ac:${trimmed.toLowerCase()}`;
-    const cached = placesCache.get<{ placeId: string; description: string }[]>(cacheKey);
+    const cached =
+      placesCache.get<{ placeId: string; description: string }[]>(cacheKey);
     if (cached) return cached;
 
     const params = new URLSearchParams({
@@ -105,7 +109,9 @@ export class PlacesService {
     const data = (await response.json()) as AutocompleteResponse;
     if (data.status === 'ZERO_RESULTS') return [];
     if (data.status !== 'OK') {
-      throw new BadRequestException(data.error_message || `Place search failed (${data.status})`);
+      throw new BadRequestException(
+        data.error_message || `Place search failed (${data.status})`,
+      );
     }
 
     const results = (data.predictions ?? [])
@@ -144,7 +150,9 @@ export class PlacesService {
     const data = (await response.json()) as PlaceDetailsResponse;
     const location = data.result?.geometry?.location;
     if (data.status !== 'OK' || !location) {
-      throw new BadRequestException(data.error_message || 'Could not load place details');
+      throw new BadRequestException(
+        data.error_message || 'Could not load place details',
+      );
     }
 
     const components = data.result?.address_components || [];
@@ -155,7 +163,12 @@ export class PlacesService {
       '';
     const city =
       this.component(components, 'locality') ||
-      this.component(components, 'sublocality_level_1', 'sublocality', 'neighborhood') ||
+      this.component(
+        components,
+        'sublocality_level_1',
+        'sublocality',
+        'neighborhood',
+      ) ||
       undefined;
     const stateName = this.component(components, 'administrative_area_level_1');
     const pincode = this.component(components, 'postal_code');
@@ -235,7 +248,12 @@ export class PlacesService {
       address: first?.formatted_address,
       city:
         this.component(components, 'locality') ||
-        this.component(components, 'sublocality_level_1', 'sublocality', 'neighborhood') ||
+        this.component(
+          components,
+          'sublocality_level_1',
+          'sublocality',
+          'neighborhood',
+        ) ||
         undefined,
       stateName: this.component(components, 'administrative_area_level_1'),
       pincode: this.component(components, 'postal_code'),

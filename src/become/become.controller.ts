@@ -32,7 +32,9 @@ export class BecomeQuestionsController {
   @Permissions('cms.read')
   list(@Query('target') target?: BecomeTarget) {
     const filter =
-      target && Object.values(BecomeTarget).includes(target) ? target : undefined;
+      target && Object.values(BecomeTarget).includes(target)
+        ? target
+        : undefined;
     return this.become.listQuestionsAdmin(filter);
   }
 
@@ -68,7 +70,9 @@ export class BecomeApplicationsController {
     @Query('search') search?: string,
   ) {
     const targetFilter =
-      target && Object.values(BecomeTarget).includes(target) ? target : undefined;
+      target && Object.values(BecomeTarget).includes(target)
+        ? target
+        : undefined;
     const statusFilter =
       status && Object.values(BecomeApplicationStatus).includes(status)
         ? status

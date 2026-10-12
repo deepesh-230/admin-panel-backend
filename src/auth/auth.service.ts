@@ -115,7 +115,9 @@ export class AuthService {
         ),
       ],
       role: user.role.name,
-      permissions: (user.role.permissions || []).map((rp) => rp.permission.code),
+      permissions: (user.role.permissions || []).map(
+        (rp) => rp.permission.code,
+      ),
       states: (user.userStates || []).map((us) => ({
         id: us.state.id,
         name: us.state.name,
@@ -129,8 +131,14 @@ export class AuthService {
 
   private userInclude() {
     return {
-      role: { include: { permissions: { include: { permission: { select: { code: true } } } } } },
-      userStates: { include: { state: { select: { id: true, name: true, code: true } } } },
+      role: {
+        include: {
+          permissions: { include: { permission: { select: { code: true } } } },
+        },
+      },
+      userStates: {
+        include: { state: { select: { id: true, name: true, code: true } } },
+      },
       disabilities: {
         include: {
           subcategory: {
@@ -146,10 +154,16 @@ export class AuthService {
     } as const;
   }
 
-  private async issueTokens(userId: string, email: string, meta: SessionMeta = {}) {
+  private async issueTokens(
+    userId: string,
+    email: string,
+    meta: SessionMeta = {},
+  ) {
     const payload = { sub: userId, email };
     const refreshToken = randomBytes(48).toString('hex');
-    const refreshDays = Number(this.config.get<string>('JWT_REFRESH_DAYS') || 7);
+    const refreshDays = Number(
+      this.config.get<string>('JWT_REFRESH_DAYS') || 7,
+    );
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + refreshDays);
 
@@ -179,7 +193,9 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto, meta: SessionMeta = {}) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email.toLowerCase() } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
     if (existing) throw new ConflictException('Email already registered');
 
     const role = await this.getRoleByName(RoleName.END_USER);
@@ -359,7 +375,11 @@ export class AuthService {
       : [];
 
     const stateIds = [
-      ...new Set([row.stateId, ...states.map((s) => s.id)].filter((id): id is string => Boolean(id))),
+      ...new Set(
+        [row.stateId, ...states.map((s) => s.id)].filter((id): id is string =>
+          Boolean(id),
+        ),
+      ),
     ];
 
     authCache.set(
@@ -442,7 +462,11 @@ export class AuthService {
         : []),
     ]);
 
-    const tokens = await this.issueTokens(stored.user.id, stored.user.email, meta);
+    const tokens = await this.issueTokens(
+      stored.user.id,
+      stored.user.email,
+      meta,
+    );
 
     return {
       success: true,

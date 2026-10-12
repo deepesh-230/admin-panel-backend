@@ -76,21 +76,29 @@ function sqlStateIn(column: Prisma.Sql, stateIds: string[] | null) {
   return Prisma.sql`AND ${column} IN (${Prisma.join(ids)})`;
 }
 
-function prismaStateIn(stateIds: string[] | null): { in: string[] } | undefined {
+function prismaStateIn(
+  stateIds: string[] | null,
+): { in: string[] } | undefined {
   if (!stateIds) return undefined;
   return { in: stateIds.length ? stateIds : ['__none__'] };
 }
 
-async function runPool(fns: Array<() => Promise<unknown>>, limit = QUERY_CONCURRENCY): Promise<unknown[]> {
+async function runPool(
+  fns: Array<() => Promise<unknown>>,
+  limit = QUERY_CONCURRENCY,
+): Promise<unknown[]> {
   const out: unknown[] = new Array(fns.length);
   let next = 0;
-  const workers = Array.from({ length: Math.min(limit, fns.length) }, async () => {
-    while (true) {
-      const i = next++;
-      if (i >= fns.length) return;
-      out[i] = await fns[i]();
-    }
-  });
+  const workers = Array.from(
+    { length: Math.min(limit, fns.length) },
+    async () => {
+      while (true) {
+        const i = next++;
+        if (i >= fns.length) return;
+        out[i] = await fns[i]();
+      }
+    },
+  );
   await Promise.all(workers);
   return out;
 }
@@ -113,23 +121,39 @@ export class DashboardService {
   /** Soft-deleted records flagged DELETE older than 60 days are hard-removed. */
   async purgeDeleted(olderThanDays = 60) {
     const cutoff = addDays(new Date(), -olderThanDays);
-    const [enquiries, suggestions, jobAlerts, events, products] = await Promise.all([
-      this.prisma.enquiry.deleteMany({
-        where: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: { lte: cutoff } },
-      }),
-      this.prisma.suggestion.deleteMany({
-        where: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: { lte: cutoff } },
-      }),
-      this.prisma.jobAlert.deleteMany({
-        where: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: { lte: cutoff } },
-      }),
-      this.prisma.event.deleteMany({
-        where: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: { lte: cutoff } },
-      }),
-      this.prisma.marketplaceProduct.deleteMany({
-        where: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: { lte: cutoff } },
-      }),
-    ]);
+    const [enquiries, suggestions, jobAlerts, events, products] =
+      await Promise.all([
+        this.prisma.enquiry.deleteMany({
+          where: {
+            adminFlag: AdminLifecycleFlag.DELETE,
+            deletedAt: { lte: cutoff },
+          },
+        }),
+        this.prisma.suggestion.deleteMany({
+          where: {
+            adminFlag: AdminLifecycleFlag.DELETE,
+            deletedAt: { lte: cutoff },
+          },
+        }),
+        this.prisma.jobAlert.deleteMany({
+          where: {
+            adminFlag: AdminLifecycleFlag.DELETE,
+            deletedAt: { lte: cutoff },
+          },
+        }),
+        this.prisma.event.deleteMany({
+          where: {
+            adminFlag: AdminLifecycleFlag.DELETE,
+            deletedAt: { lte: cutoff },
+          },
+        }),
+        this.prisma.marketplaceProduct.deleteMany({
+          where: {
+            adminFlag: AdminLifecycleFlag.DELETE,
+            deletedAt: { lte: cutoff },
+          },
+        }),
+      ]);
 
     return {
       purged: {
@@ -148,11 +172,15 @@ export class DashboardService {
     range?: { from?: string; to?: string },
   ) {
     const stateIds =
-      currentUser.role === RoleName.STATE_ADMIN ? assignedStateIds(currentUser) : null;
+      currentUser.role === RoleName.STATE_ADMIN
+        ? assignedStateIds(currentUser)
+        : null;
     const now = new Date();
     const since7 = addDays(now, -7);
     const windowStart = range?.from ? new Date(range.from) : startOfDay(now);
-    const windowEnd = range?.to ? new Date(range.to) : addDays(startOfDay(now), 30);
+    const windowEnd = range?.to
+      ? new Date(range.to)
+      : addDays(startOfDay(now), 30);
     const isCentralAdmin = currentUser.role === RoleName.ADMIN;
     const cacheKey = `stats:${currentUser.role}:${stateIds?.join(',') || 'all'}:${windowStart.toISOString().slice(0, 10)}:${windowEnd.toISOString().slice(0, 10)}`;
     const cached = statsCache.get<Record<string, unknown>>(cacheKey);
@@ -192,13 +220,22 @@ export class DashboardService {
       const trackedRoleIds = roles
         .filter((r) => TRACKED_USER_ROLES.includes(r.name))
         .map((r) => r.id);
-      const volunteerRoleId = roles.find((r) => r.name === RoleName.VOLUNTEER)?.id;
-      const userRoleIds = [...trackedRoleIds, ...(volunteerRoleId ? [volunteerRoleId] : [])];
+      const volunteerRoleId = roles.find(
+        (r) => r.name === RoleName.VOLUNTEER,
+      )?.id;
+      const userRoleIds = [
+        ...trackedRoleIds,
+        ...(volunteerRoleId ? [volunteerRoleId] : []),
+      ];
 
       const userWhere: Prisma.UserWhereInput = { roleId: { in: userRoleIds } };
-      const trackedUserWhere: Prisma.UserWhereInput = { roleId: { in: trackedRoleIds } };
+      const trackedUserWhere: Prisma.UserWhereInput = {
+        roleId: { in: trackedRoleIds },
+      };
       const providerWhere: Prisma.ServiceProviderWhereInput = {};
-      const productWhere: Prisma.MarketplaceProductWhereInput = { ...notDeleted };
+      const productWhere: Prisma.MarketplaceProductWhereInput = {
+        ...notDeleted,
+      };
       const enquiryWhere: Prisma.EnquiryWhereInput = { ...notDeleted };
       const stateIn = prismaStateIn(stateIds);
       if (stateIn) {
@@ -224,7 +261,11 @@ export class DashboardService {
           }),
         () =>
           this.prisma.user.count({
-            where: { ...trackedUserWhere, isActive: true, createdAt: { gte: since7 } },
+            where: {
+              ...trackedUserWhere,
+              isActive: true,
+              createdAt: { gte: since7 },
+            },
           }),
         () =>
           this.prisma.serviceProvider.groupBy({
@@ -234,7 +275,11 @@ export class DashboardService {
           }),
         () =>
           this.prisma.serviceProvider.count({
-            where: { ...providerWhere, isActive: true, createdAt: { gte: since7 } },
+            where: {
+              ...providerWhere,
+              isActive: true,
+              createdAt: { gte: since7 },
+            },
           }),
         () =>
           this.prisma.marketplaceProduct.groupBy({
@@ -248,7 +293,11 @@ export class DashboardService {
           }),
         () =>
           this.prisma.marketplaceProduct.count({
-            where: { ...productWhere, isActive: true, createdAt: { gte: since7 } },
+            where: {
+              ...productWhere,
+              isActive: true,
+              createdAt: { gte: since7 },
+            },
           }),
         () =>
           this.prisma.enquiry.groupBy({
@@ -257,7 +306,7 @@ export class DashboardService {
             _count: { _all: true },
           }),
         () =>
-            this.prisma.enquiry.groupBy({
+          this.prisma.enquiry.groupBy({
             by: ['kind'],
             where: enquiryWhere,
             _count: { _all: true },
@@ -287,10 +336,18 @@ export class DashboardService {
                 {
                   AND: [
                     { startsAt: { lte: windowEnd } },
-                    { OR: [{ endsAt: null }, { endsAt: { gte: windowStart } }] },
+                    {
+                      OR: [{ endsAt: null }, { endsAt: { gte: windowStart } }],
+                    },
                   ],
                 },
-                { AND: [{ startsAt: null }, { endsAt: null }, { isActive: true }] },
+                {
+                  AND: [
+                    { startsAt: null },
+                    { endsAt: null },
+                    { isActive: true },
+                  ],
+                },
               ],
             },
           }),
@@ -340,7 +397,8 @@ export class DashboardService {
               user: { select: { stateId: true } },
             },
           }),
-        () => (isCentralAdmin ? this.centralAdminExtras(now) : Promise.resolve(null)),
+        () =>
+          isCentralAdmin ? this.centralAdminExtras(now) : Promise.resolve(null),
       ]);
 
       type CountAll<T> = T & { _count: { _all: number } };
@@ -367,10 +425,18 @@ export class DashboardService {
         payments,
         centralAdmin,
       ] = raw as [
-        CountAll<{ stateId: string | null; roleId: string; isActive: boolean }>[],
+        CountAll<{
+          stateId: string | null;
+          roleId: string;
+          isActive: boolean;
+        }>[],
         CountAll<{ stateId: string | null; roleId: string }>[],
         number,
-        CountAll<{ stateId: string; isActive: boolean; approvalStatus: ProviderApprovalStatus }>[],
+        CountAll<{
+          stateId: string;
+          isActive: boolean;
+          approvalStatus: ProviderApprovalStatus;
+        }>[],
         number,
         CountAll<{
           stateId: string | null;
@@ -397,7 +463,10 @@ export class DashboardService {
           createdAt: Date;
         }>,
         CountAll<{ location: string | null }>[],
-        CountAll<{ approvalStatus: MarketplaceApprovalStatus; createdById: string | null }>[],
+        CountAll<{
+          approvalStatus: MarketplaceApprovalStatus;
+          createdById: string | null;
+        }>[],
         Array<{
           planId: string | null;
           validUntil: Date | null;
@@ -407,7 +476,10 @@ export class DashboardService {
         Awaited<ReturnType<DashboardService['centralAdminExtras']>> | null,
       ];
 
-      const emptyRoleCounts = (): RoleCounts => ({ endUser: 0, providerAdmin: 0 });
+      const emptyRoleCounts = (): RoleCounts => ({
+        endUser: 0,
+        providerAdmin: 0,
+      });
       const usersByStateMap = new Map<
         string,
         {
@@ -451,28 +523,40 @@ export class DashboardService {
           else {
             volunteerByStateMap.set(key, {
               stateId: row.stateId,
-              stateName: (row.stateId && stateNames.get(row.stateId)) || 'Unassigned',
+              stateName:
+                (row.stateId && stateNames.get(row.stateId)) || 'Unassigned',
               count,
             });
           }
           continue;
         }
-        if (roleName !== RoleName.END_USER && roleName !== RoleName.SERVICE_PROVIDER_ADMIN) {
+        if (
+          roleName !== RoleName.END_USER &&
+          roleName !== RoleName.SERVICE_PROVIDER_ADMIN
+        ) {
           continue;
         }
         totalUsers += count;
         if (row.isActive) activeUsers += count;
-        const roleKey = roleName === RoleName.SERVICE_PROVIDER_ADMIN ? 'providerAdmin' : 'endUser';
+        const roleKey =
+          roleName === RoleName.SERVICE_PROVIDER_ADMIN
+            ? 'providerAdmin'
+            : 'endUser';
         ensureUserState(row.stateId).submitted[roleKey] += count;
       }
       for (const row of userVerifiedBuckets) {
         const roleName = roleById.get(row.roleId);
         const roleKey =
-          roleName === RoleName.SERVICE_PROVIDER_ADMIN ? 'providerAdmin' : 'endUser';
+          roleName === RoleName.SERVICE_PROVIDER_ADMIN
+            ? 'providerAdmin'
+            : 'endUser';
         ensureUserState(row.stateId).verified[roleKey] += row._count._all;
       }
       for (const bucket of usersByStateMap.values()) {
-        bucket.unverified.endUser = Math.max(0, bucket.submitted.endUser - bucket.verified.endUser);
+        bucket.unverified.endUser = Math.max(
+          0,
+          bucket.submitted.endUser - bucket.verified.endUser,
+        );
         bucket.unverified.providerAdmin = Math.max(
           0,
           bucket.submitted.providerAdmin - bucket.verified.providerAdmin,
@@ -484,13 +568,20 @@ export class DashboardService {
       let verifiedProviders = 0;
       const providersByStateMap = new Map<
         string,
-        { stateId: string; stateName: string; total: number; verified: number; unverified: number }
+        {
+          stateId: string;
+          stateName: string;
+          total: number;
+          verified: number;
+          unverified: number;
+        }
       >();
       for (const row of providerBuckets) {
         const count = row._count._all;
         totalServiceProviders += count;
         if (row.isActive) activeServiceProviders += count;
-        if (row.approvalStatus === ProviderApprovalStatus.APPROVED) verifiedProviders += count;
+        if (row.approvalStatus === ProviderApprovalStatus.APPROVED)
+          verifiedProviders += count;
         if (!providersByStateMap.has(row.stateId)) {
           providersByStateMap.set(row.stateId, {
             stateId: row.stateId,
@@ -502,7 +593,8 @@ export class DashboardService {
         }
         const bucket = providersByStateMap.get(row.stateId)!;
         bucket.total += count;
-        if (row.approvalStatus === ProviderApprovalStatus.APPROVED) bucket.verified += count;
+        if (row.approvalStatus === ProviderApprovalStatus.APPROVED)
+          bucket.verified += count;
         else bucket.unverified += count;
       }
 
@@ -519,16 +611,20 @@ export class DashboardService {
         const count = row._count._all;
         listings += count;
         if (row.isActive) activeListings += count;
-        if (row.approvalStatus === MarketplaceApprovalStatus.APPROVED) saleApproved += count;
-        else if (row.approvalStatus === MarketplaceApprovalStatus.PENDING) salePending += count;
-        else if (row.approvalStatus === MarketplaceApprovalStatus.REJECTED) saleRejected += count;
+        if (row.approvalStatus === MarketplaceApprovalStatus.APPROVED)
+          saleApproved += count;
+        else if (row.approvalStatus === MarketplaceApprovalStatus.PENDING)
+          salePending += count;
+        else if (row.approvalStatus === MarketplaceApprovalStatus.REJECTED)
+          saleRejected += count;
         const key = keyOf(row.stateId);
         const existing = salesByStateMap.get(key);
         if (existing) existing.count += count;
         else {
           salesByStateMap.set(key, {
             stateId: row.stateId,
-            stateName: (row.stateId && stateNames.get(row.stateId)) || 'Unassigned',
+            stateName:
+              (row.stateId && stateNames.get(row.stateId)) || 'Unassigned',
             count,
           });
         }
@@ -544,7 +640,8 @@ export class DashboardService {
       let productEnquiries = 0;
       for (const row of enquiryKindBuckets) {
         if (row.kind === 'PROVIDER') listEnquiries += row._count._all;
-        else if (row.kind === 'PRODUCT' || row.kind === 'USER') productEnquiries += row._count._all;
+        else if (row.kind === 'PRODUCT' || row.kind === 'USER')
+          productEnquiries += row._count._all;
       }
 
       let suggestionsOpen = 0;
@@ -553,13 +650,16 @@ export class DashboardService {
       const suggestionsByStatus = suggestionBuckets.map((row) => {
         suggestionsTotal += row._count._all;
         if (OPEN_SUGGESTION.has(row.status)) suggestionsOpen += row._count._all;
-        if (CLOSED_SUGGESTION.has(row.status)) suggestionsClosed += row._count._all;
+        if (CLOSED_SUGGESTION.has(row.status))
+          suggestionsClosed += row._count._all;
         return { status: row.status, count: row._count._all };
       });
 
       const submitterUserIds = [
         ...new Set(
-          salesSubmitterRows.map((row) => row.createdById).filter((id): id is string => Boolean(id)),
+          salesSubmitterRows
+            .map((row) => row.createdById)
+            .filter((id): id is string => Boolean(id)),
         ),
       ];
       const submitterUsers = submitterUserIds.length
@@ -586,7 +686,9 @@ export class DashboardService {
             ? salesBreakdown.approved
             : salesBreakdown.unapproved;
         const count = row._count._all;
-        const user = row.createdById ? submitterById.get(row.createdById) : undefined;
+        const user = row.createdById
+          ? submitterById.get(row.createdById)
+          : undefined;
         const roleName = user ? roleById.get(user.roleId) : undefined;
         const verified = Boolean(user?.emailVerifiedAt);
         if (roleName === RoleName.END_USER) {
@@ -600,13 +702,28 @@ export class DashboardService {
         }
       }
 
-      type TierCounts = { platinum: number; gold: number; silver: number; other: number };
-      const emptyTiers = (): TierCounts => ({ platinum: 0, gold: 0, silver: 0, other: 0 });
+      type TierCounts = {
+        platinum: number;
+        gold: number;
+        silver: number;
+        other: number;
+      };
+      const emptyTiers = (): TierCounts => ({
+        platinum: 0,
+        gold: 0,
+        silver: 0,
+        other: 0,
+      });
       let activeCount = 0;
       let inactiveCount = 0;
       const subscriptionByState = new Map<
         string,
-        { stateId: string | null; stateName: string; active: TierCounts; inactive: TierCounts }
+        {
+          stateId: string | null;
+          stateName: string;
+          active: TierCounts;
+          inactive: TierCounts;
+        }
       >();
       for (const row of payments) {
         const active = isSponsorshipActive(now, row.validUntil, row.paidAt);
@@ -624,13 +741,15 @@ export class DashboardService {
           };
           subscriptionByState.set(key, bucket);
         }
-        const tier = normalizePlanCode(row.planId) as keyof TierCounts;
+        const tier = normalizePlanCode(row.planId);
         (active ? bucket.active : bucket.inactive)[tier] += 1;
       }
 
       const windowDays = Math.max(
         1,
-        Math.round((windowEnd.getTime() - windowStart.getTime()) / (24 * 60 * 60 * 1000)),
+        Math.round(
+          (windowEnd.getTime() - windowStart.getTime()) / (24 * 60 * 60 * 1000),
+        ),
       );
 
       const result = {
@@ -639,7 +758,8 @@ export class DashboardService {
         inactiveUsers: totalUsers - activeUsers,
         totalServiceProviders,
         activeServiceProviders,
-        inactiveServiceProviders: totalServiceProviders - activeServiceProviders,
+        inactiveServiceProviders:
+          totalServiceProviders - activeServiceProviders,
         listings,
         activeListings,
         listEnquiries,
@@ -1079,7 +1199,9 @@ export class DashboardService {
     const subscriptionInactive = asNum(row.subscriptionInactive);
     const windowDays = Math.max(
       1,
-      Math.round((windowEnd.getTime() - windowStart.getTime()) / (24 * 60 * 60 * 1000)),
+      Math.round(
+        (windowEnd.getTime() - windowStart.getTime()) / (24 * 60 * 60 * 1000),
+      ),
     );
 
     const usersByState = asList<{
@@ -1105,7 +1227,10 @@ export class DashboardService {
         verified,
         unverified: {
           endUser: Math.max(0, submitted.endUser - verified.endUser),
-          providerAdmin: Math.max(0, submitted.providerAdmin - verified.providerAdmin),
+          providerAdmin: Math.max(
+            0,
+            submitted.providerAdmin - verified.providerAdmin,
+          ),
         },
       };
     });
@@ -1143,11 +1268,26 @@ export class DashboardService {
       }
     }
 
-    type TierCounts = { platinum: number; gold: number; silver: number; other: number };
-    const emptyTiers = (): TierCounts => ({ platinum: 0, gold: 0, silver: 0, other: 0 });
+    type TierCounts = {
+      platinum: number;
+      gold: number;
+      silver: number;
+      other: number;
+    };
+    const emptyTiers = (): TierCounts => ({
+      platinum: 0,
+      gold: 0,
+      silver: 0,
+      other: 0,
+    });
     const subscriptionMap = new Map<
       string,
-      { stateId: string | null; stateName: string; active: TierCounts; inactive: TierCounts }
+      {
+        stateId: string | null;
+        stateName: string;
+        active: TierCounts;
+        inactive: TierCounts;
+      }
     >();
     for (const item of asList<{
       stateId: string | null;
@@ -1167,16 +1307,18 @@ export class DashboardService {
         };
         subscriptionMap.set(key, bucket);
       }
-      const tier = normalizePlanCode(item.planId) as keyof TierCounts;
-      (item.active ? bucket.active : bucket.inactive)[tier] += asNum(item.count);
+      const tier = normalizePlanCode(item.planId);
+      (item.active ? bucket.active : bucket.inactive)[tier] += asNum(
+        item.count,
+      );
     }
 
-    const eventsByLocation = asList<{ location: string; count: number }>(row.eventsByLocation).map(
-      (item) => ({
-        location: item.location || 'Unspecified',
-        count: asNum(item.count),
-      }),
-    );
+    const eventsByLocation = asList<{ location: string; count: number }>(
+      row.eventsByLocation,
+    ).map((item) => ({
+      location: item.location || 'Unspecified',
+      count: asNum(item.count),
+    }));
 
     return {
       totalUsers,
@@ -1209,9 +1351,11 @@ export class DashboardService {
       },
       users: {
         byState: usersByState,
-        volunteersByState: asList<{ stateId: string | null; stateName: string; count: number }>(
-          row.volunteerByState,
-        ).map((item) => ({
+        volunteersByState: asList<{
+          stateId: string | null;
+          stateName: string;
+          count: number;
+        }>(row.volunteerByState).map((item) => ({
           stateId: item.stateId,
           stateName: item.stateName || 'Unassigned',
           count: asNum(item.count),
@@ -1235,9 +1379,11 @@ export class DashboardService {
         unverified: totalServiceProviders - verifiedProviders,
       },
       sales: {
-        byState: asList<{ stateId: string | null; stateName: string; count: number }>(
-          row.salesByState,
-        ).map((item) => ({
+        byState: asList<{
+          stateId: string | null;
+          stateName: string;
+          count: number;
+        }>(row.salesByState).map((item) => ({
           stateId: item.stateId,
           stateName: item.stateName || 'Unassigned',
           count: asNum(item.count),
@@ -1258,7 +1404,9 @@ export class DashboardService {
         total: suggestionsTotal,
         open: asNum(row.suggestionsOpen),
         closed: asNum(row.suggestionsClosed),
-        byStatus: asList<{ status: string; count: number }>(row.suggestionsByStatus).map((item) => ({
+        byStatus: asList<{ status: string; count: number }>(
+          row.suggestionsByStatus,
+        ).map((item) => ({
           status: item.status,
           count: asNum(item.count),
         })),
@@ -1323,7 +1471,9 @@ export class DashboardService {
       await this.prisma.payment.update({
         where: { id: row.id },
         data: {
-          validUntil: new Date(row.paidAt.getTime() + 365 * 24 * 60 * 60 * 1000),
+          validUntil: new Date(
+            row.paidAt.getTime() + 365 * 24 * 60 * 60 * 1000,
+          ),
         },
       });
     }
@@ -1369,7 +1519,10 @@ export class DashboardService {
             where: {
               purpose: 'SPONSORSHIP',
               status: 'SUCCESS',
-              OR: [{ validUntil: { gte: now } }, { validUntil: null, paidAt: { gte: addDays(now, -365) } }],
+              OR: [
+                { validUntil: { gte: now } },
+                { validUntil: null, paidAt: { gte: addDays(now, -365) } },
+              ],
             },
           }),
         () =>

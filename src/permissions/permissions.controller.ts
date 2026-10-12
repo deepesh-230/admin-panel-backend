@@ -31,7 +31,10 @@ export class PermissionsController {
     @Param('roleName') roleName: RoleName,
     @Body() dto: UpdateRolePermissionsDto,
   ) {
-    return this.permissionsService.setRolePermissions(roleName, dto.permissionCodes);
+    return this.permissionsService.setRolePermissions(
+      roleName,
+      dto.permissionCodes,
+    );
   }
 
   @Post('roles/:roleName/reset')

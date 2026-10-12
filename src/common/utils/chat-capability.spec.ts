@@ -45,7 +45,11 @@ describe('chat-capability', () => {
         },
         {
           isPrimary: true,
-          user: { id: 'b', isActive: true, role: RoleName.SERVICE_PROVIDER_ADMIN },
+          user: {
+            id: 'b',
+            isActive: true,
+            role: RoleName.SERVICE_PROVIDER_ADMIN,
+          },
         },
       ],
       { id: 'creator', isActive: true, role: RoleName.ADMIN },

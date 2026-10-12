@@ -245,4 +245,8 @@ export class ListMarketplacePublicQueryDto {
   @IsString()
   @IsIn(['sell', 'buy', 'SELL', 'BUY'])
   listingIntent?: string;
+
+  @IsOptional()
+  @IsString()
+  stateId?: string;
 }

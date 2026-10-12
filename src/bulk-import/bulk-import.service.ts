@@ -129,7 +129,13 @@ export class BulkImportService {
       case 'subcategories':
         return this.importSubcategory(row, dryRun, context, categoryCache);
       case 'keywords':
-        return this.importKeyword(row, dryRun, context, categoryCache, subcategoryCache);
+        return this.importKeyword(
+          row,
+          dryRun,
+          context,
+          categoryCache,
+          subcategoryCache,
+        );
       case 'service-providers':
         return this.importServiceProvider(
           row,
@@ -147,22 +153,28 @@ export class BulkImportService {
         return this.importCms('faq', row, dryRun, ['title'], (r) => ({
           title: pick(r, 'title', 'question'),
           slug: pick(r, 'slug') || undefined,
-          description: pick(r, 'description', 'answer', 'shortdescription') || undefined,
+          description:
+            pick(r, 'description', 'answer', 'shortdescription') || undefined,
           isActive: parseBool(pick(r, 'isactive', 'active'), true),
         }));
       case 'blogs':
         return this.importCms('blog', row, dryRun, ['title'], (r) => {
           const images = splitDelimited(
-            pick(r, 'images', 'gallery') || pick(r, 'image', 'imageurl', 'image_url'),
+            pick(r, 'images', 'gallery') ||
+              pick(r, 'image', 'imageurl', 'image_url'),
           );
           const additionalLinks = splitDelimited(
             pick(r, 'additionallinks', 'additional_links', 'links'),
           );
           return {
             title: pick(r, 'title'),
-            shortDescription: pick(r, 'shortdescription', 'short_description') || undefined,
+            shortDescription:
+              pick(r, 'shortdescription', 'short_description') || undefined,
             description: pick(r, 'description') || undefined,
-            image: images[0] || pick(r, 'image', 'imageurl', 'image_url') || undefined,
+            image:
+              images[0] ||
+              pick(r, 'image', 'imageurl', 'image_url') ||
+              undefined,
             images,
             additionalLinks,
             isActive: parseBool(pick(r, 'isactive', 'active'), true),
@@ -180,17 +192,26 @@ export class BulkImportService {
             postDate,
             lastDate,
             startsAt:
-              startsAt && !Number.isNaN(startsAt.getTime()) ? startsAt : undefined,
-            endsAt: endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : undefined,
+              startsAt && !Number.isNaN(startsAt.getTime())
+                ? startsAt
+                : undefined,
+            endsAt:
+              endsAt && !Number.isNaN(endsAt.getTime()) ? endsAt : undefined,
             isActive: parseBool(pick(r, 'isactive', 'active'), true),
           };
         });
       case 'useful-links':
-        return this.importCms('usefulLink', row, dryRun, ['title', 'url'], (r) => ({
-          title: pick(r, 'title'),
-          url: pick(r, 'url', 'link'),
-          isActive: parseBool(pick(r, 'isactive', 'active'), true),
-        }));
+        return this.importCms(
+          'usefulLink',
+          row,
+          dryRun,
+          ['title', 'url'],
+          (r) => ({
+            title: pick(r, 'title'),
+            url: pick(r, 'url', 'link'),
+            isActive: parseBool(pick(r, 'isactive', 'active'), true),
+          }),
+        );
       default:
         throw new BadRequestException(`Unsupported entity: ${entity}`);
     }
@@ -282,7 +303,12 @@ export class BulkImportService {
     contextSubcategoryId: string | undefined,
     cache: Map<string, string>,
   ): Promise<string | undefined> {
-    const ids = await this.resolveSubcategoryIds(row, categoryId, contextSubcategoryId, cache);
+    const ids = await this.resolveSubcategoryIds(
+      row,
+      categoryId,
+      contextSubcategoryId,
+      cache,
+    );
     return ids[0];
   }
 
@@ -299,7 +325,8 @@ export class BulkImportService {
       contextSubcategoryId ||
       '';
     const tokens = splitDelimited(raw);
-    if (!tokens.length && contextSubcategoryId) tokens.push(contextSubcategoryId);
+    if (!tokens.length && contextSubcategoryId)
+      tokens.push(contextSubcategoryId);
     if (!tokens.length) return [];
 
     const resolved: string[] = [];
@@ -309,7 +336,9 @@ export class BulkImportService {
           where: { id: token, categoryId },
         });
         if (!subcategory) {
-          throw new BadRequestException(`Subcategory not found under category: ${token}`);
+          throw new BadRequestException(
+            `Subcategory not found under category: ${token}`,
+          );
         }
         resolved.push(subcategory.id);
         continue;
@@ -482,7 +511,11 @@ export class BulkImportService {
     const name = pick(row, 'name');
     if (!name) throw new BadRequestException('name is required');
 
-    const categoryId = await this.resolveCategoryId(row, undefined, categoryCache);
+    const categoryId = await this.resolveCategoryId(
+      row,
+      undefined,
+      categoryCache,
+    );
     const subcategoryIds = await this.resolveSubcategoryIds(
       row,
       categoryId,
@@ -492,8 +525,14 @@ export class BulkImportService {
     const subcategoryId = subcategoryIds[0];
     const stateId = await this.resolveStateId(row, user, stateCache);
 
-    const statusRaw = pick(row, 'approvalstatus', 'approval_status', 'status').toUpperCase();
-    let approvalStatus: ProviderApprovalStatus = ProviderApprovalStatus.APPROVED;
+    const statusRaw = pick(
+      row,
+      'approvalstatus',
+      'approval_status',
+      'status',
+    ).toUpperCase();
+    let approvalStatus: ProviderApprovalStatus =
+      ProviderApprovalStatus.APPROVED;
     if (statusRaw === 'PENDING' || statusRaw === 'PENDING_APPROVAL') {
       approvalStatus = ProviderApprovalStatus.PENDING_APPROVAL;
     } else if (statusRaw === 'REJECTED') {
@@ -509,7 +548,9 @@ export class BulkImportService {
 
     if (latitude == null || longitude == null) {
       const stateLabel = pick(row, 'state', 'statename', 'state_name');
-      const geoQuery = [address, city, stateLabel, 'India'].filter(Boolean).join(', ');
+      const geoQuery = [address, city, stateLabel, 'India']
+        .filter(Boolean)
+        .join(', ');
       if (geoQuery.length >= 3) {
         const geo = await this.places.geocode(geoQuery);
         if (geo) {
@@ -528,25 +569,36 @@ export class BulkImportService {
         description: pick(row, 'description') || undefined,
         phone: pick(row, 'phone') || undefined,
         landline:
-          pick(row, 'landline', 'landline number', 'landlinenumber', 'landline_number') ||
-          undefined,
+          pick(
+            row,
+            'landline',
+            'landline number',
+            'landlinenumber',
+            'landline_number',
+          ) || undefined,
         email: pick(row, 'email') || undefined,
         website: pick(row, 'website') || undefined,
         address,
         city,
         latitude,
         longitude,
-        googlePlaceId: pick(row, 'googleplaceid', 'google_place_id') || undefined,
+        googlePlaceId:
+          pick(row, 'googleplaceid', 'google_place_id') || undefined,
         about: pick(row, 'about') || undefined,
         services: pick(row, 'services') || undefined,
-        coverPhotoUrl: pick(row, 'coverphotourl', 'cover_photo_url', 'image') || undefined,
+        coverPhotoUrl:
+          pick(row, 'coverphotourl', 'cover_photo_url', 'image') || undefined,
         isActive: parseBool(pick(row, 'isactive', 'active'), true),
         approvalStatus,
         createdById: user.id,
         approvedById:
-          approvalStatus === ProviderApprovalStatus.APPROVED ? user.id : undefined,
+          approvalStatus === ProviderApprovalStatus.APPROVED
+            ? user.id
+            : undefined,
         approvedAt:
-          approvalStatus === ProviderApprovalStatus.APPROVED ? new Date() : undefined,
+          approvalStatus === ProviderApprovalStatus.APPROVED
+            ? new Date()
+            : undefined,
       },
     });
 
@@ -571,21 +623,31 @@ export class BulkImportService {
 
     if (dryRun) return 'created';
 
-    const intentRaw = pick(row, 'listingintent', 'listing_intent', 'intent').toLowerCase();
+    const intentRaw = pick(
+      row,
+      'listingintent',
+      'listing_intent',
+      'intent',
+    ).toLowerCase();
     const conditionRaw = pick(row, 'condition').toUpperCase();
     const condition =
-      conditionRaw === 'NEW' || conditionRaw === 'USED' || conditionRaw === 'FREE'
+      conditionRaw === 'NEW' ||
+      conditionRaw === 'USED' ||
+      conditionRaw === 'FREE'
         ? conditionRaw
         : undefined;
     await this.prisma.marketplaceProduct.create({
       data: {
         name,
-        actualPrice: pick(row, 'actualprice', 'actual_price', 'mrp') || undefined,
-        offerPrice: pick(row, 'offerprice', 'offer_price', 'price') || undefined,
+        actualPrice:
+          pick(row, 'actualprice', 'actual_price', 'mrp') || undefined,
+        offerPrice:
+          pick(row, 'offerprice', 'offer_price', 'price') || undefined,
         phone: pick(row, 'phone') || undefined,
         listingIntent: intentRaw === 'buy' ? 'buy' : 'sell',
         condition,
-        sellerName: pick(row, 'sellername', 'seller_name', 'seller') || undefined,
+        sellerName:
+          pick(row, 'sellername', 'seller_name', 'seller') || undefined,
         description: pick(row, 'description') || undefined,
         address: pick(row, 'address') || undefined,
         color: pick(row, 'color') || undefined,
@@ -643,24 +705,62 @@ export class BulkImportService {
         await this.prisma.blog.create({ data: data as Prisma.BlogCreateInput });
         break;
       case 'jobAlert':
-        await this.prisma.jobAlert.create({ data: data as Prisma.JobAlertCreateInput });
+        await this.prisma.jobAlert.create({
+          data: data as Prisma.JobAlertCreateInput,
+        });
         break;
       case 'usefulLink':
-        await this.prisma.usefulLink.create({ data: data as Prisma.UsefulLinkCreateInput });
+        await this.prisma.usefulLink.create({
+          data: data as Prisma.UsefulLinkCreateInput,
+        });
         break;
     }
     return 'created';
   }
 
-  getTemplate(entity: BulkImportEntity): { columns: string[]; sample: string[] } {
-    const templates: Record<BulkImportEntity, { columns: string[]; sample: string[] }> = {
+  getTemplate(entity: BulkImportEntity): {
+    columns: string[];
+    sample: string[];
+  } {
+    const templates: Record<
+      BulkImportEntity,
+      { columns: string[]; sample: string[] }
+    > = {
       categories: {
-        columns: ['name', 'code', 'description', 'type', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'PHY', 'Rehab services', 'SERVICE', '0', 'true'],
+        columns: [
+          'name',
+          'code',
+          'description',
+          'type',
+          'sortOrder',
+          'isActive',
+        ],
+        sample: [
+          'Physiotherapy',
+          'PHY',
+          'Rehab services',
+          'SERVICE',
+          '0',
+          'true',
+        ],
       },
       subcategories: {
-        columns: ['category', 'name', 'code', 'description', 'sortOrder', 'isActive'],
-        sample: ['Physiotherapy', 'Pediatric PT', 'PHY_PED_PHY', '', '0', 'true'],
+        columns: [
+          'category',
+          'name',
+          'code',
+          'description',
+          'sortOrder',
+          'isActive',
+        ],
+        sample: [
+          'Physiotherapy',
+          'Pediatric PT',
+          'PHY_PED_PHY',
+          '',
+          '0',
+          'true',
+        ],
       },
       keywords: {
         columns: ['category', 'subcategory', 'term', 'isActive'],
@@ -767,7 +867,13 @@ export class BulkImportService {
       },
       'job-alerts': {
         columns: ['title', 'description', 'postDate', 'lastDate', 'isActive'],
-        sample: ['Hiring therapist', 'Full-time role', '2026-01-01', '2026-02-01', 'true'],
+        sample: [
+          'Hiring therapist',
+          'Full-time role',
+          '2026-01-01',
+          '2026-02-01',
+          'true',
+        ],
       },
       'useful-links': {
         columns: ['title', 'url', 'isActive'],

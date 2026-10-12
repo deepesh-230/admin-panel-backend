@@ -23,9 +23,7 @@ import {
 
 function normalizeOptions(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((o) => String(o ?? '').trim())
-    .filter((o) => o.length > 0);
+  return raw.map((o) => String(o ?? '').trim()).filter((o) => o.length > 0);
 }
 
 function optionsFromJson(value: Prisma.JsonValue | null | undefined): string[] {
@@ -53,7 +51,10 @@ export class BecomeService {
   }) {
     return {
       ...row,
-      options: row.type === BecomeQuestionType.SINGLE_CHOICE ? optionsFromJson(row.options) : [],
+      options:
+        row.type === BecomeQuestionType.SINGLE_CHOICE
+          ? optionsFromJson(row.options)
+          : [],
     };
   }
 
@@ -64,7 +65,9 @@ export class BecomeService {
     if (type === BecomeQuestionType.SINGLE_CHOICE) {
       const opts = normalizeOptions(options);
       if (opts.length < 2) {
-        throw new BadRequestException('Multiple choice questions need at least 2 options');
+        throw new BadRequestException(
+          'Multiple choice questions need at least 2 options',
+        );
       }
       return opts;
     }
@@ -75,7 +78,11 @@ export class BecomeService {
     return this.prisma.becomeQuestion
       .findMany({
         where: target ? { target } : undefined,
-        orderBy: [{ target: 'asc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }],
+        orderBy: [
+          { target: 'asc' },
+          { sortOrder: 'asc' },
+          { createdAt: 'asc' },
+        ],
       })
       .then((rows) => rows.map((r) => this.serializeQuestion(r)));
   }
@@ -109,7 +116,9 @@ export class BecomeService {
   }
 
   async updateQuestion(id: string, dto: UpdateBecomeQuestionDto) {
-    const existing = await this.prisma.becomeQuestion.findUnique({ where: { id } });
+    const existing = await this.prisma.becomeQuestion.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Question not found');
 
     const nextType = dto.type ?? existing.type;
@@ -143,7 +152,9 @@ export class BecomeService {
   }
 
   async removeQuestion(id: string) {
-    const existing = await this.prisma.becomeQuestion.findUnique({ where: { id } });
+    const existing = await this.prisma.becomeQuestion.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Question not found');
     await this.prisma.becomeQuestion.delete({ where: { id } });
     return { id, deleted: true };
@@ -240,7 +251,9 @@ export class BecomeService {
     }
 
     if (user.role.name === RoleName.ADMIN) {
-      throw new BadRequestException('Cannot change role of a Central Admin account');
+      throw new BadRequestException(
+        'Cannot change role of a Central Admin account',
+      );
     }
     if (
       application.target === BecomeTarget.STATE_ADMIN &&
@@ -261,7 +274,9 @@ export class BecomeService {
           'State is required when approving a state admin application',
         );
       }
-      const state = await this.prisma.state.findUnique({ where: { id: nextStateId } });
+      const state = await this.prisma.state.findUnique({
+        where: { id: nextStateId },
+      });
       if (!state) throw new BadRequestException('Selected state was not found');
       if (!state.isActive) {
         throw new BadRequestException('Selected state is inactive');
@@ -336,7 +351,10 @@ export class BecomeService {
     let promotedUserId: string | null = null;
     let promotedRole: RoleName | null = null;
     if (dto.status === BecomeApplicationStatus.APPROVED) {
-      const result = await this.promoteApplicantOnApproval(existing, dto.stateId);
+      const result = await this.promoteApplicantOnApproval(
+        existing,
+        dto.stateId,
+      );
       promotedUserId = result?.userId ?? null;
       promotedRole = result?.roleName ?? null;
     }
@@ -372,7 +390,9 @@ export class BecomeService {
       const recipientId =
         promotedUserId || updated.userId || updated.user?.id || existing.userId;
       if (recipientId) {
-        const roleLabel = String(updated.target).replace(/_/g, ' ').toLowerCase();
+        const roleLabel = String(updated.target)
+          .replace(/_/g, ' ')
+          .toLowerCase();
         const isStateAdmin = promotedRole === RoleName.STATE_ADMIN;
         if (isStateAdmin) {
           await this.revokeMobileSessions(recipientId);
@@ -432,12 +452,16 @@ export class BecomeService {
       throw new BadRequestException('This user is already a state admin');
     }
     if (linkedUser?.role.name === RoleName.ADMIN) {
-      throw new BadRequestException('Cannot change role of a Central Admin account');
+      throw new BadRequestException(
+        'Cannot change role of a Central Admin account',
+      );
     }
 
     const stateId = dto.stateId?.trim();
     if (!stateId) {
-      throw new BadRequestException('State is required to make this user a state admin');
+      throw new BadRequestException(
+        'State is required to make this user a state admin',
+      );
     }
 
     const result = await this.promoteApplicantOnApproval(
@@ -445,7 +469,9 @@ export class BecomeService {
       stateId,
     );
     if (!result?.userId) {
-      throw new BadRequestException('Could not resolve the applicant user account');
+      throw new BadRequestException(
+        'Could not resolve the applicant user account',
+      );
     }
 
     const note =
@@ -510,10 +536,7 @@ export class BecomeService {
 
     const applications = await this.prisma.becomeApplication.findMany({
       where: {
-        OR: [
-          ...(userId ? [{ userId }] : []),
-          ...(email ? [{ email }] : []),
-        ],
+        OR: [...(userId ? [{ userId }] : []), ...(email ? [{ email }] : [])],
       },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -525,7 +548,9 @@ export class BecomeService {
       },
     });
 
-    const pending = applications.find((a) => a.status === BecomeApplicationStatus.PENDING);
+    const pending = applications.find(
+      (a) => a.status === BecomeApplicationStatus.PENDING,
+    );
     const approvedTargets = applications
       .filter((a) => a.status === BecomeApplicationStatus.APPROVED)
       .map((a) => a.target);
@@ -554,7 +579,9 @@ export class BecomeService {
           )
         : false);
 
-    const allowedTargets = (Object.values(BecomeTarget) as BecomeTarget[]).filter((target) => {
+    const allowedTargets = (
+      Object.values(BecomeTarget) as BecomeTarget[]
+    ).filter((target) => {
       if (approvedTargets.includes(target)) return false;
       if (pending) return false;
       // Only volunteers may apply to become state admin
@@ -654,7 +681,9 @@ export class BecomeService {
     });
 
     if (questions.length === 0) {
-      throw new BadRequestException('No questions are configured for this role yet');
+      throw new BadRequestException(
+        'No questions are configured for this role yet',
+      );
     }
 
     const answerByQuestion = new Map(
