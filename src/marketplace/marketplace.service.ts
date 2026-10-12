@@ -80,7 +80,7 @@ function normalizeCondition(
   if (!value?.trim()) return undefined;
   const key = value.trim().toUpperCase();
   if (key === 'NEW' || key === 'USED' || key === 'FREE') {
-    return key as MarketplaceItemCondition;
+    return key;
   }
   return undefined;
 }
@@ -118,7 +118,9 @@ export class MarketplaceService {
     private push: PushService,
   ) {}
 
-  private buildPriceGeoWhere(query: MarketplaceListQuery): Prisma.MarketplaceProductWhereInput {
+  private buildPriceGeoWhere(
+    query: MarketplaceListQuery,
+  ): Prisma.MarketplaceProductWhereInput {
     const where: Prisma.MarketplaceProductWhereInput = {};
     const condition = normalizeCondition(query.condition);
     if (condition) where.condition = condition;
@@ -179,7 +181,12 @@ export class MarketplaceService {
     return rows
       .map((row) => {
         if (row.latitude == null || row.longitude == null) return null;
-        const distanceKm = haversineKm(originLat, originLng, row.latitude, row.longitude);
+        const distanceKm = haversineKm(
+          originLat,
+          originLng,
+          row.latitude,
+          row.longitude,
+        );
         if (distanceKm > radiusKm) return null;
         return { ...row, distanceKm: Math.round(distanceKm * 100) / 100 };
       })
@@ -280,13 +287,17 @@ export class MarketplaceService {
 
   private buildCreateData(
     data: MarketplaceWriteInput,
-    extras?: { createdById?: string; sellerName?: string | null; stateId?: string },
+    extras?: {
+      createdById?: string;
+      sellerName?: string | null;
+      stateId?: string;
+    },
   ): Prisma.MarketplaceProductCreateInput {
     const intent = (data.listingIntent || 'sell').toLowerCase();
     const quantity = data.quantity ?? 1;
     const sold = applySoldFromQuantity(quantity);
     const offerPrice = data.offerPrice ?? undefined;
-    let saleStatus =
+    const saleStatus =
       sold.saleStatus ??
       (data.approvalStatus === 'APPROVED'
         ? MarketplaceSaleStatus.PENDING_SALE
@@ -348,7 +359,8 @@ export class MarketplaceService {
     });
 
     const becameApproved =
-      data.approvalStatus === 'APPROVED' && existing.approvalStatus !== 'APPROVED';
+      data.approvalStatus === 'APPROVED' &&
+      existing.approvalStatus !== 'APPROVED';
     if (becameApproved && existing.createdById) {
       void this.push.notifyApproval(
         [existing.createdById],
@@ -387,7 +399,9 @@ export class MarketplaceService {
     if (data.gallery !== undefined) payload.gallery = data.gallery;
     if (data.isActive !== undefined) payload.isActive = data.isActive;
     if (data.stateId !== undefined) {
-      payload.state = data.stateId ? { connect: { id: data.stateId } } : { disconnect: true };
+      payload.state = data.stateId
+        ? { connect: { id: data.stateId } }
+        : { disconnect: true };
     }
     if (typeof data.listingIntent === 'string') {
       const intent = data.listingIntent.toLowerCase();
@@ -397,7 +411,7 @@ export class MarketplaceService {
       payload.condition =
         data.condition == null || data.condition === ''
           ? null
-          : normalizeCondition(String(data.condition)) ?? null;
+          : (normalizeCondition(String(data.condition)) ?? null);
     }
 
     if (data.offerPrice !== undefined) {
@@ -406,11 +420,7 @@ export class MarketplaceService {
       if (next != null && prev != null && next.trim() !== prev.trim()) {
         const nextN = parseOfferPriceValue(next);
         const prevN = parseOfferPriceValue(prev);
-        if (
-          nextN != null &&
-          prevN != null &&
-          prevN > nextN
-        ) {
+        if (nextN != null && prevN != null && prevN > nextN) {
           payload.previousOfferPrice = prev;
         }
       }
@@ -470,21 +480,26 @@ export class MarketplaceService {
   async listPublic(query: MarketplaceListQuery = {}) {
     const normalized: MarketplaceListQuery = {
       ...query,
-      minPrice: query.minPrice != null && Number.isFinite(Number(query.minPrice))
-        ? Number(query.minPrice)
-        : undefined,
-      maxPrice: query.maxPrice != null && Number.isFinite(Number(query.maxPrice))
-        ? Number(query.maxPrice)
-        : undefined,
-      latitude: query.latitude != null && Number.isFinite(Number(query.latitude))
-        ? Number(query.latitude)
-        : undefined,
-      longitude: query.longitude != null && Number.isFinite(Number(query.longitude))
-        ? Number(query.longitude)
-        : undefined,
-      radius: query.radius != null && Number.isFinite(Number(query.radius))
-        ? Number(query.radius)
-        : undefined,
+      minPrice:
+        query.minPrice != null && Number.isFinite(Number(query.minPrice))
+          ? Number(query.minPrice)
+          : undefined,
+      maxPrice:
+        query.maxPrice != null && Number.isFinite(Number(query.maxPrice))
+          ? Number(query.maxPrice)
+          : undefined,
+      latitude:
+        query.latitude != null && Number.isFinite(Number(query.latitude))
+          ? Number(query.latitude)
+          : undefined,
+      longitude:
+        query.longitude != null && Number.isFinite(Number(query.longitude))
+          ? Number(query.longitude)
+          : undefined,
+      radius:
+        query.radius != null && Number.isFinite(Number(query.radius))
+          ? Number(query.radius)
+          : undefined,
     };
 
     if (
@@ -511,7 +526,12 @@ export class MarketplaceService {
       deletedAt: null,
       adminFlag: { not: 'DELETE' },
       approvalStatus: 'APPROVED',
-      saleStatus: { in: [MarketplaceSaleStatus.NEWLY_ADDED, MarketplaceSaleStatus.PENDING_SALE] },
+      saleStatus: {
+        in: [
+          MarketplaceSaleStatus.NEWLY_ADDED,
+          MarketplaceSaleStatus.PENDING_SALE,
+        ],
+      },
       ...this.buildPriceGeoWhere(normalized),
     };
 
@@ -543,9 +563,9 @@ export class MarketplaceService {
     return this.applyHaversineFilter(priced, normalized);
   }
 
-  private withChatCapability<T extends { createdBy?: Parameters<typeof productChatCapability>[0] }>(
-    product: T,
-  ) {
+  private withChatCapability<
+    T extends { createdBy?: Parameters<typeof productChatCapability>[0] },
+  >(product: T) {
     const capability = productChatCapability(product.createdBy ?? null);
     return {
       ...product,
@@ -572,38 +592,63 @@ export class MarketplaceService {
 
   listForUser(userId: string) {
     return this.prisma.marketplaceProduct.findMany({
-      where: { createdById: userId },
+      where: {
+        createdById: userId,
+        deletedAt: null,
+        adminFlag: { not: 'DELETE' },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async findForUser(userId: string, id: string) {
     const product = await this.prisma.marketplaceProduct.findFirst({
-      where: { id, createdById: userId },
+      where: {
+        id,
+        createdById: userId,
+        deletedAt: null,
+        adminFlag: { not: 'DELETE' },
+      },
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
+  }
+
+  private isPrivilegedCreator(role?: string | null) {
+    return role === RoleName.ADMIN || role === RoleName.STATE_ADMIN;
   }
 
   async createForUser(
     userId: string,
     sellerName: string | null | undefined,
     data: MarketplaceWriteInput & { name: string },
+    creatorRole?: string | null,
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { stateId: true },
     });
+    const approvalStatus = this.isPrivilegedCreator(creatorRole)
+      ? 'APPROVED'
+      : data.approvalStatus;
     return this.prisma.marketplaceProduct.create({
-      data: this.buildCreateData(data, {
-        createdById: userId,
-        sellerName: sellerName || undefined,
-        stateId: data.stateId || user?.stateId || undefined,
-      }),
+      data: this.buildCreateData(
+        { ...data, approvalStatus },
+        {
+          createdById: userId,
+          sellerName: sellerName || undefined,
+          stateId: data.stateId || user?.stateId || undefined,
+        },
+      ),
     });
   }
 
-  async updateForUser(userId: string, id: string, data: MarketplaceWriteInput) {
+  async updateForUser(
+    userId: string,
+    id: string,
+    data: MarketplaceWriteInput,
+    creatorRole?: string | null,
+  ) {
     const existing = await this.findForUser(userId, id);
     const contentKeys: (keyof MarketplaceWriteInput)[] = [
       'name',
@@ -633,7 +678,13 @@ export class MarketplaceService {
         data: { isActive: Boolean(data.isActive) },
       });
     }
-    const payload = this.buildUpdatePayload(existing, data);
+    const payload = this.buildUpdatePayload(existing, {
+      ...data,
+      // Admin/state-admin edits stay (or become) approved.
+      ...(this.isPrivilegedCreator(creatorRole) && contentChanged
+        ? { approvalStatus: 'APPROVED' as const }
+        : {}),
+    });
     return this.prisma.marketplaceProduct.update({
       where: { id },
       data: payload,
@@ -652,12 +703,11 @@ export class MarketplaceService {
     });
   }
 
-  private assertSoldRetention(
-    role: RoleName | string,
-    soldAt: Date | null,
-  ) {
+  private assertSoldRetention(role: RoleName | string, soldAt: Date | null) {
     if (!soldAt) {
-      throw new ForbiddenException('Only sold items can be deleted after the retention period');
+      throw new ForbiddenException(
+        'Only sold items can be deleted after the retention period',
+      );
     }
     const days = role === RoleName.END_USER ? 30 : 180;
     const elapsedMs = Date.now() - soldAt.getTime();

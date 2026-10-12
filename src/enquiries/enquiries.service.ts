@@ -10,7 +10,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEnquiryDto, UpdateEnquiryDto } from './dto/enquiry.dto';
 
 const enquiryInclude = {
-  provider: { select: { id: true, name: true, stateId: true, createdById: true } },
+  provider: {
+    select: { id: true, name: true, stateId: true, createdById: true },
+  },
   marketplaceProduct: { select: { id: true, name: true, createdById: true } },
   state: { select: { id: true, name: true, code: true } },
 } as const;
@@ -84,14 +86,17 @@ export class EnquiriesService {
       where: { id },
       include: enquiryInclude,
     });
-    if (!enquiry) throw new NotFoundException(`Enquiry with ID ${id} not found`);
+    if (!enquiry)
+      throw new NotFoundException(`Enquiry with ID ${id} not found`);
     await this.assertCanAccess(currentUser, enquiry);
     return enquiry;
   }
 
   async create(currentUser: AuthUser, data: CreateEnquiryDto) {
     const resolved = await this.resolveWriteFields(currentUser, data);
-    const last = await this.prisma.enquiry.findFirst({ orderBy: { sNo: 'desc' } });
+    const last = await this.prisma.enquiry.findFirst({
+      orderBy: { sNo: 'desc' },
+    });
     const nextSNo = (last?.sNo ?? 0) + 1;
     return this.prisma.enquiry.create({
       data: {
@@ -119,15 +124,23 @@ export class EnquiriesService {
     const existing = await this.findOne(id, currentUser);
     const resolved = await this.resolveWriteFields(currentUser, {
       kind: data.kind ?? existing.kind,
-      providerId: data.providerId !== undefined ? data.providerId : existing.providerId ?? undefined,
-      stateId: data.stateId !== undefined ? data.stateId : existing.stateId ?? undefined,
+      providerId:
+        data.providerId !== undefined
+          ? data.providerId
+          : (existing.providerId ?? undefined),
+      stateId:
+        data.stateId !== undefined
+          ? data.stateId
+          : (existing.stateId ?? undefined),
     });
 
     return this.prisma.enquiry.update({
       where: { id },
       data: {
         ...(data.category !== undefined && { category: data.category }),
-        ...(data.subCategory !== undefined && { subCategory: data.subCategory }),
+        ...(data.subCategory !== undefined && {
+          subCategory: data.subCategory,
+        }),
         ...(data.product !== undefined && { product: data.product }),
         ...(data.name !== undefined && { name: data.name }),
         ...(data.email !== undefined && { email: data.email }),
@@ -147,7 +160,9 @@ export class EnquiriesService {
     return this.prisma.enquiry.delete({ where: { id } });
   }
 
-  private async scopeWhere(currentUser: AuthUser): Promise<Prisma.EnquiryWhereInput> {
+  private async scopeWhere(
+    currentUser: AuthUser,
+  ): Promise<Prisma.EnquiryWhereInput> {
     if (currentUser.role === RoleName.ADMIN) return {};
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
@@ -202,14 +217,18 @@ export class EnquiriesService {
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {
       const ids = await this.assignedProviderIds(currentUser.id);
       if (!enquiry.providerId || !ids.includes(enquiry.providerId)) {
-        throw new ForbiddenException('You can only access enquiries for your assigned providers');
+        throw new ForbiddenException(
+          'You can only access enquiries for your assigned providers',
+        );
       }
       return;
     }
 
     if (currentUser.role === RoleName.VOLUNTEER) {
       if (enquiry.kind !== 'USER') {
-        throw new ForbiddenException('Volunteers can only access user enquiries');
+        throw new ForbiddenException(
+          'Volunteers can only access user enquiries',
+        );
       }
       return;
     }
@@ -228,7 +247,11 @@ export class EnquiriesService {
 
   private async resolveWriteFields(
     currentUser: AuthUser,
-    data: { kind?: string; providerId?: string | null; stateId?: string | null },
+    data: {
+      kind?: string;
+      providerId?: string | null;
+      stateId?: string | null;
+    },
   ) {
     let kind = data.kind || 'USER';
     let providerId = data.providerId || null;
@@ -252,14 +275,19 @@ export class EnquiriesService {
       const ids = await this.assignedProviderIds(currentUser.id);
       const usable = ids.filter((id) => id !== '__none__');
       if (!usable.length) {
-        throw new ForbiddenException('No providers are assigned to this account');
+        throw new ForbiddenException(
+          'No providers are assigned to this account',
+        );
       }
       if (!providerId) {
         if (usable.length === 1) providerId = usable[0];
-        else throw new ForbiddenException('Select one of your assigned providers');
+        else
+          throw new ForbiddenException('Select one of your assigned providers');
       }
       if (!usable.includes(providerId)) {
-        throw new ForbiddenException('You can only attach enquiries to your assigned providers');
+        throw new ForbiddenException(
+          'You can only attach enquiries to your assigned providers',
+        );
       }
     }
 

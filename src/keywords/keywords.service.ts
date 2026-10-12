@@ -38,7 +38,8 @@ export class KeywordsService {
       where: { id },
       include: { subcategory: true },
     });
-    if (!keyword) throw new NotFoundException(`Keyword with ID ${id} not found`);
+    if (!keyword)
+      throw new NotFoundException(`Keyword with ID ${id} not found`);
     return keyword;
   }
 

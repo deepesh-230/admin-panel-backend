@@ -108,8 +108,11 @@ export class UsersService {
   }
 
   private async getRole(roleName: RoleName) {
-    const role = await this.prisma.role.findUnique({ where: { name: roleName } });
-    if (!role) throw new BadRequestException(`Role ${roleName} is not configured`);
+    const role = await this.prisma.role.findUnique({
+      where: { name: roleName },
+    });
+    if (!role)
+      throw new BadRequestException(`Role ${roleName} is not configured`);
     return role;
   }
 
@@ -139,7 +142,10 @@ export class UsersService {
 
     // STATE_ADMIN cannot see main ADMIN accounts
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (query.role === RoleName.ADMIN || query.role === RoleName.STATE_ADMIN) {
+      if (
+        query.role === RoleName.ADMIN ||
+        query.role === RoleName.STATE_ADMIN
+      ) {
         return {
           items: [],
           pagination: { page, limit, total: 0, totalPages: 0 },
@@ -165,7 +171,9 @@ export class UsersService {
     const disabilitySubcategoryIds = parseStateIds(query.subcategoryId);
     const disabilityCategoryIds = parseStateIds(query.categoryId);
     if (disabilitySubcategoryIds.length) {
-      where.disabilities = { some: { subcategoryId: { in: disabilitySubcategoryIds } } };
+      where.disabilities = {
+        some: { subcategoryId: { in: disabilitySubcategoryIds } },
+      };
     } else if (disabilityCategoryIds.length) {
       where.disabilities = {
         some: { subcategory: { categoryId: { in: disabilityCategoryIds } } },
@@ -189,9 +197,20 @@ export class UsersService {
 
     if (and.length) where.AND = and;
 
-    const allowedSort = new Set(['createdAt', 'email', 'name', 'updatedAt', 'isActive', 'role', 'state']);
-    const sortBy = allowedSort.has(query.sortBy || '') ? query.sortBy! : 'createdAt';
-    const sortOrder: Prisma.SortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const allowedSort = new Set([
+      'createdAt',
+      'email',
+      'name',
+      'updatedAt',
+      'isActive',
+      'role',
+      'state',
+    ]);
+    const sortBy = allowedSort.has(query.sortBy || '')
+      ? query.sortBy!
+      : 'createdAt';
+    const sortOrder: Prisma.SortOrder =
+      query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     const orderBy: Prisma.UserOrderByWithRelationInput =
       sortBy === 'role'
@@ -230,7 +249,10 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (user.role.name === RoleName.ADMIN || user.role.name === RoleName.STATE_ADMIN) {
+      if (
+        user.role.name === RoleName.ADMIN ||
+        user.role.name === RoleName.STATE_ADMIN
+      ) {
         throw new ForbiddenException('Access denied');
       }
       assertAssignedStateOverlap(currentUser, [
@@ -338,7 +360,10 @@ export class UsersService {
     if (!existing) throw new NotFoundException('User not found');
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (existing.role.name === RoleName.ADMIN || existing.role.name === RoleName.STATE_ADMIN) {
+      if (
+        existing.role.name === RoleName.ADMIN ||
+        existing.role.name === RoleName.STATE_ADMIN
+      ) {
         throw new ForbiddenException('Access denied');
       }
       assertAssignedStateOverlap(currentUser, [
@@ -347,10 +372,14 @@ export class UsersService {
       ]);
       if (dto.role && dto.role !== existing.role.name) {
         const allowed =
-          (existing.role.name === RoleName.END_USER && dto.role === RoleName.VOLUNTEER) ||
-          (existing.role.name === RoleName.VOLUNTEER && dto.role === RoleName.END_USER);
+          (existing.role.name === RoleName.END_USER &&
+            dto.role === RoleName.VOLUNTEER) ||
+          (existing.role.name === RoleName.VOLUNTEER &&
+            dto.role === RoleName.END_USER);
         if (!allowed) {
-          throw new ForbiddenException('You can only promote/demote END_USER ↔ VOLUNTEER');
+          throw new ForbiddenException(
+            'You can only promote/demote END_USER ↔ VOLUNTEER',
+          );
         }
       }
       if (dto.stateId) {
@@ -458,7 +487,10 @@ export class UsersService {
     }
 
     if (currentUser.role === RoleName.STATE_ADMIN) {
-      if (existing.role.name === RoleName.ADMIN || existing.role.name === RoleName.STATE_ADMIN) {
+      if (
+        existing.role.name === RoleName.ADMIN ||
+        existing.role.name === RoleName.STATE_ADMIN
+      ) {
         throw new ForbiddenException('Access denied');
       }
       assertAssignedStateOverlap(currentUser, [
@@ -467,7 +499,10 @@ export class UsersService {
       ]);
     }
 
-    if (existing.role.name === RoleName.ADMIN && currentUser.role !== RoleName.ADMIN) {
+    if (
+      existing.role.name === RoleName.ADMIN &&
+      currentUser.role !== RoleName.ADMIN
+    ) {
       throw new ForbiddenException('Access denied');
     }
 

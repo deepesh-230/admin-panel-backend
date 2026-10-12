@@ -20,7 +20,9 @@ import { VolunteerAdminsService } from './volunteer-admins.service';
 @Controller('volunteer-admins')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
 export class VolunteerAdminsController {
-  constructor(private readonly volunteerAdminsService: VolunteerAdminsService) {}
+  constructor(
+    private readonly volunteerAdminsService: VolunteerAdminsService,
+  ) {}
 
   @Get()
   @Permissions('users.read')
@@ -30,7 +32,10 @@ export class VolunteerAdminsController {
   ) {
     const activeFilter =
       isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-    return this.volunteerAdminsService.findAll({ search, isActive: activeFilter });
+    return this.volunteerAdminsService.findAll({
+      search,
+      isActive: activeFilter,
+    });
   }
 
   @Get(':id')

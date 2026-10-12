@@ -61,7 +61,9 @@ export class BroadcastsService {
           data: {
             contentType: params.contentType,
             ...(params.jobAlertId ? { jobAlertId: params.jobAlertId } : {}),
-            ...(params.usefulLinkId ? { usefulLinkId: params.usefulLinkId } : {}),
+            ...(params.usefulLinkId
+              ? { usefulLinkId: params.usefulLinkId }
+              : {}),
             ...(params.url ? { url: params.url } : {}),
           },
         });
@@ -153,5 +155,13 @@ export class BroadcastsService {
       where: { id },
       data: { readAt: new Date() },
     });
+  }
+
+  async markAllRead(userId: string) {
+    const result = await this.prisma.userBroadcast.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return { updated: result.count };
   }
 }

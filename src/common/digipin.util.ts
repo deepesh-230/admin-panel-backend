@@ -56,9 +56,13 @@ export function resolveDigipinFields(
   pincode?: string | null,
 ) {
   const digipin =
-    latitude != null && longitude != null ? encodeDigipin(latitude, longitude) : null;
+    latitude != null && longitude != null
+      ? encodeDigipin(latitude, longitude)
+      : null;
 
-  const result: { digipin: string | null; pincode?: string | null } = { digipin };
+  const result: { digipin: string | null; pincode?: string | null } = {
+    digipin,
+  };
   if (pincode !== undefined) {
     result.pincode = pincode?.trim() || null;
   }

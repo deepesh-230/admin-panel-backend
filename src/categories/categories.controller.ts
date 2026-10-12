@@ -31,14 +31,19 @@ export class CategoriesController {
     const activeFilter =
       isActive === 'true' ? true : isActive === 'false' ? false : undefined;
     const typeFilter =
-      type === CategoryType.CARE || type === CategoryType.SERVICE ? type : undefined;
+      type === CategoryType.CARE || type === CategoryType.SERVICE
+        ? type
+        : undefined;
     return this.categoriesService.findAll(search, activeFilter, typeFilter);
   }
 
   @Get('export')
   @Permissions('categories.read')
   @Header('Content-Type', 'text/csv; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="categories-subcategories.csv"')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="categories-subcategories.csv"',
+  )
   exportCsv() {
     return this.categoriesService.exportCsv();
   }
@@ -46,7 +51,9 @@ export class CategoriesController {
   @Get('subcategories')
   @Permissions('categories.read')
   listSubcategoriesBulk(@Query('categoryId') categoryId?: string) {
-    return this.categoriesService.listSubcategoriesByCategoryIds(parseStateIds(categoryId));
+    return this.categoriesService.listSubcategoriesByCategoryIds(
+      parseStateIds(categoryId),
+    );
   }
 
   @Get(':categoryId/subcategories')

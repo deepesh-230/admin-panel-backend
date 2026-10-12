@@ -5,14 +5,20 @@ import {
 } from '@nestjs/common';
 import { PaymentPurpose, PaymentStatus, Prisma } from '@prisma/client';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
-import { parseStateIds, resolveScopedStateIds } from '../common/utils/state-scope';
+import {
+  parseStateIds,
+  resolveScopedStateIds,
+} from '../common/utils/state-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreatePaymentDto,
   ListPaymentsQueryDto,
   UpdatePaymentDto,
 } from './dto/payment.dto';
-import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
+import {
+  addPlanDuration,
+  type PaymentPlanDurationUnit,
+} from './payment-plan.defaults';
 
 const paymentListInclude = {
   user: {
@@ -57,13 +63,20 @@ function normalizePlanCode(planId: string | null | undefined) {
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  private async sponsorshipValidUntil(planId: string | null | undefined, paidAt: Date) {
+  private async sponsorshipValidUntil(
+    planId: string | null | undefined,
+    paidAt: Date,
+  ) {
     let value = 1;
     let unit: PaymentPlanDurationUnit = 'YEAR';
     if (planId?.trim()) {
       const code =
-        planId.trim().toLowerCase() === 'diamond' ? 'platinum' : planId.trim().toLowerCase();
-      const plan = await this.prisma.paymentPlan.findUnique({ where: { code } });
+        planId.trim().toLowerCase() === 'diamond'
+          ? 'platinum'
+          : planId.trim().toLowerCase();
+      const plan = await this.prisma.paymentPlan.findUnique({
+        where: { code },
+      });
       if (plan) {
         value = plan.durationValue > 0 ? plan.durationValue : 1;
         unit = plan.durationUnit === 'MONTH' ? 'MONTH' : 'YEAR';
@@ -264,7 +277,9 @@ export class PaymentsService {
           : undefined;
     const purpose = dto.purpose ?? PaymentPurpose.OTHER;
     const validUntil =
-      status === PaymentStatus.SUCCESS && purpose === PaymentPurpose.SPONSORSHIP && paidAt
+      status === PaymentStatus.SUCCESS &&
+      purpose === PaymentPurpose.SPONSORSHIP &&
+      paidAt
         ? await this.sponsorshipValidUntil(dto.planId, paidAt)
         : undefined;
 
@@ -332,14 +347,19 @@ export class PaymentsService {
 
     const effectivePurpose = dto.purpose ?? current?.purpose;
     const effectivePaidAt = paidAt === undefined ? current?.paidAt : paidAt;
-    const effectivePlanId = dto.planId !== undefined ? dto.planId : current?.planId;
+    const effectivePlanId =
+      dto.planId !== undefined ? dto.planId : current?.planId;
     if (
-      (nextStatus === PaymentStatus.SUCCESS || current?.status === PaymentStatus.SUCCESS) &&
+      (nextStatus === PaymentStatus.SUCCESS ||
+        current?.status === PaymentStatus.SUCCESS) &&
       effectivePurpose === PaymentPurpose.SPONSORSHIP &&
       effectivePaidAt &&
       !current?.validUntil
     ) {
-      validUntil = await this.sponsorshipValidUntil(effectivePlanId, new Date(effectivePaidAt));
+      validUntil = await this.sponsorshipValidUntil(
+        effectivePlanId,
+        new Date(effectivePaidAt),
+      );
     }
 
     try {
@@ -358,7 +378,9 @@ export class PaymentsService {
           ...(dto.gateway !== undefined && { gateway: dto.gateway }),
           ...(dto.orderId !== undefined && { orderId: dto.orderId }),
           ...(dto.paymentId !== undefined && { paymentId: dto.paymentId }),
-          ...(dto.referenceNo !== undefined && { referenceNo: dto.referenceNo }),
+          ...(dto.referenceNo !== undefined && {
+            referenceNo: dto.referenceNo,
+          }),
           ...(dto.notes !== undefined && { notes: dto.notes }),
           ...(dto.payerNote !== undefined && { payerNote: dto.payerNote }),
           ...(paidAt !== undefined && { paidAt }),
@@ -406,7 +428,14 @@ export class PaymentsService {
             OR: [
               { userId: user.id },
               ...(email
-                ? [{ payerEmail: { equals: email, mode: 'insensitive' as const } }]
+                ? [
+                    {
+                      payerEmail: {
+                        equals: email,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  ]
                 : []),
             ],
           },

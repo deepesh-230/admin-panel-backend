@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService, shouldRunEnsureDdl } from '../prisma/prisma.service';
 import {
   DEFAULT_SYSTEM_SETTINGS,
@@ -22,13 +28,16 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
         );
       });
     }, 15_000);
-    this.lifecycleTimer = setInterval(() => {
-      void this.runJobAlertLifecycle().catch((err) => {
-        this.logger.warn(
-          `Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
-    }, 60 * 60 * 1000);
+    this.lifecycleTimer = setInterval(
+      () => {
+        void this.runJobAlertLifecycle().catch((err) => {
+          this.logger.warn(
+            `Job alert lifecycle skipped: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+      },
+      60 * 60 * 1000,
+    );
   }
 
   onModuleDestroy() {
@@ -69,7 +78,11 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
 
     const allowed = new Set(DEFAULT_SYSTEM_SETTINGS.map((s) => s.key));
     for (const item of updates) {
-      if (!allowed.has(item.key as (typeof DEFAULT_SYSTEM_SETTINGS)[number]['key'])) {
+      if (
+        !allowed.has(
+          item.key as (typeof DEFAULT_SYSTEM_SETTINGS)[number]['key'],
+        )
+      ) {
         throw new BadRequestException(`Unknown setting key: ${item.key}`);
       }
       if (item.key === SYSTEM_SETTING_KEYS.JOB_ALERT_RETENTION_MONTHS) {
@@ -83,10 +96,14 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
       if (item.key === SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER) {
         const text = String(item.value ?? '').trim();
         if (!text) {
-          throw new BadRequestException('Sponsorship plans header text is required');
+          throw new BadRequestException(
+            'Sponsorship plans header text is required',
+          );
         }
         if (text.length > 1000) {
-          throw new BadRequestException('Sponsorship plans header must be at most 1000 characters');
+          throw new BadRequestException(
+            'Sponsorship plans header must be at most 1000 characters',
+          );
         }
       }
     }
@@ -116,7 +133,11 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
    */
   async runJobAlertLifecycle() {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
 
     const deactivated = await this.prisma.jobAlert.updateMany({
       where: {
@@ -155,7 +176,11 @@ export class SystemSettingsService implements OnModuleInit, OnModuleDestroy {
       2,
     );
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const retentionStart = new Date(startOfToday);
     retentionStart.setMonth(retentionStart.getMonth() - retentionMonths);
 

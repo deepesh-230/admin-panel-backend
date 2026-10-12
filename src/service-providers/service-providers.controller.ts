@@ -9,7 +9,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -25,7 +28,9 @@ import { ServiceProvidersService } from './service-providers.service';
 @Controller('service-providers')
 @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
 export class ServiceProvidersController {
-  constructor(private readonly serviceProvidersService: ServiceProvidersService) {}
+  constructor(
+    private readonly serviceProvidersService: ServiceProvidersService,
+  ) {}
 
   /** Mobile discovery — approved + active providers only */
   @Public()
@@ -42,7 +47,10 @@ export class ServiceProvidersController {
 
   @Get()
   @Permissions('providers.read')
-  findAll(@CurrentUser() user: AuthUser, @Query() query: ListServiceProvidersQueryDto) {
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListServiceProvidersQueryDto,
+  ) {
     return this.serviceProvidersService.findAll(user, query);
   }
 

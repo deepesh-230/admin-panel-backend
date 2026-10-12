@@ -8,20 +8,48 @@ export type PermissionDef = {
 
 /** Canonical permission catalog used by seed + config UI. */
 export const PERMISSION_CATALOG: PermissionDef[] = [
-  { code: 'dashboard.read', description: 'View dashboard statistics', group: 'Dashboard' },
+  {
+    code: 'dashboard.read',
+    description: 'View dashboard statistics',
+    group: 'Dashboard',
+  },
   { code: 'users.read', description: 'View users', group: 'Users' },
   { code: 'users.write', description: 'Manage users', group: 'Users' },
   { code: 'listings.read', description: 'View listings', group: 'Listings' },
   { code: 'listings.write', description: 'Manage listings', group: 'Listings' },
   { code: 'enquiries.read', description: 'View enquiries', group: 'Enquiries' },
-  { code: 'enquiries.write', description: 'Manage enquiries', group: 'Enquiries' },
-  { code: 'providers.read', description: 'View service providers', group: 'Service providers' },
-  { code: 'providers.write', description: 'Manage service providers', group: 'Service providers' },
-  { code: 'settings.write', description: 'Manage settings & access control', group: 'Settings' },
+  {
+    code: 'enquiries.write',
+    description: 'Manage enquiries',
+    group: 'Enquiries',
+  },
+  {
+    code: 'providers.read',
+    description: 'View service providers',
+    group: 'Service providers',
+  },
+  {
+    code: 'providers.write',
+    description: 'Manage service providers',
+    group: 'Service providers',
+  },
+  {
+    code: 'settings.write',
+    description: 'Manage settings & access control',
+    group: 'Settings',
+  },
   { code: 'states.read', description: 'View states', group: 'States' },
   { code: 'states.write', description: 'Manage states', group: 'States' },
-  { code: 'state_admins.read', description: 'View state admins', group: 'State admins' },
-  { code: 'state_admins.write', description: 'Manage state admins', group: 'State admins' },
+  {
+    code: 'state_admins.read',
+    description: 'View state admins',
+    group: 'State admins',
+  },
+  {
+    code: 'state_admins.write',
+    description: 'Manage state admins',
+    group: 'State admins',
+  },
   {
     code: 'categories.read',
     description: 'View categories, subcategories, and keywords',
@@ -42,8 +70,16 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
     description: 'Manage FAQ, pages, blogs, links, jobs, help, suggestions',
     group: 'CMS',
   },
-  { code: 'volunteers.read', description: 'View volunteers', group: 'Volunteers' },
-  { code: 'volunteers.write', description: 'Manage volunteers', group: 'Volunteers' },
+  {
+    code: 'volunteers.read',
+    description: 'View volunteers',
+    group: 'Volunteers',
+  },
+  {
+    code: 'volunteers.write',
+    description: 'Manage volunteers',
+    group: 'Volunteers',
+  },
   {
     code: 'marketplace.read',
     description: 'View marketplace products, buyers, and sellers',
@@ -54,10 +90,22 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
     description: 'Manage marketplace products, buyers, and sellers',
     group: 'Marketplace',
   },
-  { code: 'payments.read', description: 'View payment records', group: 'Payments' },
-  { code: 'payments.write', description: 'Manage payment records', group: 'Payments' },
+  {
+    code: 'payments.read',
+    description: 'View payment records',
+    group: 'Payments',
+  },
+  {
+    code: 'payments.write',
+    description: 'Manage payment records',
+    group: 'Payments',
+  },
   { code: 'events.read', description: 'View events', group: 'Events' },
-  { code: 'events.write', description: 'Create and manage events', group: 'Events' },
+  {
+    code: 'events.write',
+    description: 'Create and manage events',
+    group: 'Events',
+  },
 ];
 
 /** Roles shown on the admin-panel access matrix. */
@@ -122,9 +170,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleName, string[]> = {
 export const STATE_ADMIN_LOCKED_ON = ['dashboard.read'] as const;
 
 /** Never granted to STATE_ADMIN — they cannot open or manage the State Admins tab. */
-export const STATE_ADMIN_LOCKED_OFF = ['state_admins.read', 'state_admins.write'] as const;
+export const STATE_ADMIN_LOCKED_OFF = [
+  'state_admins.read',
+  'state_admins.write',
+] as const;
 
-export function applyStateAdminPermissionLocks(roleName: RoleName, codes: string[]): string[] {
+export function applyStateAdminPermissionLocks(
+  roleName: RoleName,
+  codes: string[],
+): string[] {
   const unique = [...new Set(codes)];
   if (roleName !== RoleName.STATE_ADMIN) return unique.sort();
   const set = new Set(unique);
@@ -135,7 +189,8 @@ export function applyStateAdminPermissionLocks(roleName: RoleName, codes: string
 
 export function stateAdminPermissionLock(code: string): 'on' | 'off' | null {
   if ((STATE_ADMIN_LOCKED_ON as readonly string[]).includes(code)) return 'on';
-  if ((STATE_ADMIN_LOCKED_OFF as readonly string[]).includes(code)) return 'off';
+  if ((STATE_ADMIN_LOCKED_OFF as readonly string[]).includes(code))
+    return 'off';
   return null;
 }
 

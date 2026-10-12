@@ -10,7 +10,10 @@ import {
 import { RoleName } from '@prisma/client';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CreatePaymentPlanDto, UpdatePaymentPlanDto } from './dto/payment-plan.dto';
+import {
+  CreatePaymentPlanDto,
+  UpdatePaymentPlanDto,
+} from './dto/payment-plan.dto';
 import { PaymentPlansService } from './payment-plans.service';
 
 @Controller('payment-plans')

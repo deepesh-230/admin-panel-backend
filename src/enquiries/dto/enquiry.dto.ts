@@ -1,5 +1,13 @@
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { EnquiryStatus } from '@prisma/client';
 
 const emptyToUndefined = ({ value }: { value: unknown }) =>

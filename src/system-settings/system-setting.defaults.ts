@@ -26,6 +26,7 @@ export const DEFAULT_SYSTEM_SETTINGS: {
     key: SYSTEM_SETTING_KEYS.SPONSORSHIP_PLANS_HEADER,
     value: DEFAULT_SPONSORSHIP_PLANS_HEADER,
     label: 'Sponsorship plans header',
-    description: 'Intro text shown at the top of the mobile sponsorship / payment plans screen.',
+    description:
+      'Intro text shown at the top of the mobile sponsorship / payment plans screen.',
   },
 ];

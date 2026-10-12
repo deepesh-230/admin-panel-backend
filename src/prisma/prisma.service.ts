@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { PoolConfig } from 'pg';
@@ -54,7 +59,8 @@ function positiveInt(value: string | null | undefined, fallback: number) {
  */
 function buildPoolConfig(): PoolConfig & { displayUrl: string } {
   let raw = process.env.DATABASE_URL || '';
-  if (/pooler\.supabase\.com:5432/i.test(raw)) raw = raw.replace(':5432', ':6543');
+  if (/pooler\.supabase\.com:5432/i.test(raw))
+    raw = raw.replace(':5432', ':6543');
 
   const url = new URL(raw);
   const params = url.searchParams;
@@ -64,11 +70,20 @@ function buildPoolConfig(): PoolConfig & { displayUrl: string } {
 
   // Prisma-specific params are meaningless to node-postgres; sslmode is handled
   // explicitly because pg treats `require` as verify-full, which rejects Supabase's CA.
-  for (const key of ['pgbouncer', 'connection_limit', 'pool_timeout', 'connect_timeout', 'sslmode', 'schema']) {
+  for (const key of [
+    'pgbouncer',
+    'connection_limit',
+    'pool_timeout',
+    'connect_timeout',
+    'sslmode',
+    'schema',
+  ]) {
     params.delete(key);
   }
 
-  const needsSsl = (sslmode && sslmode !== 'disable') || /supabase\.(com|co)/i.test(url.hostname);
+  const needsSsl =
+    (sslmode && sslmode !== 'disable') ||
+    /supabase\.(com|co)/i.test(url.hostname);
 
   return {
     connectionString: url.toString(),
@@ -119,7 +134,9 @@ export class PrismaService
 
       const sql = shortenSql(e.query);
       const params =
-        withParams && e.params && e.params !== '[]' ? ` params=${e.params}` : '';
+        withParams && e.params && e.params !== '[]'
+          ? ` params=${e.params}`
+          : '';
       const line = `query ${duration}ms — ${sql}${params}`;
 
       if (duration >= 2000) this.logger.warn(line);
@@ -175,7 +192,9 @@ export class PrismaService
         this.logger.warn(
           `Database unreachable (attempt ${attempt}/${MAX_CONNECT_RETRIES}), retrying in ${CONNECT_RETRY_DELAY_MS / 1000}s...`,
         );
-        await new Promise((resolve) => setTimeout(resolve, CONNECT_RETRY_DELAY_MS));
+        await new Promise((resolve) =>
+          setTimeout(resolve, CONNECT_RETRY_DELAY_MS),
+        );
       }
     }
   }
@@ -352,7 +371,9 @@ export class PrismaService
     try {
       let added = 0;
       for (const page of defaults) {
-        const existing = await this.cmsPage.findUnique({ where: { slug: page.slug } });
+        const existing = await this.cmsPage.findUnique({
+          where: { slug: page.slug },
+        });
         if (existing) continue;
         await this.cmsPage.create({ data: { ...page, isActive: true } });
         added += 1;
@@ -1043,9 +1064,15 @@ export class PrismaService
   private async ensureDropCategorySlugs() {
     try {
       await this.$executeRawUnsafe(`DROP INDEX IF EXISTS "Category_slug_key"`);
-      await this.$executeRawUnsafe(`ALTER TABLE "Category" DROP COLUMN IF EXISTS "slug"`);
-      await this.$executeRawUnsafe(`DROP INDEX IF EXISTS "Subcategory_slug_key"`);
-      await this.$executeRawUnsafe(`ALTER TABLE "Subcategory" DROP COLUMN IF EXISTS "slug"`);
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "Category" DROP COLUMN IF EXISTS "slug"`,
+      );
+      await this.$executeRawUnsafe(
+        `DROP INDEX IF EXISTS "Subcategory_slug_key"`,
+      );
+      await this.$executeRawUnsafe(
+        `ALTER TABLE "Subcategory" DROP COLUMN IF EXISTS "slug"`,
+      );
     } catch (error) {
       this.logger.warn(
         `Could not drop category/subcategory slug columns: ${error instanceof Error ? error.message : String(error)}`,

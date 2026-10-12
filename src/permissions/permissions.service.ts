@@ -83,23 +83,32 @@ export class PermissionsService {
 
   async setRolePermissions(roleName: RoleName, permissionCodes: string[]) {
     if (roleName === RoleName.ADMIN) {
-      throw new ForbiddenException('Central Admin permissions cannot be edited');
+      throw new ForbiddenException(
+        'Central Admin permissions cannot be edited',
+      );
     }
     if (!EDITABLE_ROLES.includes(roleName)) {
       throw new BadRequestException(`Role ${roleName} is not editable`);
     }
 
-    const role = await this.prisma.role.findUnique({ where: { name: roleName } });
+    const role = await this.prisma.role.findUnique({
+      where: { name: roleName },
+    });
     if (!role) throw new NotFoundException(`Role ${roleName} not found`);
 
-    const uniqueCodes = applyStateAdminPermissionLocks(roleName, permissionCodes);
+    const uniqueCodes = applyStateAdminPermissionLocks(
+      roleName,
+      permissionCodes,
+    );
     const permissions = await this.prisma.permission.findMany({
       where: { code: { in: uniqueCodes } },
     });
     if (permissions.length !== uniqueCodes.length) {
       const found = new Set(permissions.map((p) => p.code));
       const missing = uniqueCodes.filter((c) => !found.has(c));
-      throw new BadRequestException(`Unknown permission code(s): ${missing.join(', ')}`);
+      throw new BadRequestException(
+        `Unknown permission code(s): ${missing.join(', ')}`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -135,16 +144,23 @@ export class PermissionsService {
 
     const lockedEntries = entries.map(
       ([roleName, codes]) =>
-        [roleName, applyStateAdminPermissionLocks(roleName, codes || [])] as [RoleName, string[]],
+        [roleName, applyStateAdminPermissionLocks(roleName, codes || [])] as [
+          RoleName,
+          string[],
+        ],
     );
     const allCodes = [...new Set(lockedEntries.flatMap(([, codes]) => codes))];
     const permissions = allCodes.length
-      ? await this.prisma.permission.findMany({ where: { code: { in: allCodes } } })
+      ? await this.prisma.permission.findMany({
+          where: { code: { in: allCodes } },
+        })
       : [];
     const byCode = new Map(permissions.map((p) => [p.code, p]));
     if (allCodes.length !== permissions.length) {
       const missing = allCodes.filter((c) => !byCode.has(c));
-      throw new BadRequestException(`Unknown permission code(s): ${missing.join(', ')}`);
+      throw new BadRequestException(
+        `Unknown permission code(s): ${missing.join(', ')}`,
+      );
     }
 
     const roles = await this.prisma.role.findMany({
@@ -175,16 +191,22 @@ export class PermissionsService {
 
   async resetRole(roleName: RoleName) {
     if (roleName === RoleName.ADMIN) {
-      throw new ForbiddenException('Central Admin permissions cannot be reset via this endpoint');
+      throw new ForbiddenException(
+        'Central Admin permissions cannot be reset via this endpoint',
+      );
     }
     const defaults = DEFAULT_ROLE_PERMISSIONS[roleName];
-    if (!defaults) throw new BadRequestException(`No defaults for role ${roleName}`);
+    if (!defaults)
+      throw new BadRequestException(`No defaults for role ${roleName}`);
     return this.setRolePermissions(roleName, defaults);
   }
 
   async resetAllEditable() {
     for (const roleName of EDITABLE_ROLES) {
-      await this.setRolePermissions(roleName, DEFAULT_ROLE_PERMISSIONS[roleName] || []);
+      await this.setRolePermissions(
+        roleName,
+        DEFAULT_ROLE_PERMISSIONS[roleName] || [],
+      );
     }
     return this.getMatrix();
   }

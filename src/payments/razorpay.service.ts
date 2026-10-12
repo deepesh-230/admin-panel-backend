@@ -15,7 +15,10 @@ import {
 import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { PrismaService } from '../prisma/prisma.service';
-import { addPlanDuration, type PaymentPlanDurationUnit } from './payment-plan.defaults';
+import {
+  addPlanDuration,
+  type PaymentPlanDurationUnit,
+} from './payment-plan.defaults';
 import {
   CreateRazorpayOrderDto,
   VerifyRazorpayPaymentDto,
@@ -38,7 +41,9 @@ const TIER_RANK: Record<string, number> = {
 
 function parseProviderIds(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  return raw.filter(
+    (id): id is string => typeof id === 'string' && id.length > 0,
+  );
 }
 
 @Injectable()
@@ -72,12 +77,17 @@ export class RazorpayService {
     return this.client;
   }
 
-  private async sponsorshipValidUntil(planId: string | null | undefined, paidAt: Date) {
+  private async sponsorshipValidUntil(
+    planId: string | null | undefined,
+    paidAt: Date,
+  ) {
     let value = 1;
     let unit: PaymentPlanDurationUnit = 'YEAR';
     if (planId?.trim()) {
       const code = normalizePlanCode(planId);
-      const plan = await this.prisma.paymentPlan.findUnique({ where: { code } });
+      const plan = await this.prisma.paymentPlan.findUnique({
+        where: { code },
+      });
       if (plan) {
         value = plan.durationValue > 0 ? plan.durationValue : 1;
         unit = plan.durationUnit === 'MONTH' ? 'MONTH' : 'YEAR';
@@ -87,8 +97,13 @@ export class RazorpayService {
   }
 
   /** Ensure user owns/admins each provider and they are approved + active. */
-  private async assertSponsorableProviders(userId: string, providerIds: string[]) {
-    const uniqueIds = [...new Set(providerIds.map((id) => id.trim()).filter(Boolean))];
+  private async assertSponsorableProviders(
+    userId: string,
+    providerIds: string[],
+  ) {
+    const uniqueIds = [
+      ...new Set(providerIds.map((id) => id.trim()).filter(Boolean)),
+    ];
     if (!uniqueIds.length) {
       throw new BadRequestException('Select at least one business to sponsor');
     }
@@ -113,7 +128,8 @@ export class RazorpayService {
     }
 
     const ineligible = rows.filter(
-      (r) => !r.isActive || r.approvalStatus !== ProviderApprovalStatus.APPROVED,
+      (r) =>
+        !r.isActive || r.approvalStatus !== ProviderApprovalStatus.APPROVED,
     );
     if (ineligible.length) {
       throw new BadRequestException(
@@ -190,7 +206,9 @@ export class RazorpayService {
       where: { code: planCode, isActive: true },
     });
     if (!plan) {
-      throw new NotFoundException(`Payment plan "${planCode}" not found or inactive`);
+      throw new NotFoundException(
+        `Payment plan "${planCode}" not found or inactive`,
+      );
     }
 
     const unitAmount = Number(plan.amount);
@@ -224,7 +242,7 @@ export class RazorpayService {
 
     let order: { id: string; amount: number | string; currency: string };
     try {
-      order = (await razorpay.orders.create({
+      order = await razorpay.orders.create({
         amount: amountPaise,
         currency,
         receipt,
@@ -234,10 +252,12 @@ export class RazorpayService {
           userId,
           providerCount: String(serviceProviderIds.length),
         },
-      })) as { id: string; amount: number | string; currency: string };
+      });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to create Razorpay order';
+        error instanceof Error
+          ? error.message
+          : 'Failed to create Razorpay order';
       throw new BadRequestException(message);
     }
 
@@ -284,7 +304,10 @@ export class RazorpayService {
     }
 
     const body = `${dto.razorpayOrderId}|${dto.razorpayPaymentId}`;
-    const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(body)
+      .digest('hex');
     if (expected !== dto.razorpaySignature) {
       throw new BadRequestException('Invalid payment signature');
     }

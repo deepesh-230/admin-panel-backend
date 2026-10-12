@@ -5,7 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, ProviderApprovalStatus, RoleName, BusinessVerificationStatus } from '@prisma/client';
+import {
+  Prisma,
+  ProviderApprovalStatus,
+  RoleName,
+  BusinessVerificationStatus,
+} from '@prisma/client';
 import { providerChatCapability } from '../common/utils/chat-capability';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import {
@@ -24,7 +29,12 @@ import {
   UpdateServiceProviderDto,
 } from './dto/service-provider.dto';
 
-const subcategorySelect = { id: true, name: true, code: true, categoryId: true } as const;
+const subcategorySelect = {
+  id: true,
+  name: true,
+  code: true,
+  categoryId: true,
+} as const;
 
 const providerSubcategoryInclude = {
   subcategory: { select: subcategorySelect },
@@ -87,8 +97,12 @@ const providerListInclude = {
   _count: { select: { admins: true } },
 } as const;
 
-type ProviderRow = Prisma.ServiceProviderGetPayload<{ include: typeof providerInclude }>;
-type ProviderListRow = Prisma.ServiceProviderGetPayload<{ include: typeof providerListInclude }>;
+type ProviderRow = Prisma.ServiceProviderGetPayload<{
+  include: typeof providerInclude;
+}>;
+type ProviderListRow = Prisma.ServiceProviderGetPayload<{
+  include: typeof providerListInclude;
+}>;
 
 @Injectable()
 export class ServiceProvidersService {
@@ -97,7 +111,10 @@ export class ServiceProvidersService {
     private push: PushService,
   ) {}
 
-  private sanitize(provider: ProviderRow | ProviderListRow, distanceKm?: number | null) {
+  private sanitize(
+    provider: ProviderRow | ProviderListRow,
+    distanceKm?: number | null,
+  ) {
     const linked =
       'subcategories' in provider
         ? provider.subcategories.map((link) => link.subcategory)
@@ -105,7 +122,9 @@ export class ServiceProvidersService {
     const primary = linked[0] ?? provider.subcategory ?? null;
 
     const createdByRole =
-      provider.createdBy && 'role' in provider.createdBy && provider.createdBy.role
+      provider.createdBy &&
+      'role' in provider.createdBy &&
+      provider.createdBy.role
         ? typeof provider.createdBy.role === 'string'
           ? provider.createdBy.role
           : provider.createdBy.role.name
@@ -172,8 +191,8 @@ export class ServiceProvidersService {
       sponsoredUntil: provider.sponsoredUntil ?? null,
       isSponsored: Boolean(
         provider.sponsoredUntil &&
-          provider.sponsoredUntil.getTime() >= Date.now() &&
-          provider.sponsorPlanId,
+        provider.sponsoredUntil.getTime() >= Date.now() &&
+        provider.sponsorPlanId,
       ),
       createdById: provider.createdById,
       approvedById: provider.approvedById,
@@ -250,7 +269,9 @@ export class ServiceProvidersService {
         ? undefined
         : input.mcaId?.trim().toUpperCase() || null;
     const din =
-      input.din === undefined ? undefined : input.din?.trim().toUpperCase() || null;
+      input.din === undefined
+        ? undefined
+        : input.din?.trim().toUpperCase() || null;
     const gstin =
       input.gstin === undefined
         ? undefined
@@ -295,7 +316,9 @@ export class ServiceProvidersService {
       ids.panId !== undefined;
     if (!touched) return {};
 
-    const hasAny = Boolean(ids.mcaId || ids.din || ids.gstin || ids.nmcId || ids.panId);
+    const hasAny = Boolean(
+      ids.mcaId || ids.din || ids.gstin || ids.nmcId || ids.panId,
+    );
     const patch: Prisma.ServiceProviderUncheckedUpdateInput = {
       mcaId: ids.mcaId,
       din: ids.din,
@@ -313,16 +336,25 @@ export class ServiceProvidersService {
       patch.businessVerificationStatus = BusinessVerificationStatus.IN_PROGRESS;
       patch.verificationSubmittedAt = new Date();
       patch.verificationNote = null;
-    } else if (!hasAny && currentStatus === BusinessVerificationStatus.IN_PROGRESS) {
-      patch.businessVerificationStatus = BusinessVerificationStatus.NOT_INITIATED;
+    } else if (
+      !hasAny &&
+      currentStatus === BusinessVerificationStatus.IN_PROGRESS
+    ) {
+      patch.businessVerificationStatus =
+        BusinessVerificationStatus.NOT_INITIATED;
       patch.verificationSubmittedAt = null;
     }
 
     return patch;
   }
 
-  private async assertCategoryLinks(categoryId: string, subcategoryIds: string[]) {
-    const category = await this.prisma.category.findUnique({ where: { id: categoryId } });
+  private async assertCategoryLinks(
+    categoryId: string,
+    subcategoryIds: string[],
+  ) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+    });
     if (!category) throw new BadRequestException('Category not found');
 
     if (!subcategoryIds.length) return;
@@ -338,11 +370,16 @@ export class ServiceProvidersService {
     // Primary categoryId is still stored on the provider row for listing/filtering.
   }
 
-  private async syncProviderSubcategories(serviceProviderId: string, subcategoryIds: string[]) {
+  private async syncProviderSubcategories(
+    serviceProviderId: string,
+    subcategoryIds: string[],
+  ) {
     await this.prisma.serviceProviderSubcategory.deleteMany({
       where: {
         serviceProviderId,
-        ...(subcategoryIds.length ? { subcategoryId: { notIn: subcategoryIds } } : {}),
+        ...(subcategoryIds.length
+          ? { subcategoryId: { notIn: subcategoryIds } }
+          : {}),
       },
     });
     if (!subcategoryIds.length) return;
@@ -355,7 +392,10 @@ export class ServiceProvidersService {
     });
   }
 
-  private async assertProviderAdminAccess(currentUser: AuthUser, providerId: string) {
+  private async assertProviderAdminAccess(
+    currentUser: AuthUser,
+    providerId: string,
+  ) {
     if (currentUser.role !== RoleName.SERVICE_PROVIDER_ADMIN) return;
 
     const assignment = await this.prisma.serviceProviderAdmin.findUnique({
@@ -367,7 +407,9 @@ export class ServiceProvidersService {
       },
     });
     if (!assignment) {
-      throw new ForbiddenException('You can only access providers you administer');
+      throw new ForbiddenException(
+        'You can only access providers you administer',
+      );
     }
   }
 
@@ -419,7 +461,9 @@ export class ServiceProvidersService {
 
     const scopedIds =
       options?.scopedStateIds ??
-      (options?.scopedStateId ? [options.scopedStateId] : parseStateIds(query.stateId));
+      (options?.scopedStateId
+        ? [options.scopedStateId]
+        : parseStateIds(query.stateId));
     if (scopedIds.length) where.stateId = { in: scopedIds };
 
     const categoryIds = parseStateIds(query.categoryId);
@@ -437,7 +481,9 @@ export class ServiceProvidersService {
       and.push({
         OR: [
           { subcategoryId: { in: subcategoryIds } },
-          { subcategories: { some: { subcategoryId: { in: subcategoryIds } } } },
+          {
+            subcategories: { some: { subcategoryId: { in: subcategoryIds } } },
+          },
         ],
       });
       where.AND = and;
@@ -465,27 +511,37 @@ export class ServiceProvidersService {
         { subcategory: { name: { contains: text, mode: 'insensitive' } } },
         {
           subcategories: {
-            some: { subcategory: { name: { contains: text, mode: 'insensitive' } } },
+            some: {
+              subcategory: { name: { contains: text, mode: 'insensitive' } },
+            },
           },
         },
       ];
       if (keywordSubIds.length) {
         or.push({ subcategoryId: { in: keywordSubIds } });
-        or.push({ subcategories: { some: { subcategoryId: { in: keywordSubIds } } } });
+        or.push({
+          subcategories: { some: { subcategoryId: { in: keywordSubIds } } },
+        });
       }
       // If both search and keyword provided, also resolve keyword separately
       if (searchTerm && keywordTerm && keywordTerm !== searchTerm) {
         const extra = await this.resolveKeywordSubcategoryIds(keywordTerm);
         if (extra.length) {
           or.push({ subcategoryId: { in: extra } });
-          or.push({ subcategories: { some: { subcategoryId: { in: extra } } } });
+          or.push({
+            subcategories: { some: { subcategoryId: { in: extra } } },
+          });
         }
         or.push({
           subcategory: { name: { contains: keywordTerm, mode: 'insensitive' } },
         });
         or.push({
           subcategories: {
-            some: { subcategory: { name: { contains: keywordTerm, mode: 'insensitive' } } },
+            some: {
+              subcategory: {
+                name: { contains: keywordTerm, mode: 'insensitive' },
+              },
+            },
           },
         });
       }
@@ -536,7 +592,9 @@ export class ServiceProvidersService {
       'state',
       'category',
     ]);
-    const sortBy = allowedSort.has(query.sortBy || '') ? query.sortBy! : 'createdAt';
+    const sortBy = allowedSort.has(query.sortBy || '')
+      ? query.sortBy!
+      : 'createdAt';
     const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
     if (!hasGeo) {
@@ -547,7 +605,9 @@ export class ServiceProvidersService {
             ? { state: { name: sortOrder } }
             : sortBy === 'category'
               ? { category: { name: sortOrder } }
-              : ({ [sortBy]: sortOrder } as Prisma.ServiceProviderOrderByWithRelationInput);
+              : {
+                  [sortBy]: sortOrder,
+                };
 
       // Sponsored businesses first (active sponsoredUntil), then caller sort.
       const orderBy: Prisma.ServiceProviderOrderByWithRelationInput[] = [
@@ -626,7 +686,12 @@ export class ServiceProvidersService {
         );
         const sponsored =
           row.sponsoredUntil != null && row.sponsoredUntil.getTime() >= nowMs;
-        return { row, distanceKm, sponsored, tier: sponsored ? tierRank(row.sponsorPlanId) : 0 };
+        return {
+          row,
+          distanceKm,
+          sponsored,
+          tier: sponsored ? tierRank(row.sponsorPlanId) : 0,
+        };
       })
       .filter((item) => item.distanceKm <= radiusKm);
 
@@ -649,11 +714,15 @@ export class ServiceProvidersService {
         return sortOrder === 'asc' ? cmp : -cmp;
       }
       if (sortBy === 'state') {
-        const cmp = (a.row.state?.name || '').localeCompare(b.row.state?.name || '');
+        const cmp = (a.row.state?.name || '').localeCompare(
+          b.row.state?.name || '',
+        );
         return sortOrder === 'asc' ? cmp : -cmp;
       }
       if (sortBy === 'category') {
-        const cmp = (a.row.category?.name || '').localeCompare(b.row.category?.name || '');
+        const cmp = (a.row.category?.name || '').localeCompare(
+          b.row.category?.name || '',
+        );
         return sortOrder === 'asc' ? cmp : -cmp;
       }
       if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
@@ -669,7 +738,9 @@ export class ServiceProvidersService {
     const total = withDistance.length;
     const pageItems = withDistance.slice(skip, skip + limit);
     const pageIds = pageItems.map((item) => item.row.id);
-    const distanceById = new Map(pageItems.map((item) => [item.row.id, item.distanceKm]));
+    const distanceById = new Map(
+      pageItems.map((item) => [item.row.id, item.distanceKm]),
+    );
 
     const rows = pageIds.length
       ? await this.prisma.serviceProvider.findMany({
@@ -682,7 +753,10 @@ export class ServiceProvidersService {
 
     return {
       items: rows.map((row) =>
-        this.sanitize(row, Math.round((distanceById.get(row.id) || 0) * 100) / 100),
+        this.sanitize(
+          row,
+          Math.round((distanceById.get(row.id) || 0) * 100) / 100,
+        ),
       ),
       pagination: {
         page,
@@ -696,15 +770,21 @@ export class ServiceProvidersService {
   async findAll(currentUser: AuthUser, query: ListServiceProvidersQueryDto) {
     const scopedStateIds = resolveScopedStateIds(currentUser, query.stateId);
     const providerAdminUserId =
-      currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN ? currentUser.id : undefined;
+      currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN
+        ? currentUser.id
+        : undefined;
     return this.runSearch(query, { scopedStateIds, providerAdminUserId });
   }
 
   /** Mobile/public discovery: approved + active only */
   async searchPublic(query: ListServiceProvidersQueryDto) {
     if (
-      (query.latitude != null || query.longitude != null || query.radius != null) &&
-      (query.latitude == null || query.longitude == null || query.radius == null)
+      (query.latitude != null ||
+        query.longitude != null ||
+        query.radius != null) &&
+      (query.latitude == null ||
+        query.longitude == null ||
+        query.radius == null)
     ) {
       throw new BadRequestException(
         'latitude, longitude, and radius are all required for nearby search',
@@ -736,7 +816,9 @@ export class ServiceProvidersService {
     if (!stateId) throw new BadRequestException('stateId is required');
     assertStateAccess(currentUser, stateId);
 
-    const state = await this.prisma.state.findUnique({ where: { id: stateId } });
+    const state = await this.prisma.state.findUnique({
+      where: { id: stateId },
+    });
     if (!state) throw new BadRequestException('State not found');
 
     await this.assertCategoryLinks(
@@ -748,12 +830,17 @@ export class ServiceProvidersService {
     const primarySubcategoryId = subcategoryIds[0] ?? null;
     const bizIds = this.normalizeBusinessIds(dto);
     const hasBizIds = Boolean(
-      bizIds.mcaId || bizIds.din || bizIds.gstin || bizIds.nmcId || bizIds.panId,
+      bizIds.mcaId ||
+      bizIds.din ||
+      bizIds.gstin ||
+      bizIds.nmcId ||
+      bizIds.panId,
     );
 
     const approvalStatus =
       dto.approvalStatus ??
-      (currentUser.role === RoleName.ADMIN || currentUser.role === RoleName.STATE_ADMIN
+      (currentUser.role === RoleName.ADMIN ||
+      currentUser.role === RoleName.STATE_ADMIN
         ? ProviderApprovalStatus.APPROVED
         : ProviderApprovalStatus.PENDING_APPROVAL);
 
@@ -790,9 +877,13 @@ export class ServiceProvidersService {
         verificationSubmittedAt: hasBizIds ? new Date() : undefined,
         createdById: currentUser.id,
         approvedById:
-          approvalStatus === ProviderApprovalStatus.APPROVED ? currentUser.id : undefined,
+          approvalStatus === ProviderApprovalStatus.APPROVED
+            ? currentUser.id
+            : undefined,
         approvedAt:
-          approvalStatus === ProviderApprovalStatus.APPROVED ? new Date() : undefined,
+          approvalStatus === ProviderApprovalStatus.APPROVED
+            ? new Date()
+            : undefined,
       },
       include: providerInclude,
     });
@@ -805,15 +896,23 @@ export class ServiceProvidersService {
     return this.sanitize(refreshed);
   }
 
-  async update(id: string, dto: UpdateServiceProviderDto, currentUser: AuthUser) {
+  async update(
+    id: string,
+    dto: UpdateServiceProviderDto,
+    currentUser: AuthUser,
+  ) {
     const existing = await this.getScopedOrThrow(id, currentUser);
 
     if (currentUser.role === RoleName.SERVICE_PROVIDER_ADMIN) {
       if (dto.stateId !== undefined && dto.stateId !== existing.stateId) {
-        throw new ForbiddenException('Service provider admins cannot change state');
+        throw new ForbiddenException(
+          'Service provider admins cannot change state',
+        );
       }
       if (dto.isActive !== undefined) {
-        throw new ForbiddenException('Service provider admins cannot change active status');
+        throw new ForbiddenException(
+          'Service provider admins cannot change active status',
+        );
       }
     }
 
@@ -828,7 +927,9 @@ export class ServiceProvidersService {
     let nextStateId = existing.stateId;
     if (dto.stateId) {
       assertStateAccess(currentUser, dto.stateId);
-      const state = await this.prisma.state.findUnique({ where: { id: dto.stateId } });
+      const state = await this.prisma.state.findUnique({
+        where: { id: dto.stateId },
+      });
       if (!state) throw new BadRequestException('State not found');
       nextStateId = dto.stateId;
     }
@@ -855,13 +956,18 @@ export class ServiceProvidersService {
         stateId: nextStateId,
         latitude: dto.latitude === undefined ? undefined : dto.latitude,
         longitude: dto.longitude === undefined ? undefined : dto.longitude,
-        googlePlaceId: dto.googlePlaceId === undefined ? undefined : dto.googlePlaceId,
+        googlePlaceId:
+          dto.googlePlaceId === undefined ? undefined : dto.googlePlaceId,
         about: dto.about,
         services: dto.services,
-        coverPhotoUrl: dto.coverPhotoUrl === undefined ? undefined : dto.coverPhotoUrl,
+        coverPhotoUrl:
+          dto.coverPhotoUrl === undefined ? undefined : dto.coverPhotoUrl,
         gallery: dto.gallery,
         isActive: dto.isActive,
-        ...this.businessVerificationPatch(bizIds, existing.businessVerificationStatus),
+        ...this.businessVerificationPatch(
+          bizIds,
+          existing.businessVerificationStatus,
+        ),
       },
       include: providerInclude,
     });
@@ -886,7 +992,11 @@ export class ServiceProvidersService {
   async approve(id: string, currentUser: AuthUser) {
     const existing = await this.getScopedOrThrow(id, currentUser);
     const hasBusinessIds = Boolean(
-      existing.mcaId || existing.din || existing.gstin || existing.nmcId || existing.panId,
+      existing.mcaId ||
+      existing.din ||
+      existing.gstin ||
+      existing.nmcId ||
+      existing.panId,
     );
     if (!hasBusinessIds) {
       throw new BadRequestException(
@@ -943,7 +1053,11 @@ export class ServiceProvidersService {
     return this.sanitize(provider).admins;
   }
 
-  async assignAdmin(id: string, dto: AssignProviderAdminDto, currentUser: AuthUser) {
+  async assignAdmin(
+    id: string,
+    dto: AssignProviderAdminDto,
+    currentUser: AuthUser,
+  ) {
     await this.getScopedOrThrow(id, currentUser);
 
     const user = await this.prisma.user.findUnique({
@@ -951,12 +1065,16 @@ export class ServiceProvidersService {
       include: { role: true },
     });
     if (!user) throw new NotFoundException('User not found');
-    if (!user.isActive) throw new BadRequestException('Cannot assign an inactive user');
+    if (!user.isActive)
+      throw new BadRequestException('Cannot assign an inactive user');
 
     const spaRole = await this.prisma.role.findUnique({
       where: { name: RoleName.SERVICE_PROVIDER_ADMIN },
     });
-    if (!spaRole) throw new BadRequestException('SERVICE_PROVIDER_ADMIN role is not configured');
+    if (!spaRole)
+      throw new BadRequestException(
+        'SERVICE_PROVIDER_ADMIN role is not configured',
+      );
 
     if (user.role.name !== RoleName.SERVICE_PROVIDER_ADMIN) {
       await this.prisma.user.update({
@@ -981,8 +1099,13 @@ export class ServiceProvidersService {
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        throw new ConflictException('User is already an admin of this provider');
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'User is already an admin of this provider',
+        );
       }
       throw err;
     }
@@ -1000,9 +1123,12 @@ export class ServiceProvidersService {
         },
       },
     });
-    if (!assignment) throw new NotFoundException('Provider admin assignment not found');
+    if (!assignment)
+      throw new NotFoundException('Provider admin assignment not found');
 
-    await this.prisma.serviceProviderAdmin.delete({ where: { id: assignment.id } });
+    await this.prisma.serviceProviderAdmin.delete({
+      where: { id: assignment.id },
+    });
     return { serviceProviderId: id, userId, deleted: true };
   }
 
@@ -1011,10 +1137,7 @@ export class ServiceProvidersService {
     return this.prisma.serviceProvider
       .findMany({
         where: {
-          OR: [
-            { createdById: userId },
-            { admins: { some: { userId } } },
-          ],
+          OR: [{ createdById: userId }, { admins: { some: { userId } } }],
         },
         include: providerInclude,
         orderBy: [
@@ -1029,10 +1152,7 @@ export class ServiceProvidersService {
     const provider = await this.prisma.serviceProvider.findFirst({
       where: {
         id: providerId,
-        OR: [
-          { createdById: userId },
-          { admins: { some: { userId } } },
-        ],
+        OR: [{ createdById: userId }, { admins: { some: { userId } } }],
       },
       include: providerInclude,
     });
@@ -1084,6 +1204,10 @@ export class ServiceProvidersService {
     );
   }
 
+  private isPrivilegedCreator(role?: string | null) {
+    return role === RoleName.ADMIN || role === RoleName.STATE_ADMIN;
+  }
+
   async createForUser(
     userId: string,
     data: {
@@ -1107,6 +1231,7 @@ export class ServiceProvidersService {
       gallery?: string[];
       locationLabel?: string;
     },
+    creatorRole?: string | null,
   ) {
     const subcategoryIds = this.normalizeSubcategoryIds(data);
     await this.assertCategoryLinks(data.categoryId, subcategoryIds);
@@ -1116,6 +1241,11 @@ export class ServiceProvidersService {
       data.locationLabel,
       data.city,
     );
+
+    const autoApprove = this.isPrivilegedCreator(creatorRole);
+    const approvalStatus = autoApprove
+      ? ProviderApprovalStatus.APPROVED
+      : ProviderApprovalStatus.PENDING_APPROVAL;
 
     const provider = await this.prisma.serviceProvider.create({
       data: {
@@ -1137,8 +1267,10 @@ export class ServiceProvidersService {
         coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
         gallery: data.gallery || [],
         isActive: true,
-        approvalStatus: ProviderApprovalStatus.PENDING_APPROVAL,
+        approvalStatus,
         createdById: userId,
+        approvedById: autoApprove ? userId : undefined,
+        approvedAt: autoApprove ? new Date() : undefined,
       },
       include: providerInclude,
     });
@@ -1176,6 +1308,7 @@ export class ServiceProvidersService {
       locationLabel?: string;
       isActive?: boolean;
     },
+    creatorRole?: string | null,
   ) {
     const existing = await this.assertUserOwnsProvider(userId, id);
 
@@ -1246,11 +1379,15 @@ export class ServiceProvidersService {
           description: data.description.trim() || null,
         }),
         ...(data.phone !== undefined && { phone: data.phone.trim() || null }),
-        ...(data.landline !== undefined && { landline: data.landline.trim() || null }),
+        ...(data.landline !== undefined && {
+          landline: data.landline.trim() || null,
+        }),
         ...(data.email !== undefined && {
           email: data.email.trim().toLowerCase() || null,
         }),
-        ...(data.address !== undefined && { address: data.address.trim() || null }),
+        ...(data.address !== undefined && {
+          address: data.address.trim() || null,
+        }),
         ...(data.city !== undefined && { city: data.city.trim() || null }),
         stateId: nextStateId,
         ...(data.latitude !== undefined && { latitude: data.latitude }),
@@ -1259,16 +1396,27 @@ export class ServiceProvidersService {
           googlePlaceId: data.googlePlaceId.trim() || null,
         }),
         ...(data.about !== undefined && { about: data.about.trim() || null }),
-        ...(data.services !== undefined && { services: data.services.trim() || null }),
+        ...(data.services !== undefined && {
+          services: data.services.trim() || null,
+        }),
         ...(data.coverPhotoUrl !== undefined && {
           coverPhotoUrl: data.coverPhotoUrl?.trim() || null,
         }),
         ...(data.gallery !== undefined && { gallery: data.gallery }),
-        // Content edits go back to pending review
-        approvalStatus: ProviderApprovalStatus.PENDING_APPROVAL,
-        approvedById: null,
-        approvedAt: null,
-        rejectedReason: null,
+        // End-user content edits need re-review; admin/state-admin stay approved.
+        ...(this.isPrivilegedCreator(creatorRole)
+          ? {
+              approvalStatus: ProviderApprovalStatus.APPROVED,
+              approvedById: userId,
+              approvedAt: new Date(),
+              rejectedReason: null,
+            }
+          : {
+              approvalStatus: ProviderApprovalStatus.PENDING_APPROVAL,
+              approvedById: null,
+              approvedAt: null,
+              rejectedReason: null,
+            }),
         isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
       },
       include: providerInclude,
@@ -1303,7 +1451,10 @@ export class ServiceProvidersService {
     },
   ) {
     const existing = await this.assertUserOwnsProvider(userId, id);
-    if (existing.businessVerificationStatus === BusinessVerificationStatus.VERIFIED) {
+    if (
+      existing.businessVerificationStatus ===
+      BusinessVerificationStatus.VERIFIED
+    ) {
       throw new BadRequestException('Business is already verified');
     }
 
@@ -1319,7 +1470,10 @@ export class ServiceProvidersService {
       );
     }
 
-    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
+    if (
+      gstin &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)
+    ) {
       throw new BadRequestException('Invalid GSTIN format');
     }
     if (panId && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panId)) {

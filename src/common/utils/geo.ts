@@ -32,7 +32,8 @@ export function isWithinRadius(
 export function boundingBox(lat: number, lng: number, radiusKm: number) {
   const latDelta = radiusKm / 111.32;
   const cosLat = Math.cos((lat * Math.PI) / 180);
-  const lngDelta = radiusKm / (111.32 * (Math.abs(cosLat) < 0.01 ? 0.01 : cosLat));
+  const lngDelta =
+    radiusKm / (111.32 * (Math.abs(cosLat) < 0.01 ? 0.01 : cosLat));
   return {
     minLat: lat - latDelta,
     maxLat: lat + latDelta,

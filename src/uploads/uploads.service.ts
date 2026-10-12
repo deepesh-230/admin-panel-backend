@@ -47,16 +47,22 @@ export class UploadsService {
   }
 
   private uploadDir() {
-    return this.config.get<string>('UPLOAD_DIR') || join(process.cwd(), 'uploads');
+    return (
+      this.config.get<string>('UPLOAD_DIR') || join(process.cwd(), 'uploads')
+    );
   }
 
   private publicBaseUrl() {
-    const base = this.config.get<string>('PUBLIC_API_URL') || 'http://localhost:3000';
+    const base =
+      this.config.get<string>('PUBLIC_API_URL') || 'http://localhost:3000';
     return base.replace(/\/$/, '');
   }
 
   private requireSupabase() {
-    return Boolean(process.env.VERCEL) || this.config.get('NODE_ENV') === 'production';
+    return (
+      Boolean(process.env.VERCEL) ||
+      this.config.get('NODE_ENV') === 'production'
+    );
   }
 
   private storageConfigured() {
@@ -70,7 +76,9 @@ export class UploadsService {
   async saveImage(file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     if (!ALLOWED_MIME[file.mimetype]) {
-      throw new BadRequestException('Only JPEG, PNG, WebP, and GIF images are allowed');
+      throw new BadRequestException(
+        'Only JPEG, PNG, WebP, and GIF images are allowed',
+      );
     }
     if (file.size > MAX_BYTES) {
       throw new BadRequestException('Image must be 5 MB or smaller');
@@ -117,7 +125,11 @@ export class UploadsService {
 
   private errorMessage(json: unknown, fallback: string) {
     if (json && typeof json === 'object') {
-      const record = json as { message?: unknown; error?: unknown; msg?: unknown };
+      const record = json as {
+        message?: unknown;
+        error?: unknown;
+        msg?: unknown;
+      };
       const message = record.message || record.error || record.msg;
       if (typeof message === 'string' && message.trim()) return message;
     }
@@ -150,10 +162,13 @@ export class UploadsService {
   private async ensureBucket() {
     if (this.bucketReady) return;
     const name = this.bucket();
-    const existing = await this.storageFetch(`/bucket/${encodeURIComponent(name)}`, {
-      method: 'GET',
-      headers: this.storageHeaders(),
-    });
+    const existing = await this.storageFetch(
+      `/bucket/${encodeURIComponent(name)}`,
+      {
+        method: 'GET',
+        headers: this.storageHeaders(),
+      },
+    );
 
     if (existing.ok) {
       await this.makeBucketPublic(name);
@@ -191,15 +206,18 @@ export class UploadsService {
   private async saveToSupabase(file: Express.Multer.File, filename: string) {
     await this.ensureBucket();
     const bucket = this.bucket();
-    const uploaded = await this.storageFetch(this.objectPath(bucket, filename), {
-      method: 'POST',
-      headers: this.storageHeaders({
-        'Content-Type': file.mimetype,
-        'cache-control': '3600',
-        'x-upsert': 'true',
-      }),
-      body: new Uint8Array(file.buffer),
-    });
+    const uploaded = await this.storageFetch(
+      this.objectPath(bucket, filename),
+      {
+        method: 'POST',
+        headers: this.storageHeaders({
+          'Content-Type': file.mimetype,
+          'cache-control': '3600',
+          'x-upsert': 'true',
+        }),
+        body: new Uint8Array(file.buffer),
+      },
+    );
 
     if (!uploaded.ok) {
       throw new BadRequestException(

@@ -23,7 +23,8 @@ export class ListingsService {
 
   async findOne(id: string) {
     const listing = await this.prisma.listing.findUnique({ where: { id } });
-    if (!listing) throw new NotFoundException(`Listing with ID ${id} not found`);
+    if (!listing)
+      throw new NotFoundException(`Listing with ID ${id} not found`);
     return listing;
   }
 
@@ -37,7 +38,9 @@ export class ListingsService {
     date: string;
     status?: boolean;
   }) {
-    const last = await this.prisma.listing.findFirst({ orderBy: { sNo: 'desc' } });
+    const last = await this.prisma.listing.findFirst({
+      orderBy: { sNo: 'desc' },
+    });
     const nextSNo = (last?.sNo ?? 0) + 1;
     return this.prisma.listing.create({
       data: { ...data, sNo: nextSNo },
@@ -74,4 +77,3 @@ export class ListingsService {
     return this.prisma.listing.delete({ where: { id } });
   }
 }
-

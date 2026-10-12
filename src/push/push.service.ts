@@ -3,7 +3,12 @@ import { resolve } from 'path';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BroadcastContentType } from '@prisma/client';
-import { cert, getApps, initializeApp, type ServiceAccount } from 'firebase-admin/app';
+import {
+  cert,
+  getApps,
+  initializeApp,
+  type ServiceAccount,
+} from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -51,11 +56,15 @@ export class PushService implements OnModuleInit {
   }
 
   private loadCredentials(): ServiceAccount | null {
-    const pathValue = this.config.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH')?.trim();
+    const pathValue = this.config
+      .get<string>('FIREBASE_SERVICE_ACCOUNT_PATH')
+      ?.trim();
     if (pathValue) {
       const absolute = resolve(process.cwd(), pathValue);
       if (!existsSync(absolute)) {
-        this.logger.error(`FIREBASE_SERVICE_ACCOUNT_PATH not found: ${absolute}`);
+        this.logger.error(
+          `FIREBASE_SERVICE_ACCOUNT_PATH not found: ${absolute}`,
+        );
         return null;
       }
       try {
@@ -68,7 +77,9 @@ export class PushService implements OnModuleInit {
       }
     }
 
-    const raw = this.config.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON')?.trim();
+    const raw = this.config
+      .get<string>('FIREBASE_SERVICE_ACCOUNT_JSON')
+      ?.trim();
     if (!raw) return null;
     try {
       return JSON.parse(raw) as ServiceAccount;
@@ -126,7 +137,8 @@ export class PushService implements OnModuleInit {
    * where they are the chat peer so buyers cannot keep messaging into the void.
    */
   async markConversationsPeerUnavailable(userId: string) {
-    if (!this.ready || !userId?.trim()) return { updated: 0, skipped: !this.ready };
+    if (!this.ready || !userId?.trim())
+      return { updated: 0, skipped: !this.ready };
     try {
       const { getFirestore } = await import('firebase-admin/firestore');
       const db = getFirestore();
@@ -175,7 +187,9 @@ export class PushService implements OnModuleInit {
     body?: string,
     extraData?: Record<string, string>,
   ) {
-    const unique = [...new Set(userIds.map((id) => id?.trim()).filter(Boolean))];
+    const unique = [
+      ...new Set(userIds.map((id) => id?.trim()).filter(Boolean)),
+    ];
     if (unique.length === 0) {
       return { successCount: 0, failureCount: 0, skipped: true };
     }
@@ -229,7 +243,9 @@ export class PushService implements OnModuleInit {
       );
       return { successCount: 0, failureCount: 0, skipped: false };
     }
-    this.logger.log(`Sending FCM to ${rows.length} device token(s) for ${userIds.length} user(s)`);
+    this.logger.log(
+      `Sending FCM to ${rows.length} device token(s) for ${userIds.length} user(s)`,
+    );
 
     const data: Record<string, string> = {};
     if (payload.data) {
@@ -297,7 +313,9 @@ export class PushService implements OnModuleInit {
       await this.prisma.deviceToken.deleteMany({
         where: { token: { in: invalidTokens } },
       });
-      this.logger.warn(`Pruned ${invalidTokens.length} invalid device token(s)`);
+      this.logger.warn(
+        `Pruned ${invalidTokens.length} invalid device token(s)`,
+      );
     }
 
     return { successCount, failureCount, skipped: false };

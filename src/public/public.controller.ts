@@ -1,4 +1,13 @@
-import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Header,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { BecomeTarget, CategoryType } from '@prisma/client';
 import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
 import { Public } from '../common/decorators/public.decorator';
@@ -17,7 +26,9 @@ export class PublicController {
   @Header('Cache-Control', 'public, max-age=60')
   listCategories(@Query('type') type?: CategoryType) {
     const typeFilter =
-      type === CategoryType.CARE || type === CategoryType.SERVICE ? type : undefined;
+      type === CategoryType.CARE || type === CategoryType.SERVICE
+        ? type
+        : undefined;
     return this.publicService.listCategories(typeFilter);
   }
 
@@ -25,7 +36,9 @@ export class PublicController {
   @Get('categories/subcategories')
   @Header('Cache-Control', 'public, max-age=60')
   listSubcategoriesBulk(@Query('categoryId') categoryId?: string) {
-    return this.publicService.listSubcategoriesByCategoryIds(parseStateIds(categoryId));
+    return this.publicService.listSubcategoriesByCategoryIds(
+      parseStateIds(categoryId),
+    );
   }
 
   @Get('categories/:categoryId/subcategories')
@@ -70,10 +83,7 @@ export class PublicController {
 
   @Get('events')
   @Header('Cache-Control', 'public, max-age=60')
-  listEvents(
-    @Query('stateId') stateId?: string,
-    @Query('city') city?: string,
-  ) {
+  listEvents(@Query('stateId') stateId?: string, @Query('city') city?: string) {
     return this.publicService.listEvents({ stateId, city });
   }
 
@@ -94,7 +104,10 @@ export class PublicController {
 
   @Get('become-questions')
   listBecomeQuestions(@Query('target') target?: string) {
-    if (!target || !Object.values(BecomeTarget).includes(target as BecomeTarget)) {
+    if (
+      !target ||
+      !Object.values(BecomeTarget).includes(target as BecomeTarget)
+    ) {
       throw new BadRequestException(
         'Query target is required (STATE_ADMIN, VOLUNTEER, or PROVIDER_ADMIN)',
       );

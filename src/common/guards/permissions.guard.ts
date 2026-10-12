@@ -20,10 +20,10 @@ export class PermissionsGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const required = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!required?.length) return true;
 
@@ -35,13 +35,16 @@ export class PermissionsGuard implements CanActivate {
 
     if (user.role === RoleName.STATE_ADMIN) {
       if (required.some((code) => code.startsWith('state_admins.'))) {
-        throw new ForbiddenException('State Admins cannot access the State Admins module');
+        throw new ForbiddenException(
+          'State Admins cannot access the State Admins module',
+        );
       }
     }
 
     const userPermissions: string[] = user.permissions || [];
     const missing = required.filter((code) => {
-      if (user.role === RoleName.STATE_ADMIN && code === 'dashboard.read') return false;
+      if (user.role === RoleName.STATE_ADMIN && code === 'dashboard.read')
+        return false;
       return !userPermissions.includes(code);
     });
 

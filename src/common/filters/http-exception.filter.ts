@@ -30,7 +30,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         rawMessage.includes('Too many database connections') ||
         rawMessage.includes('remaining connection slots'));
 
-    let status =
+    const status =
       exception instanceof HttpException
         ? exception.getStatus()
         : isPoolExhausted

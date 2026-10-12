@@ -1,10 +1,27 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { RoleName } from '@prisma/client';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { BroadcastsService } from '../cms/broadcasts.service';
-import { CreateMarketplaceProductDto, UpdateMarketplaceProductDto } from './dto/create-marketplace-product.dto';
+import {
+  CreateMarketplaceProductDto,
+  UpdateMarketplaceProductDto,
+} from './dto/create-marketplace-product.dto';
 import { RegisterDeviceTokenDto } from './dto/device-token.dto';
+import { NotifyChatDto } from './dto/notify-chat.dto';
 import {
   CreateMyServiceProviderDto,
   UpdateMyServiceProviderDto,
@@ -26,6 +43,7 @@ import {
 @Roles(
   RoleName.END_USER,
   RoleName.ADMIN,
+  RoleName.STATE_ADMIN,
   RoleName.VOLUNTEER,
   RoleName.SERVICE_PROVIDER_ADMIN,
 )
@@ -40,14 +58,22 @@ export class ProfileController {
   ) {}
 
   @Get('sponsorship')
-  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN, RoleName.ADMIN)
+  @Roles(
+    RoleName.END_USER,
+    RoleName.VOLUNTEER,
+    RoleName.SERVICE_PROVIDER_ADMIN,
+    RoleName.ADMIN,
+  )
   getSponsorship(@CurrentUser() user: AuthUser) {
     return this.payments.getActiveSponsorshipForUser(user.id);
   }
 
   @Patch()
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
-  async updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+  async updateProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateProfileDto,
+  ) {
     const place = await resolvePlaceProfileFields(this.prisma, {
       location: dto.location,
       city: dto.city,
@@ -172,7 +198,7 @@ export class ProfileController {
       where: { id: user.id },
       select: { name: true },
     });
-    return this.marketplace.createForUser(user.id, dbUser?.name, dto);
+    return this.marketplace.createForUser(user.id, dbUser?.name, dto, user.role);
   }
 
   @Patch('marketplace/products/:id')
@@ -181,16 +207,22 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() dto: UpdateMarketplaceProductDto,
   ) {
-    return this.marketplace.updateForUser(user.id, id, dto);
+    return this.marketplace.updateForUser(user.id, id, dto, user.role);
   }
 
   @Post('marketplace/products/:id/mark-sold')
-  markMarketplaceProductSold(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  markMarketplaceProductSold(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
     return this.marketplace.markSoldForUser(user.id, id);
   }
 
   @Delete('marketplace/products/:id')
-  removeMarketplaceProduct(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  removeMarketplaceProduct(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
     return this.marketplace.removeForUser(user.id, id, user.role);
   }
 
@@ -209,7 +241,7 @@ export class ProfileController {
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateMyServiceProviderDto,
   ) {
-    return this.serviceProviders.createForUser(user.id, dto);
+    return this.serviceProviders.createForUser(user.id, dto, user.role);
   }
 
   @Patch('service-providers/:id')
@@ -218,11 +250,14 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() dto: UpdateMyServiceProviderDto,
   ) {
-    return this.serviceProviders.updateForUser(user.id, id, dto);
+    return this.serviceProviders.updateForUser(user.id, id, dto, user.role);
   }
 
   @Delete('service-providers/:id')
-  removeMyServiceProvider(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  removeMyServiceProvider(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
     return this.serviceProviders.removeForUser(user.id, id);
   }
 
@@ -232,13 +267,24 @@ export class ProfileController {
     @Param('id') id: string,
     @Body() dto: SubmitBusinessVerificationDto,
   ) {
-    return this.serviceProviders.submitBusinessVerificationForUser(user.id, id, dto);
+    return this.serviceProviders.submitBusinessVerificationForUser(
+      user.id,
+      id,
+      dto,
+    );
   }
 
   @Get('broadcasts')
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
   listBroadcasts(@CurrentUser() user: AuthUser) {
     return this.broadcasts.listForUser(user.id);
+  }
+
+  /** Static path must be registered before `broadcasts/:id/read`. */
+  @Patch('broadcasts/read-all')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
+  markAllBroadcastsRead(@CurrentUser() user: AuthUser) {
+    return this.broadcasts.markAllRead(user.id);
   }
 
   @Patch('broadcasts/:id/read')
@@ -269,5 +315,25 @@ export class ProfileController {
   @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
   createFirebaseToken(@CurrentUser() user: AuthUser) {
     return this.push.createCustomToken(user.id);
+  }
+
+  /** Notify the other participant that a chat message was sent (FCM). */
+  @Post('chat/notify')
+  @Roles(RoleName.END_USER, RoleName.VOLUNTEER, RoleName.SERVICE_PROVIDER_ADMIN)
+  notifyChat(@CurrentUser() user: AuthUser, @Body() dto: NotifyChatDto) {
+    if (dto.recipientId === user.id) {
+      throw new BadRequestException('Cannot notify yourself');
+    }
+    const title = dto.title?.trim() || 'New message';
+    const preview = dto.preview.trim().slice(0, 180);
+    return this.push.sendToUserIds([dto.recipientId], {
+      title,
+      body: preview,
+      data: {
+        type: 'CHAT',
+        conversationId: dto.conversationId,
+        senderId: user.id,
+      },
+    });
   }
 }

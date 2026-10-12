@@ -11,11 +11,16 @@ export function assignedStateIds(currentUser: AuthUser): string[] {
   return [...new Set(ids.filter(Boolean))];
 }
 
-export function assertStateAccess(currentUser: AuthUser, targetStateId: string | null | undefined) {
+export function assertStateAccess(
+  currentUser: AuthUser,
+  targetStateId: string | null | undefined,
+) {
   if (currentUser.role !== RoleName.STATE_ADMIN) return;
   const ids = assignedStateIds(currentUser);
   if (!targetStateId || !ids.includes(targetStateId)) {
-    throw new ForbiddenException('You can only access records in your assigned state');
+    throw new ForbiddenException(
+      'You can only access records in your assigned state',
+    );
   }
 }
 
@@ -25,8 +30,12 @@ export function assertAssignedStateOverlap(
 ) {
   if (currentUser.role !== RoleName.STATE_ADMIN) return;
   const assigned = assignedStateIds(currentUser);
-  if (!recordStateIds.some((id) => Boolean(id) && assigned.includes(id as string))) {
-    throw new ForbiddenException('You can only access records in your assigned state');
+  if (
+    !recordStateIds.some((id) => Boolean(id) && assigned.includes(id as string))
+  ) {
+    throw new ForbiddenException(
+      'You can only access records in your assigned state',
+    );
   }
 }
 
@@ -36,7 +45,8 @@ export function resolveScopedStateId(
 ): string | undefined {
   if (currentUser.role === RoleName.STATE_ADMIN) {
     const ids = assignedStateIds(currentUser);
-    if (requestedStateId && ids.includes(requestedStateId)) return requestedStateId;
+    if (requestedStateId && ids.includes(requestedStateId))
+      return requestedStateId;
     return ids[0];
   }
   return requestedStateId;
@@ -45,7 +55,14 @@ export function resolveScopedStateId(
 /** Parse `stateId` query values: comma-separated or repeated params. */
 export function parseStateIds(value?: string | string[] | null): string[] {
   const raw = Array.isArray(value) ? value.join(',') : String(value || '');
-  return [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 /**
@@ -60,7 +77,9 @@ export function resolveScopedStateIds(
   if (currentUser.role === RoleName.STATE_ADMIN) {
     const assigned = assignedStateIds(currentUser);
     if (!assigned.length) return ['__none__'];
-    const requested = parseStateIds(requestedStateId).filter((id) => assigned.includes(id));
+    const requested = parseStateIds(requestedStateId).filter((id) =>
+      assigned.includes(id),
+    );
     return requested.length ? requested : assigned;
   }
   const ids = parseStateIds(requestedStateId);

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, RoleName } from '@prisma/client';
 import { sanitizeCoverage } from '../common/coverage';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
@@ -42,7 +46,10 @@ export class CmsService {
     const where: Record<string, unknown> = { ...extraWhere };
     if (search?.trim()) {
       where.OR = searchFields.map((field) => ({
-        [field]: { contains: search.trim(), mode: Prisma.QueryMode.insensitive },
+        [field]: {
+          contains: search.trim(),
+          mode: Prisma.QueryMode.insensitive,
+        },
       }));
     }
     if (model === 'homeBanner') {
@@ -77,7 +84,12 @@ export class CmsService {
         : [];
       extraWhere.email = { in: users.map((u) => u.email).concat('__none__') };
     }
-    return this.findAll('helpTicket', search, ['name', 'email', 'message'], extraWhere);
+    return this.findAll(
+      'helpTicket',
+      search,
+      ['name', 'email', 'message'],
+      extraWhere,
+    );
   }
 
   async findJobAlerts(filters: {
@@ -103,13 +115,17 @@ export class CmsService {
     }
 
     const startsAt: Prisma.DateTimeFilter = {};
-    if (filters.postFrom) startsAt.gte = new Date(`${filters.postFrom}T00:00:00.000Z`);
-    if (filters.postTo) startsAt.lte = new Date(`${filters.postTo}T23:59:59.999Z`);
+    if (filters.postFrom)
+      startsAt.gte = new Date(`${filters.postFrom}T00:00:00.000Z`);
+    if (filters.postTo)
+      startsAt.lte = new Date(`${filters.postTo}T23:59:59.999Z`);
     if (Object.keys(startsAt).length) where.startsAt = startsAt;
 
     const endsAt: Prisma.DateTimeFilter = {};
-    if (filters.closeFrom) endsAt.gte = new Date(`${filters.closeFrom}T00:00:00.000Z`);
-    if (filters.closeTo) endsAt.lte = new Date(`${filters.closeTo}T23:59:59.999Z`);
+    if (filters.closeFrom)
+      endsAt.gte = new Date(`${filters.closeFrom}T00:00:00.000Z`);
+    if (filters.closeTo)
+      endsAt.lte = new Date(`${filters.closeTo}T23:59:59.999Z`);
     if (Object.keys(endsAt).length) where.endsAt = endsAt;
 
     return this.prisma.jobAlert.findMany({
@@ -128,9 +144,7 @@ export class CmsService {
     if (!Array.isArray(value)) return [];
     return [
       ...new Set(
-        value
-          .map((item) => String(item ?? '').trim())
-          .filter(Boolean),
+        value.map((item) => String(item ?? '').trim()).filter(Boolean),
       ),
     ];
   }
@@ -187,7 +201,9 @@ export class CmsService {
         coverageCity: body.coverageCity as string | undefined,
       });
     } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : 'Invalid coverage');
+      throw new BadRequestException(
+        e instanceof Error ? e.message : 'Invalid coverage',
+      );
     }
 
     if (coverage.coverageStateId) {
@@ -230,16 +246,21 @@ export class CmsService {
       title: body.title !== undefined ? body.title : existing.title,
       image: body.image !== undefined ? body.image : existing.image,
       url: body.url !== undefined ? body.url : existing.url,
-      sortOrder: body.sortOrder !== undefined ? body.sortOrder : existing.sortOrder,
+      sortOrder:
+        body.sortOrder !== undefined ? body.sortOrder : existing.sortOrder,
       isActive: body.isActive !== undefined ? body.isActive : existing.isActive,
       coverageFlag:
-        body.coverageFlag !== undefined ? body.coverageFlag : existing.coverageFlag,
+        body.coverageFlag !== undefined
+          ? body.coverageFlag
+          : existing.coverageFlag,
       coverageStateId:
         body.coverageStateId !== undefined
           ? body.coverageStateId
           : existing.coverageStateId,
       coverageCity:
-        body.coverageCity !== undefined ? body.coverageCity : existing.coverageCity,
+        body.coverageCity !== undefined
+          ? body.coverageCity
+          : existing.coverageCity,
     });
     return this.prisma.homeBanner.update({
       where: { id },

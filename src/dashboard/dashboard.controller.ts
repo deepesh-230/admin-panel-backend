@@ -11,9 +11,19 @@ import {
   Query,
 } from '@nestjs/common';
 import { AdminLifecycleFlag, CoverageFlag, RoleName } from '@prisma/client';
-import { IsBoolean, IsEnum, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { sanitizeCoverage } from '../common/coverage';
-import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,7 +31,8 @@ import { DashboardService } from './dashboard.service';
 
 class SetFlagDto {
   @IsIn(['enquiry', 'suggestion', 'jobAlert', 'event', 'marketplaceProduct'])
-  entity!: 'enquiry' | 'suggestion' | 'jobAlert' | 'event' | 'marketplaceProduct';
+  entity!:
+    'enquiry' | 'suggestion' | 'jobAlert' | 'event' | 'marketplaceProduct';
 
   @IsUUID()
   id!: string;
@@ -146,7 +157,9 @@ export class DashboardController {
     try {
       coverage = sanitizeCoverage(input);
     } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : 'Invalid coverage');
+      throw new BadRequestException(
+        e instanceof Error ? e.message : 'Invalid coverage',
+      );
     }
     if (coverage.coverageStateId) {
       const state = await this.prisma.state.findUnique({
@@ -181,7 +194,8 @@ export class DashboardController {
   @Patch('flag')
   @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN)
   async setFlag(@Body() dto: SetFlagDto) {
-    const deletedAt = dto.flag === AdminLifecycleFlag.DELETE ? new Date() : null;
+    const deletedAt =
+      dto.flag === AdminLifecycleFlag.DELETE ? new Date() : null;
     const data = { adminFlag: dto.flag, deletedAt };
 
     switch (dto.entity) {
@@ -194,7 +208,10 @@ export class DashboardController {
       case 'event':
         return this.prisma.event.update({ where: { id: dto.id }, data });
       case 'marketplaceProduct':
-        return this.prisma.marketplaceProduct.update({ where: { id: dto.id }, data });
+        return this.prisma.marketplaceProduct.update({
+          where: { id: dto.id },
+          data,
+        });
       default:
         return { ok: false };
     }
@@ -210,10 +227,16 @@ export class DashboardController {
   ) {
     const now = new Date();
     const windowStart = from ? new Date(from) : now;
-    const windowEnd = to ? new Date(to) : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const flag = String(coverageFlag || '').trim().toUpperCase();
+    const windowEnd = to
+      ? new Date(to)
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const flag = String(coverageFlag || '')
+      .trim()
+      .toUpperCase();
     const coverageWhere =
-      flag === 'NATIONAL' || flag === 'STATE' || flag === 'LOCAL'
+      flag === CoverageFlag.NATIONAL ||
+      flag === CoverageFlag.STATE ||
+      flag === CoverageFlag.LOCAL
         ? { coverageFlag: flag as CoverageFlag }
         : {};
     return this.prisma.event.findMany({
@@ -261,10 +284,18 @@ export class DashboardController {
     const existing = await this.prisma.event.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Event not found');
     const coverage = await this.buildEventCoverage({
-      coverageFlag: dto.coverageFlag !== undefined ? dto.coverageFlag : existing.coverageFlag,
+      coverageFlag:
+        dto.coverageFlag !== undefined
+          ? dto.coverageFlag
+          : existing.coverageFlag,
       coverageStateId:
-        dto.coverageStateId !== undefined ? dto.coverageStateId : existing.coverageStateId,
-      coverageCity: dto.coverageCity !== undefined ? dto.coverageCity : existing.coverageCity,
+        dto.coverageStateId !== undefined
+          ? dto.coverageStateId
+          : existing.coverageStateId,
+      coverageCity:
+        dto.coverageCity !== undefined
+          ? dto.coverageCity
+          : existing.coverageCity,
     });
     const deletedAt =
       dto.adminFlag === AdminLifecycleFlag.DELETE
@@ -279,7 +310,9 @@ export class DashboardController {
         ...(dto.description !== undefined && {
           description: dto.description?.trim() || null,
         }),
-        ...(dto.location !== undefined && { location: dto.location?.trim() || null }),
+        ...(dto.location !== undefined && {
+          location: dto.location?.trim() || null,
+        }),
         ...(dto.startsAt !== undefined && { startsAt: new Date(dto.startsAt) }),
         ...(dto.endsAt !== undefined && {
           endsAt: dto.endsAt ? new Date(dto.endsAt) : null,
@@ -305,7 +338,11 @@ export class DashboardController {
   async removeEvent(@Param('id') id: string) {
     await this.prisma.event.update({
       where: { id },
-      data: { adminFlag: AdminLifecycleFlag.DELETE, deletedAt: new Date(), isActive: false },
+      data: {
+        adminFlag: AdminLifecycleFlag.DELETE,
+        deletedAt: new Date(),
+        isActive: false,
+      },
     });
     return { id, deleted: true };
   }

@@ -20,7 +20,12 @@ class PaymentPlansBootstrap implements OnModuleInit {
 
 @Module({
   controllers: [PaymentsController, PaymentPlansController, RazorpayController],
-  providers: [PaymentsService, PaymentPlansService, PaymentPlansBootstrap, RazorpayService],
+  providers: [
+    PaymentsService,
+    PaymentPlansService,
+    PaymentPlansBootstrap,
+    RazorpayService,
+  ],
   exports: [PaymentsService, PaymentPlansService, RazorpayService],
 })
 export class PaymentsModule {}

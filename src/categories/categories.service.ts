@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { CategoryType, Prisma } from '@prisma/client';
 import { normalizeBusinessCode } from '../common/utils/business-code';
-import { CATALOG_TTL_MS, catalogCache, invalidateCatalogCache } from '../common/utils/ttl-cache';
+import {
+  CATALOG_TTL_MS,
+  catalogCache,
+  invalidateCatalogCache,
+} from '../common/utils/ttl-cache';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 
@@ -38,7 +42,10 @@ export class CategoriesService {
       ? null
       : `categories:${isActive ?? 'any'}:${type ?? 'any'}`;
     if (cacheKey) {
-      const hit = catalogCache.get<Awaited<ReturnType<CategoriesService['findAll']>>>(cacheKey);
+      const hit =
+        catalogCache.get<Awaited<ReturnType<CategoriesService['findAll']>>>(
+          cacheKey,
+        );
       if (hit) return hit;
     }
 
@@ -61,7 +68,8 @@ export class CategoriesService {
         },
       },
     });
-    if (!category) throw new NotFoundException(`Category with ID ${id} not found`);
+    if (!category)
+      throw new NotFoundException(`Category with ID ${id} not found`);
     return category;
   }
 
@@ -80,8 +88,13 @@ export class CategoriesService {
     });
   }
 
-  async listSubcategoriesByCategoryIds(categoryIds: string[], activeOnly = false) {
-    const ids = [...new Set(categoryIds.map((id) => id.trim()).filter(Boolean))];
+  async listSubcategoriesByCategoryIds(
+    categoryIds: string[],
+    activeOnly = false,
+  ) {
+    const ids = [
+      ...new Set(categoryIds.map((id) => id.trim()).filter(Boolean)),
+    ];
     if (!ids.length) return [];
     return this.prisma.subcategory.findMany({
       where: {
@@ -153,7 +166,10 @@ export class CategoriesService {
   }
 
   async create(dto: CreateCategoryDto) {
-    const code = normalizeBusinessCode(dto.code, { required: true, field: 'code' });
+    const code = normalizeBusinessCode(dto.code, {
+      required: true,
+      field: 'code',
+    });
     try {
       const row = await this.prisma.category.create({
         data: {
@@ -191,7 +207,9 @@ export class CategoriesService {
         data: {
           ...(dto.name !== undefined && { name: dto.name }),
           ...(code !== undefined && { code }),
-          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
           ...(dto.type !== undefined && { type: dto.type }),

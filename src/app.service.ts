@@ -15,8 +15,9 @@ export class AppService {
 
   private dbRegionHint(): string | null {
     const url = process.env.DATABASE_URL || '';
-    const match = url.match(/aws-0-([a-z0-9-]+)\.pooler\.supabase\.com/i)
-      || url.match(/db\.[^.]+\.supabase\.co/i);
+    const match =
+      url.match(/aws-0-([a-z0-9-]+)\.pooler\.supabase\.com/i) ||
+      url.match(/db\.[^.]+\.supabase\.co/i);
     if (!match) return null;
     if (match[1]) return match[1];
     // direct host — region not in hostname; still useful
@@ -46,7 +47,11 @@ export class AppService {
 
     const totalMs = Date.now() - started;
     const status: HealthCheckStatus =
-      dbStatus === 'down' ? 'down' : dbStatus === 'degraded' ? 'degraded' : 'ok';
+      dbStatus === 'down'
+        ? 'down'
+        : dbStatus === 'degraded'
+          ? 'degraded'
+          : 'ok';
 
     return {
       status,

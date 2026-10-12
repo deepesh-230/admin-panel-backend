@@ -12,7 +12,9 @@ export type ViewerLocation = {
 };
 
 export function parseCoverageFlag(value?: string | null): CoverageFlag {
-  const raw = String(value || '').trim().toUpperCase();
+  const raw = String(value || '')
+    .trim()
+    .toUpperCase();
   if (raw === 'STATE' || raw === 'ORANGE') return CoverageFlag.STATE;
   if (raw === 'LOCAL' || raw === 'GREEN') return CoverageFlag.LOCAL;
   return CoverageFlag.NATIONAL;
@@ -82,11 +84,13 @@ export function coverageVisibilityClauses(
 export function coverageVisibilityWhere(
   viewer?: ViewerLocation | null,
 ): Prisma.HomeBannerWhereInput {
-  return { OR: coverageVisibilityClauses(viewer) as Prisma.HomeBannerWhereInput[] };
+  return {
+    OR: coverageVisibilityClauses(viewer),
+  };
 }
 
 export function eventCoverageVisibilityWhere(
   viewer?: ViewerLocation | null,
 ): Prisma.EventWhereInput {
-  return { OR: coverageVisibilityClauses(viewer) as Prisma.EventWhereInput[] };
+  return { OR: coverageVisibilityClauses(viewer) };
 }

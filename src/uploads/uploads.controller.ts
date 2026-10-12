@@ -38,7 +38,12 @@ export class UploadsController {
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (!ALLOWED_MIME.has(file.mimetype)) {
-          cb(new BadRequestException('Only JPEG, PNG, WebP, and GIF images are allowed'), false);
+          cb(
+            new BadRequestException(
+              'Only JPEG, PNG, WebP, and GIF images are allowed',
+            ),
+            false,
+          );
           return;
         }
         cb(null, true);
