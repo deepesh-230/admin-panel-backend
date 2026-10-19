@@ -99,5 +99,10 @@
   },
   "prisma": {
     "seed": "pnpm exec ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "jose": "4.15.9"
+    }
   }
 }
