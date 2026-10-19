@@ -56,13 +56,28 @@ export class PushService implements OnModuleInit {
   }
 
   private loadCredentials(): ServiceAccount | null {
+    // Prefer JSON (Vercel / serverless). Fall back to file path for local dev.
+    const raw = this.config
+      .get<string>('FIREBASE_SERVICE_ACCOUNT_JSON')
+      ?.trim();
+    if (raw) {
+      try {
+        return JSON.parse(raw) as ServiceAccount;
+      } catch (error) {
+        this.logger.error(
+          `Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        // Continue to file path fallback
+      }
+    }
+
     const pathValue = this.config
       .get<string>('FIREBASE_SERVICE_ACCOUNT_PATH')
       ?.trim();
     if (pathValue) {
       const absolute = resolve(process.cwd(), pathValue);
       if (!existsSync(absolute)) {
-        this.logger.error(
+        this.logger.warn(
           `FIREBASE_SERVICE_ACCOUNT_PATH not found: ${absolute}`,
         );
         return null;
@@ -77,18 +92,7 @@ export class PushService implements OnModuleInit {
       }
     }
 
-    const raw = this.config
-      .get<string>('FIREBASE_SERVICE_ACCOUNT_JSON')
-      ?.trim();
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as ServiceAccount;
-    } catch (error) {
-      this.logger.error(
-        `Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      return null;
-    }
+    return null;
   }
 
   async registerToken(userId: string, token: string, platform: string) {
@@ -124,7 +128,7 @@ export class PushService implements OnModuleInit {
   async createCustomToken(userId: string) {
     if (!this.ready) {
       throw new Error(
-        'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_PATH to enable chat.',
+        'Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON (Vercel) or FIREBASE_SERVICE_ACCOUNT_PATH (local) to enable chat.',
       );
     }
     const { getAuth } = await import('firebase-admin/auth');

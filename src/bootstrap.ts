@@ -10,6 +10,26 @@ import { join } from 'path';
 import { gzipSync } from 'zlib';
 import { AppModule } from './app.module';
 
+/** Allow every browser origin. */
+function corsMiddleware(req: Request, res: Response, next: NextFunction) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, Accept, Origin, X-Requested-With',
+  );
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  );
+
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+
+  next();
+}
+
 function gzipMiddleware(req: Request, res: Response, next: NextFunction) {
   const accept = String(req.headers['accept-encoding'] || '');
   if (!accept.includes('gzip')) {
@@ -34,20 +54,30 @@ function gzipMiddleware(req: Request, res: Response, next: NextFunction) {
 export async function createNestApp(
   expressApp: Express = express(),
 ): Promise<{ app: NestExpressApplication; expressApp: Express }> {
+  expressApp.use(corsMiddleware);
+
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
     new ExpressAdapter(expressApp),
   );
+
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+  });
 
   const uploadDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads');
   app.useStaticAssets(uploadDir, { prefix: '/uploads/' });
   app.use(gzipMiddleware);
 
   app.setGlobalPrefix('api/v1');
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
