@@ -1,13 +1,49 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, RoleName } from '@prisma/client';
+import {
+  BroadcastContentType,
+  HelpTicketAuthor,
+  HelpTicketStatus,
+  Prisma,
+  RoleName,
+} from '@prisma/client';
 import { sanitizeCoverage } from '../common/coverage';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { assignedStateIds } from '../common/utils/state-scope';
+import { CreatePublicHelpTicketDto } from '../public/dto/create-public-help-ticket.dto';
+import { PushService } from '../push/push.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateHelpTicketDto } from './dto/update-help-ticket.dto';
+
+const helpTicketMessageSelect = {
+  id: true,
+  author: true,
+  body: true,
+  createdAt: true,
+} satisfies Prisma.HelpTicketMessageSelect;
+
+const helpTicketMessagesAsc = {
+  orderBy: { createdAt: 'asc' as const },
+  select: helpTicketMessageSelect,
+};
+
+const helpTicketViewSelect = {
+  id: true,
+  userId: true,
+  name: true,
+  email: true,
+  phone: true,
+  message: true,
+  status: true,
+  reply: true,
+  repliedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.HelpTicketSelect;
 
 export type CmsModel =
   | 'faq'
@@ -25,7 +61,10 @@ export type CmsModel =
 
 @Injectable()
 export class CmsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
   private client(model: CmsModel) {
     return this.prisma[model] as unknown as {
@@ -68,28 +107,276 @@ export class CmsService {
   }
 
   async findHelpTickets(search: string | undefined, currentUser: AuthUser) {
-    const extraWhere: Record<string, unknown> = {};
+    const where: Prisma.HelpTicketWhereInput = {};
     if (currentUser.role === RoleName.STATE_ADMIN) {
       const ids = assignedStateIds(currentUser);
-      const users = ids.length
-        ? await this.prisma.user.findMany({
-            where: {
-              OR: [
-                { stateId: { in: ids } },
-                { userStates: { some: { stateId: { in: ids } } } },
-              ],
-            },
-            select: { email: true },
-          })
-        : [];
-      extraWhere.email = { in: users.map((u) => u.email).concat('__none__') };
+      if (!ids.length) {
+        where.userId = '__none__';
+      } else {
+        where.user = {
+          OR: [
+            { stateId: { in: ids } },
+            { userStates: { some: { stateId: { in: ids } } } },
+          ],
+        };
+      }
     }
-    return this.findAll(
-      'helpTicket',
-      search,
-      ['name', 'email', 'message'],
-      extraWhere,
-    );
+    const q = search?.trim();
+    if (q) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { phone: { contains: q, mode: 'insensitive' } },
+            { message: { contains: q, mode: 'insensitive' } },
+            { reply: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+    return this.prisma.helpTicket.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: helpTicketViewSelect,
+    });
+  }
+
+  async listHelpTicketsForUser(userId: string) {
+    const rows = await this.prisma.helpTicket.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        ...helpTicketViewSelect,
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: helpTicketMessageSelect,
+        },
+      },
+    });
+    return rows.map(({ messages, ...ticket }) => ({
+      ...ticket,
+      latestMessage: messages[0] ?? null,
+    }));
+  }
+
+  async getHelpTicketForUser(id: string, userId: string) {
+    const row = await this.prisma.helpTicket.findFirst({
+      where: { id, userId },
+      select: {
+        ...helpTicketViewSelect,
+        messages: helpTicketMessagesAsc,
+      },
+    });
+    if (!row) throw new NotFoundException('Record not found');
+    return row;
+  }
+
+  async addHelpTicketUserMessage(id: string, userId: string, body: string) {
+    const text = body.trim();
+    if (!text) throw new BadRequestException('Enter a message');
+    const ticket = await this.prisma.helpTicket.findFirst({
+      where: { id, userId },
+      select: { id: true, status: true },
+    });
+    if (!ticket) throw new NotFoundException('Record not found');
+    if (ticket.status === HelpTicketStatus.CLOSED) {
+      throw new BadRequestException('This ticket is closed');
+    }
+    await this.prisma.helpTicketMessage.create({
+      data: {
+        ticketId: id,
+        author: HelpTicketAuthor.USER,
+        body: text,
+      },
+    });
+    return this.getHelpTicketForUser(id, userId);
+  }
+
+  async createHelpTicket(dto: CreatePublicHelpTicketDto, userId?: string | null) {
+    const email = dto.email.trim().toLowerCase();
+    const message = dto.message.trim();
+    let ownerId = userId?.trim() || null;
+    if (!ownerId) {
+      const matched = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      ownerId = matched?.id ?? null;
+    }
+    return this.prisma.helpTicket.create({
+      data: {
+        userId: ownerId,
+        name: dto.name.trim(),
+        email,
+        phone: dto.phone.trim(),
+        message,
+        status: HelpTicketStatus.OPEN,
+        messages: {
+          create: {
+            author: HelpTicketAuthor.USER,
+            body: message,
+          },
+        },
+      },
+      select: {
+        ...helpTicketViewSelect,
+        messages: helpTicketMessagesAsc,
+      },
+    });
+  }
+
+  async getHelpTicket(id: string, currentUser: AuthUser) {
+    const row = await this.findHelpTicketOrThrow(id);
+    this.assertHelpTicketScope(currentUser, row.user);
+    return this.toHelpTicketView(row);
+  }
+
+  async updateHelpTicket(
+    id: string,
+    dto: UpdateHelpTicketDto,
+    currentUser: AuthUser,
+  ) {
+    const nextReply = dto.reply?.trim() || '';
+    if (dto.status === undefined && !nextReply) {
+      throw new BadRequestException('Nothing to update');
+    }
+    const existing = await this.findHelpTicketOrThrow(id);
+    this.assertHelpTicketScope(currentUser, existing.user);
+
+    const data: Prisma.HelpTicketUpdateInput = {};
+    if (dto.status) data.status = dto.status;
+    if (nextReply) {
+      data.reply = nextReply;
+      data.repliedAt = new Date();
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (nextReply) {
+        await tx.helpTicketMessage.create({
+          data: {
+            ticketId: id,
+            author: HelpTicketAuthor.SUPPORT,
+            body: nextReply,
+          },
+        });
+      }
+      return tx.helpTicket.update({
+        where: { id },
+        data,
+        select: {
+          ...helpTicketViewSelect,
+          messages: helpTicketMessagesAsc,
+        },
+      });
+    });
+
+    const threadUrl = `/menu/help-tickets/${id}`;
+    const closedNow =
+      dto.status === HelpTicketStatus.CLOSED &&
+      existing.status !== HelpTicketStatus.CLOSED;
+    if (existing.userId && nextReply) {
+      await this.push.notifyUserInbox(
+        existing.userId,
+        BroadcastContentType.HELP_TICKET,
+        'Support replied',
+        nextReply.slice(0, 180),
+        { ticketId: id },
+        threadUrl,
+      );
+    } else if (existing.userId && closedNow) {
+      await this.push.notifyUserInbox(
+        existing.userId,
+        BroadcastContentType.HELP_TICKET,
+        'Help request closed',
+        'Your help request has been closed.',
+        { ticketId: id },
+        threadUrl,
+      );
+    }
+
+    return updated;
+  }
+
+  async removeHelpTicket(id: string, currentUser: AuthUser) {
+    const existing = await this.findHelpTicketOrThrow(id);
+    this.assertHelpTicketScope(currentUser, existing.user);
+    await this.prisma.helpTicket.delete({ where: { id } });
+    return { id };
+  }
+
+  private async findHelpTicketOrThrow(id: string) {
+    const row = await this.prisma.helpTicket.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            stateId: true,
+            userStates: { select: { stateId: true } },
+          },
+        },
+        messages: helpTicketMessagesAsc,
+      },
+    });
+    if (!row) throw new NotFoundException('Record not found');
+    return row;
+  }
+
+  private toHelpTicketView(row: {
+    id: string;
+    userId: string | null;
+    name: string;
+    email: string;
+    phone: string | null;
+    message: string;
+    status: HelpTicketStatus;
+    reply: string | null;
+    repliedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    messages: {
+      id: string;
+      author: HelpTicketAuthor;
+      body: string;
+      createdAt: Date;
+    }[];
+  }) {
+    return {
+      id: row.id,
+      userId: row.userId,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      message: row.message,
+      status: row.status,
+      reply: row.reply,
+      repliedAt: row.repliedAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      messages: row.messages,
+    };
+  }
+
+  private assertHelpTicketScope(
+    currentUser: AuthUser,
+    owner: { stateId: string | null; userStates: { stateId: string }[] } | null,
+  ) {
+    if (currentUser.role !== RoleName.STATE_ADMIN) return;
+    const assigned = assignedStateIds(currentUser);
+    const recordStates = [
+      owner?.stateId,
+      ...(owner?.userStates.map((row) => row.stateId) ?? []),
+    ];
+    if (
+      !recordStates.some(
+        (stateId) => Boolean(stateId) && assigned.includes(stateId as string),
+      )
+    ) {
+      throw new ForbiddenException(
+        'You can only access records in your assigned state',
+      );
+    }
   }
 
   async findJobAlerts(filters: {

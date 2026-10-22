@@ -92,6 +92,7 @@ model User {
   broadcasts               UserBroadcast[]
   deviceTokens             DeviceToken[]
   becomeApplications       BecomeApplication[]
+  helpTickets              HelpTicket[]
   role                     Role                   @relation(fields: [roleId], references: [id])
   state                    State?                 @relation("UserPrimaryState", fields: [stateId], references: [id])
   userStates               UserState[]
@@ -349,14 +350,35 @@ model SocialSetting {
 }
 
 model HelpTicket {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
+  userId    String?
   name      String
   email     String
   phone     String?
   message   String
-  status    String   @default("OPEN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    HelpTicketStatus @default(OPEN)
+  reply     String?
+  repliedAt DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages  HelpTicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model HelpTicketMessage {
+  id        String           @id @default(uuid())
+  ticketId  String
+  author    HelpTicketAuthor
+  body      String
+  createdAt DateTime         @default(now())
+  ticket    HelpTicket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
 }
 
 model CmsPage {
@@ -868,6 +890,16 @@ enum EnquiryStatus {
   CLOSED
 }
 
+enum HelpTicketStatus {
+  OPEN
+  CLOSED
+}
+
+enum HelpTicketAuthor {
+  USER
+  SUPPORT
+}
+
 enum CategoryType {
   CARE
   SERVICE
@@ -893,6 +925,7 @@ enum BroadcastContentType {
   JOB_ALERT
   USEFUL_LINK
   APPROVAL
+  HELP_TICKET
 }
 
 enum BecomeTarget {

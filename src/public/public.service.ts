@@ -364,16 +364,8 @@ export class PublicService {
     });
   }
 
-  createHelpTicket(dto: CreatePublicHelpTicketDto) {
-    return this.prisma.helpTicket.create({
-      data: {
-        name: dto.name.trim(),
-        email: dto.email.trim().toLowerCase(),
-        phone: dto.phone?.trim() || null,
-        message: dto.message.trim(),
-        status: 'OPEN',
-      },
-    });
+  createHelpTicket(dto: CreatePublicHelpTicketDto, userId?: string | null) {
+    return this.cms.createHelpTicket(dto, userId);
   }
 
   listBecomeQuestions(target: BecomeTarget) {

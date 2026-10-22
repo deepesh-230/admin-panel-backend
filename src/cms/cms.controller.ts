@@ -13,8 +13,10 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CreatePublicHelpTicketDto } from '../public/dto/create-public-help-ticket.dto';
 import { CmsModel, CmsService } from './cms.service';
 import { BroadcastsService } from './broadcasts.service';
+import { UpdateHelpTicketDto } from './dto/update-help-ticket.dto';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 
 const MARKETPLACE_SALE_STATUSES = new Set<string>(
@@ -173,26 +175,30 @@ export class HelpTicketsController {
 
   @Get(':id')
   @Permissions('cms.read')
-  findOne(@Param('id') id: string) {
-    return this.cms.findOne('helpTicket', id);
+  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.cms.getHelpTicket(id, user);
   }
 
   @Post()
   @Permissions('cms.write')
-  create(@Body() body: Record<string, unknown>) {
-    return this.cms.create('helpTicket', body);
+  create(@Body() dto: CreatePublicHelpTicketDto) {
+    return this.cms.createHelpTicket(dto);
   }
 
   @Patch(':id')
   @Permissions('cms.write')
-  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cms.update('helpTicket', id, body);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateHelpTicketDto,
+  ) {
+    return this.cms.updateHelpTicket(id, dto, user);
   }
 
   @Delete(':id')
   @Permissions('cms.write')
-  remove(@Param('id') id: string) {
-    return this.cms.remove('helpTicket', id);
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.cms.removeHelpTicket(id, user);
   }
 }
 
