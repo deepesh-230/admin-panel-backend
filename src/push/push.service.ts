@@ -232,6 +232,57 @@ export class PushService implements OnModuleInit {
     }
   }
 
+  /**
+   * Inbox row + FCM for one user. Failures are logged and do not throw.
+   */
+  async notifyUserInbox(
+    userId: string,
+    contentType: BroadcastContentType,
+    title: string,
+    body?: string,
+    extraData?: Record<string, string>,
+    url?: string,
+  ) {
+    const id = userId?.trim();
+    if (!id) return { successCount: 0, failureCount: 0, skipped: true };
+    const threadUrl = url?.trim() || null;
+
+    try {
+      await this.prisma.userBroadcast.create({
+        data: {
+          userId: id,
+          contentType,
+          title,
+          body: body ?? null,
+          url: threadUrl,
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create inbox row: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    try {
+      return await this.sendToUserIds([id], {
+        title,
+        body,
+        data: {
+          contentType,
+          ...(threadUrl ? { url: threadUrl } : {}),
+          ...(extraData || {}),
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Inbox push failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return { successCount: 0, failureCount: 0, skipped: true };
+    }
+  }
+
   async sendToUserIds(userIds: string[], payload: PushPayload) {
     if (!this.ready || userIds.length === 0) {
       return { successCount: 0, failureCount: 0, skipped: !this.ready };

@@ -1,7 +1,7 @@
 import {
   IsEmail,
-  IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -15,10 +15,11 @@ export class CreatePublicHelpTicketDto {
   @IsEmail()
   email!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(30)
-  phone?: string;
+  @Matches(/^[6-9]\d{9}$/, {
+    message: 'Enter a valid 10-digit mobile number',
+  })
+  phone!: string;
 
   @IsString()
   @MinLength(1)

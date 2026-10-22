@@ -33,6 +33,9 @@ import { PaymentsService } from '../payments/payments.service';
 import { PushService } from '../push/push.service';
 import { ServiceProvidersService } from '../service-providers/service-providers.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CmsService } from '../cms/cms.service';
+import { CreateHelpTicketMessageDto } from '../cms/dto/create-help-ticket-message.dto';
+import { CreatePublicHelpTicketDto } from '../public/dto/create-public-help-ticket.dto';
 import {
   assertSubcategoryIds,
   resolvePlaceProfileFields,
@@ -55,6 +58,7 @@ export class ProfileController {
     private readonly prisma: PrismaService,
     private readonly broadcasts: BroadcastsService,
     private readonly push: PushService,
+    private readonly cms: CmsService,
   ) {}
 
   @Get('sponsorship')
@@ -272,6 +276,33 @@ export class ProfileController {
       id,
       dto,
     );
+  }
+
+  @Get('help-tickets')
+  listMyHelpTickets(@CurrentUser() user: AuthUser) {
+    return this.cms.listHelpTicketsForUser(user.id);
+  }
+
+  @Post('help-tickets')
+  createMyHelpTicket(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreatePublicHelpTicketDto,
+  ) {
+    return this.cms.createHelpTicket(dto, user.id);
+  }
+
+  @Get('help-tickets/:id')
+  getMyHelpTicket(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.cms.getHelpTicketForUser(id, user.id);
+  }
+
+  @Post('help-tickets/:id/messages')
+  addMyHelpTicketMessage(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: CreateHelpTicketMessageDto,
+  ) {
+    return this.cms.addHelpTicketUserMessage(id, user.id, dto.body);
   }
 
   @Get('broadcasts')
