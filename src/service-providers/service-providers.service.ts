@@ -998,11 +998,6 @@ export class ServiceProvidersService {
       existing.nmcId ||
       existing.panId,
     );
-    if (!hasBusinessIds) {
-      throw new BadRequestException(
-        'User has not submitted business verification yet. Wait for MCA/DIN/GSTIN/NMC/PAN details.',
-      );
-    }
     const provider = await this.prisma.serviceProvider.update({
       where: { id },
       data: {
@@ -1011,8 +1006,13 @@ export class ServiceProvidersService {
         approvedAt: new Date(),
         rejectedReason: null,
         isActive: true,
-        businessVerificationStatus: BusinessVerificationStatus.VERIFIED,
-        verificationNote: null,
+        // Listing approval does not verify a business that has no IDs yet.
+        ...(hasBusinessIds
+          ? {
+              businessVerificationStatus: BusinessVerificationStatus.VERIFIED,
+              verificationNote: null,
+            }
+          : {}),
       },
       include: providerInclude,
     });

@@ -32,6 +32,7 @@ export class SubcategoriesService {
         { name: { contains: q, mode: 'insensitive' } },
         { code: { contains: q, mode: 'insensitive' } },
         { description: { contains: q, mode: 'insensitive' } },
+        { category: { name: { contains: q, mode: 'insensitive' } } },
       ];
     }
 
