@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Controller,
   Post,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { RoleName } from '@prisma/client';
@@ -50,7 +52,7 @@ export class UploadsController {
       },
     }),
   )
-  upload(@UploadedFile() file: Express.Multer.File) {
-    return this.uploadsService.saveImage(file);
+  upload(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    return this.uploadsService.saveImage(file, req);
   }
 }
