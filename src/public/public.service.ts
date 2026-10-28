@@ -67,6 +67,13 @@ export class PublicService {
     return this.prisma.subcategory.findMany({
       where: { categoryId, isActive: true },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      include: {
+        keywords: {
+          where: { isActive: true },
+          select: { term: true },
+          orderBy: { term: 'asc' },
+        },
+      },
     });
   }
 
@@ -217,6 +224,9 @@ export class PublicService {
     longitude?: number;
     radius?: number;
     listingIntent?: string;
+    stateId?: string;
+    city?: string;
+    coverageFlag?: string;
   }) {
     return this.marketplace.listPublic(query || {});
   }

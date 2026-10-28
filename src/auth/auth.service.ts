@@ -9,9 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { RoleName } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt, timingSafeEqual } from 'crypto';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { Msg91Service } from './msg91.service';
 import { resolveJwtAccessSecret } from '../common/utils/jwt-access-secret';
 import { AUTH_TTL_MS, authCache } from '../common/utils/ttl-cache';
 import {
@@ -25,6 +26,7 @@ import {
   RegisterDto,
   ResetPasswordByOtpDto,
   ResetPasswordDto,
+  VerifyOtpDto,
 } from './dto/auth.dto';
 
 type SessionMeta = {
@@ -41,10 +43,73 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private mail: MailService,
+    private msg91: Msg91Service,
   ) {}
 
   private hashToken(token: string) {
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  private newOtp() {
+    return String(randomInt(0, 10000)).padStart(4, '0');
+  }
+
+  private async storeOtp(userId: string, otp: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        otpCodeHash: this.hashToken(`${userId}:${otp}`),
+        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+  }
+
+  private async issueSmsOtp(userId: string, phone: string) {
+    const otp = this.newOtp();
+    const sent = await this.msg91.send(phone, otp);
+    await this.storeOtp(userId, otp);
+    return { phoneMasked: sent.phoneMasked, channel: 'sms' as const };
+  }
+
+  private async issueEmailOtp(userId: string, email: string) {
+    const otp = this.newOtp();
+    const sent = await this.mail.sendOtp(email, otp);
+    if (!sent.sent) {
+      throw new BadRequestException(
+        'Email is not configured yet. Use the SMS code instead.',
+      );
+    }
+    await this.storeOtp(userId, otp);
+    return { channel: 'email' as const };
+  }
+
+  private async assertSmsOtp(
+    user: {
+      id: string;
+      otpCodeHash: string | null;
+      otpExpiresAt: Date | null;
+    },
+    otp: string,
+  ) {
+    const code = otp.replace(/\D/g, '');
+    const actual = this.hashToken(`${user.id}:${code}`);
+    const expected = user.otpCodeHash ?? '';
+    const matches =
+      expected.length === actual.length &&
+      timingSafeEqual(Buffer.from(expected), Buffer.from(actual));
+    const expired =
+      !user.otpExpiresAt || user.otpExpiresAt.getTime() < Date.now();
+    if (!matches || expired) {
+      throw new BadRequestException('Invalid OTP');
+    }
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        otpCodeHash: null,
+        otpExpiresAt: null,
+        emailVerifiedAt: new Date(),
+      },
+    });
   }
 
   private async getRoleByName(name: RoleName) {
@@ -223,7 +288,6 @@ export class AuthService {
           km: dto.km ?? 1,
           ageRange: dto.ageRange,
           roleId: role.id,
-          emailVerifiedAt: new Date(),
           ...place,
           ...(place.stateId
             ? {
@@ -246,6 +310,13 @@ export class AuthService {
 
       return created;
     });
+
+    if (!user.phone) {
+      throw new BadRequestException(
+        'A mobile number is required to receive the OTP',
+      );
+    }
+    await this.issueSmsOtp(user.id, user.phone);
 
     const tokens = await this.issueTokens(user.id, user.email, meta);
 
@@ -349,6 +420,16 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, row.passwordHash);
     const bcryptMs = Date.now() - bcryptStarted;
     if (!valid) throw new UnauthorizedException('Invalid email or password');
+    const needsOtp =
+      row.role !== RoleName.ADMIN && row.role !== RoleName.STATE_ADMIN;
+    if (needsOtp) {
+      if (!row.phone) {
+        throw new BadRequestException(
+          'A mobile number is required to receive the OTP',
+        );
+      }
+      await this.issueSmsOtp(row.id, row.phone);
+    }
 
     const tokenStarted = Date.now();
     const tokens = await this.issueTokens(row.id, row.email, meta);
@@ -531,6 +612,7 @@ export class AuthService {
     });
 
     let resetToken: string | undefined;
+    let phoneMasked: string | undefined;
 
     // Always return success to avoid email enumeration
     if (user) {
@@ -552,6 +634,12 @@ export class AuthService {
       const resetUrl = `${adminUrl}/reset-password?token=${rawToken}`;
 
       await this.mail.sendPasswordReset(user.email, resetUrl);
+      if (!user.phone) {
+        throw new BadRequestException(
+          'A mobile number is required to receive the OTP',
+        );
+      }
+      phoneMasked = (await this.issueSmsOtp(user.id, user.phone)).phoneMasked;
 
       // Only expose raw token in non-prod / explicit opt-in (local testing)
       const expose =
@@ -566,7 +654,10 @@ export class AuthService {
     return {
       success: true,
       message: 'If the email exists, a reset link has been sent',
-      data: resetToken ? { resetToken } : null,
+      data: {
+        ...(resetToken ? { resetToken } : {}),
+        ...(phoneMasked ? { phoneMasked } : {}),
+      },
     };
   }
 
@@ -608,19 +699,73 @@ export class AuthService {
     };
   }
 
-  async resetPasswordByOtp(dto: ResetPasswordByOtpDto) {
-    const devOtp = this.config.get<string>('AUTH_DEV_OTP') || '0000';
-    if (dto.otp !== devOtp) {
+  async sendOtp(email: string, channel: 'sms' | 'email' = 'sms') {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    if (!user) {
+      throw new BadRequestException('Invalid OTP request');
+    }
+    if (channel === 'sms' && !user.phone) {
+      throw new BadRequestException(
+        'A mobile number is required to receive the OTP',
+      );
+    }
+    const sent =
+      channel === 'email'
+        ? await this.issueEmailOtp(user.id, user.email)
+        : await this.issueSmsOtp(user.id, user.phone as string);
+    return {
+      success: true,
+      message: 'OTP sent',
+      data: sent,
+    };
+  }
+
+  async verifyOtp(dto: VerifyOtpDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase() },
+    });
+    if (!user?.phone) {
       throw new BadRequestException('Invalid OTP');
     }
 
+    await this.assertSmsOtp(user, dto.otp);
+
+    if (dto.purpose === 'reset') {
+      const rawToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      await this.prisma.passwordResetToken.create({
+        data: {
+          tokenHash: this.hashToken(rawToken),
+          userId: user.id,
+          expiresAt,
+        },
+      });
+      return {
+        success: true,
+        message: 'OTP verified',
+        data: { verified: true, resetToken: rawToken },
+      };
+    }
+
+    return {
+      success: true,
+      message: 'OTP verified',
+      data: { verified: true },
+    };
+  }
+
+  async resetPasswordByOtp(dto: ResetPasswordByOtpDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
 
-    if (!user) {
+    if (!user?.phone) {
       throw new BadRequestException('Invalid OTP');
     }
+
+    await this.assertSmsOtp(user, dto.otp);
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 12);
 

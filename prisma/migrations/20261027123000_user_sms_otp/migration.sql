@@ -1,0 +1,2 @@
+ALTER TABLE "User" ADD COLUMN "otpCodeHash" TEXT;
+ALTER TABLE "User" ADD COLUMN "otpExpiresAt" TIMESTAMP(3);

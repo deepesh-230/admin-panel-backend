@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   ExpressAdapter,
@@ -77,7 +77,9 @@ export async function createNestApp(
   app.useStaticAssets(uploadDir, { prefix: '/uploads/' });
   app.use(gzipMiddleware);
 
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: [{ path: 'product/:id', method: RequestMethod.GET }],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

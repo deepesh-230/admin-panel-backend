@@ -362,6 +362,7 @@ export class MarketplaceProductsController {
     @Query('isActive') isActive?: string,
     @Query('approvalStatus') approvalStatus?: string,
     @Query('saleStatus') saleStatus?: string,
+    @Query('coverageFlag') coverageFlag?: string,
   ) {
     const pageNum = page && Number(page) >= 1 ? Number(page) : 1;
     const limitNum = limit && Number(limit) >= 1 ? Number(limit) : 20;
@@ -389,6 +390,7 @@ export class MarketplaceProductsController {
         isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       approvalStatus: approval,
       saleStatus: sale,
+      coverageFlag,
     });
   }
 

@@ -202,6 +202,20 @@ export class UpdateMarketplaceProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['NATIONAL', 'STATE', 'LOCAL'])
+  coverageFlag?: string;
+
+  @IsOptional()
+  @IsString()
+  coverageStateId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  coverageCity?: string | null;
 }
 
 export class ListMarketplacePublicQueryDto {
@@ -249,4 +263,14 @@ export class ListMarketplacePublicQueryDto {
   @IsOptional()
   @IsString()
   stateId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['NATIONAL', 'STATE', 'LOCAL'])
+  coverageFlag?: string;
 }

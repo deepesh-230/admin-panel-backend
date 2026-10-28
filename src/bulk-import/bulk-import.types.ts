@@ -16,6 +16,8 @@ export type BulkImportEntity = (typeof BULK_IMPORT_ENTITIES)[number];
 export type BulkImportRowError = {
   row: number;
   message: string;
+  /** Original sheet values so the row can be corrected and imported again. */
+  record: Record<string, string>;
 };
 
 export type BulkImportResult = {

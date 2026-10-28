@@ -23,6 +23,8 @@ import {
   RegisterDto,
   ResetPasswordByOtpDto,
   ResetPasswordDto,
+  SendOtpDto,
+  VerifyOtpDto,
 } from './dto/auth.dto';
 
 @Controller('auth')
@@ -83,6 +85,20 @@ export class AuthController {
   @Post('reset-password-otp')
   resetPasswordByOtp(@Body() dto: ResetPasswordByOtpDto) {
     return this.authService.resetPasswordByOtp(dto);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('otp/send')
+  sendOtp(@Body() dto: SendOtpDto) {
+    return this.authService.sendOtp(dto.email, dto.channel);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('otp/verify')
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto);
   }
 
   @Get('me')

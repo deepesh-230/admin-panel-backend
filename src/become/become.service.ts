@@ -10,6 +10,7 @@ import {
   Prisma,
   RoleName,
 } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 import { invalidateAuthCache } from '../common/utils/ttl-cache';
@@ -35,6 +36,7 @@ export class BecomeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly push: PushService,
+    private readonly mail: MailService,
   ) {}
 
   private serializeQuestion(row: {
@@ -411,6 +413,22 @@ export class BecomeService {
             { action: 'BECOME_APPROVED', target: updated.target },
           );
         }
+        const email = updated.user?.email || existing.email;
+        const approvedRole =
+          promotedRole ||
+          (updated.target === BecomeTarget.PROVIDER_ADMIN
+            ? RoleName.SERVICE_PROVIDER_ADMIN
+            : updated.target === BecomeTarget.VOLUNTEER
+              ? RoleName.VOLUNTEER
+              : updated.target === BecomeTarget.STATE_ADMIN
+                ? RoleName.STATE_ADMIN
+                : null);
+        if (email && approvedRole) {
+          void this.mail.sendRoleApproval(email, {
+            name: updated.user?.name || updated.name,
+            role: approvedRole,
+          });
+        }
       }
     }
 
@@ -523,6 +541,13 @@ export class BecomeService {
       `You have been promoted to state admin${stateName ? ` for ${stateName}` : ''}. Sign in to the admin dashboard with the same email and password. You have been signed out of the mobile app.`,
       { action: 'STATE_ADMIN_PROMOTED', forceLogout: '1' },
     );
+    const email = stateAdminApp.user?.email || existing.email;
+    if (email) {
+      void this.mail.sendRoleApproval(email, {
+        name: stateAdminApp.user?.name || existing.name,
+        role: RoleName.STATE_ADMIN,
+      });
+    }
 
     return stateAdminApp;
   }

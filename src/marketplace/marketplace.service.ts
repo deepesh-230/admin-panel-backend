@@ -5,11 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CoverageFlag,
   MarketplaceItemCondition,
   MarketplaceSaleStatus,
   Prisma,
   RoleName,
 } from '@prisma/client';
+import {
+  productCoverageVisibilityWhere,
+  sanitizeCoverage,
+} from '../common/coverage';
 import { productChatCapability } from '../common/utils/chat-capability';
 import { boundingBox, haversineKm } from '../common/utils/geo';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,10 +22,12 @@ import { PushService } from '../push/push.service';
 
 const adminProductInclude = {
   createdBy: { select: { id: true, name: true, email: true } },
+  coverageState: { select: { id: true, name: true } },
 } as const;
 
 const publicProductInclude = {
   state: { select: { id: true, name: true } },
+  coverageState: { select: { id: true, name: true } },
   createdBy: {
     select: {
       id: true,
@@ -46,6 +53,12 @@ export type MarketplaceListQuery = {
   isActive?: boolean;
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   saleStatus?: MarketplaceSaleStatus;
+  /** Viewer's state. Used only to match product visibility, not the listing's own state. */
+  stateId?: string;
+  /** Viewer's city. Used only to match local product visibility. */
+  city?: string;
+  /** Optional extra filter: only this coverage flag. */
+  coverageFlag?: string;
 };
 
 type MarketplaceWriteInput = {
@@ -71,6 +84,9 @@ type MarketplaceWriteInput = {
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   adminFlag?: 'READ' | 'ACTIVE' | 'DELETE';
   saleStatus?: MarketplaceSaleStatus;
+  coverageFlag?: string | null;
+  coverageStateId?: string | null;
+  coverageCity?: string | null;
 };
 
 function normalizeCondition(
@@ -211,6 +227,10 @@ export class MarketplaceService {
     if (query.saleStatus) {
       where.saleStatus = query.saleStatus;
     }
+    const coverage = query.coverageFlag?.trim().toUpperCase();
+    if (coverage === 'NATIONAL' || coverage === 'STATE' || coverage === 'LOCAL') {
+      where.coverageFlag = coverage as CoverageFlag;
+    }
     if (query.search?.trim()) {
       const q = query.search.trim();
       where.OR = [
@@ -337,13 +357,75 @@ export class MarketplaceService {
     };
   }
 
-  createAdmin(data: MarketplaceWriteInput & { name: string }) {
+  private async resolveCoverage(data: {
+    coverageFlag?: string | null;
+    coverageStateId?: string | null;
+    coverageCity?: string | null;
+  }) {
+    let coverage;
+    try {
+      coverage = sanitizeCoverage(data);
+    } catch (e) {
+      throw new BadRequestException(
+        e instanceof Error ? e.message : 'Invalid coverage',
+      );
+    }
+    if (coverage.coverageStateId) {
+      const state = await this.prisma.state.findUnique({
+        where: { id: coverage.coverageStateId },
+        select: { id: true },
+      });
+      if (!state) throw new BadRequestException('Select a valid state');
+    }
+    return coverage;
+  }
+
+  private coverageCreate(coverage: {
+    coverageFlag: 'NATIONAL' | 'STATE' | 'LOCAL';
+    coverageStateId: string | null;
+    coverageCity: string | null;
+  }): Pick<
+    Prisma.MarketplaceProductCreateInput,
+    'coverageFlag' | 'coverageCity' | 'coverageState'
+  > {
+    return {
+      coverageFlag: coverage.coverageFlag,
+      coverageCity: coverage.coverageCity,
+      ...(coverage.coverageStateId
+        ? { coverageState: { connect: { id: coverage.coverageStateId } } }
+        : {}),
+    };
+  }
+
+  private coverageUpdate(
+    coverage: {
+      coverageFlag: 'NATIONAL' | 'STATE' | 'LOCAL';
+      coverageStateId: string | null;
+      coverageCity: string | null;
+    },
+    existingStateId?: string | null,
+  ): Prisma.MarketplaceProductUpdateInput {
+    const next: Prisma.MarketplaceProductUpdateInput = {
+      coverageFlag: coverage.coverageFlag,
+      coverageCity: coverage.coverageCity,
+    };
+    if (coverage.coverageStateId) {
+      next.coverageState = { connect: { id: coverage.coverageStateId } };
+    } else if (existingStateId) {
+      next.coverageState = { disconnect: true };
+    }
+    return next;
+  }
+
+  async createAdmin(data: MarketplaceWriteInput & { name: string }) {
+    const coverage = await this.resolveCoverage(data);
     return this.prisma.marketplaceProduct.create({
       data: {
         ...this.buildCreateData({
           ...data,
           approvalStatus: data.approvalStatus ?? 'APPROVED',
         }),
+        ...this.coverageCreate(coverage),
       },
       include: adminProductInclude,
     });
@@ -352,6 +434,24 @@ export class MarketplaceService {
   async updateAdmin(id: string, data: MarketplaceWriteInput) {
     const existing = await this.findAdmin(id);
     const payload = this.buildUpdatePayload(existing, data);
+    if (
+      data.coverageFlag !== undefined ||
+      data.coverageStateId !== undefined ||
+      data.coverageCity !== undefined
+    ) {
+      const coverage = await this.resolveCoverage({
+        coverageFlag: data.coverageFlag ?? existing.coverageFlag,
+        coverageStateId:
+          data.coverageStateId !== undefined
+            ? data.coverageStateId
+            : existing.coverageStateId,
+        coverageCity:
+          data.coverageCity !== undefined
+            ? data.coverageCity
+            : existing.coverageCity,
+      });
+      Object.assign(payload, this.coverageUpdate(coverage, existing.coverageStateId));
+    }
     const updated = await this.prisma.marketplaceProduct.update({
       where: { id },
       data: payload,
@@ -539,24 +639,36 @@ export class MarketplaceService {
     if (intent === 'buy' || intent === 'sell') {
       where.listingIntent = intent;
     }
+    const coverage = normalized.coverageFlag?.trim().toUpperCase();
+    if (coverage === 'NATIONAL' || coverage === 'STATE' || coverage === 'LOCAL') {
+      where.coverageFlag = coverage as CoverageFlag;
+    }
 
+    const and: Prisma.MarketplaceProductWhereInput[] = [
+      productCoverageVisibilityWhere({
+        stateId: normalized.stateId,
+        city: normalized.city,
+      }),
+    ];
     if (normalized.search?.trim()) {
       const q = normalized.search.trim();
-      where.AND = [
-        {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' } },
-            { address: { contains: q, mode: 'insensitive' } },
-            { brand: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } },
-          ],
-        },
-      ];
+      and.push({
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { address: { contains: q, mode: 'insensitive' } },
+          { brand: { contains: q, mode: 'insensitive' } },
+          { description: { contains: q, mode: 'insensitive' } },
+        ],
+      });
     }
+    where.AND = and;
 
     const rows = await this.prisma.marketplaceProduct.findMany({
       where,
-      include: { state: { select: { id: true, name: true } } },
+      include: {
+        state: { select: { id: true, name: true } },
+        coverageState: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     const priced = this.applyPriceFilter(rows, normalized);
@@ -631,15 +743,23 @@ export class MarketplaceService {
     const approvalStatus = this.isPrivilegedCreator(creatorRole)
       ? 'APPROVED'
       : data.approvalStatus;
+    const coverage = await this.resolveCoverage({
+      coverageFlag: data.coverageFlag,
+      coverageStateId: data.coverageStateId || user?.stateId,
+      coverageCity: data.coverageCity,
+    });
     return this.prisma.marketplaceProduct.create({
-      data: this.buildCreateData(
-        { ...data, approvalStatus },
-        {
-          createdById: userId,
-          sellerName: sellerName || undefined,
-          stateId: data.stateId || user?.stateId || undefined,
-        },
-      ),
+      data: {
+        ...this.buildCreateData(
+          { ...data, approvalStatus },
+          {
+            createdById: userId,
+            sellerName: sellerName || undefined,
+            stateId: data.stateId || user?.stateId || undefined,
+          },
+        ),
+        ...this.coverageCreate(coverage),
+      },
     });
   }
 
@@ -670,6 +790,9 @@ export class MarketplaceService {
       'condition',
       'quantity',
       'saleStatus',
+      'coverageFlag',
+      'coverageStateId',
+      'coverageCity',
     ];
     const contentChanged = contentKeys.some((key) => data[key] !== undefined);
     if (data.isActive !== undefined && !contentChanged) {
@@ -685,6 +808,24 @@ export class MarketplaceService {
         ? { approvalStatus: 'APPROVED' as const }
         : {}),
     });
+    if (
+      data.coverageFlag !== undefined ||
+      data.coverageStateId !== undefined ||
+      data.coverageCity !== undefined
+    ) {
+      const coverage = await this.resolveCoverage({
+        coverageFlag: data.coverageFlag ?? existing.coverageFlag,
+        coverageStateId:
+          data.coverageStateId !== undefined
+            ? data.coverageStateId
+            : existing.coverageStateId,
+        coverageCity:
+          data.coverageCity !== undefined
+            ? data.coverageCity
+            : existing.coverageCity,
+      });
+      Object.assign(payload, this.coverageUpdate(coverage, existing.coverageStateId));
+    }
     return this.prisma.marketplaceProduct.update({
       where: { id },
       data: payload,

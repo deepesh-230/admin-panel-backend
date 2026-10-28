@@ -28,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { PublicModule } from './public/public.module';
 import { ServiceProvidersModule } from './service-providers/service-providers.module';
+import { ShareLinkModule } from './share-links/share-link.module';
 import { StateAdminsModule } from './state-admins/state-admins.module';
 import { StatesModule } from './states/states.module';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
@@ -62,6 +63,7 @@ import { UsersModule } from './users/users.module';
     KeywordsModule,
     UsersModule,
     ServiceProvidersModule,
+    ShareLinkModule,
     VolunteerAdminsModule,
     UploadsModule,
     PublicModule,

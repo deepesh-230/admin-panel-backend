@@ -46,12 +46,13 @@ model State {
   updatedAt        DateTime             @updatedAt
   isActive         Boolean              @default(true)
   serviceProviders ServiceProvider[]
-  marketplaceProducts MarketplaceProduct[]
   users            User[]               @relation("UserPrimaryState")
   userStates       UserState[]
   enquiries        Enquiry[]
   homeBanners      HomeBanner[]
   events           Event[]
+  marketplaceProducts MarketplaceProduct[] @relation("ProductListingState")
+  productCoverage     MarketplaceProduct[] @relation("ProductCoverageState")
 }
 
 model User {
@@ -74,6 +75,9 @@ model User {
   isActive                 Boolean                @default(true)
   /// Set when email/OTP verification succeeds
   emailVerifiedAt          DateTime?
+  /// SHA-256 of userId + current SMS OTP. Cleared after a successful check.
+  otpCodeHash              String?
+  otpExpiresAt             DateTime?
   /// User opted in as volunteer during registration/profile
   wantsVolunteer           Boolean                @default(false)
   roleId                   String
@@ -351,6 +355,7 @@ model SocialSetting {
 
 model HelpTicket {
   id        String           @id @default(uuid())
+  ticketNo  Int              @unique @default(autoincrement())
   userId    String?
   name      String
   email     String
@@ -547,6 +552,10 @@ model MarketplaceProduct {
   latitude           Float?
   longitude          Float?
   stateId            String?
+  /// Red = NATIONAL, Orange = STATE, Green = LOCAL
+  coverageFlag       CoverageFlag               @default(NATIONAL)
+  coverageStateId    String?
+  coverageCity       String?
   createdById        String?
   isActive           Boolean                    @default(true)
   approvalStatus     MarketplaceApprovalStatus  @default(PENDING)
@@ -555,7 +564,8 @@ model MarketplaceProduct {
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   createdBy          User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  state              State?                     @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  state              State?                     @relation("ProductListingState", fields: [stateId], references: [id], onDelete: SetNull)
+  coverageState      State?                     @relation("ProductCoverageState", fields: [coverageStateId], references: [id], onDelete: SetNull)
   enquiries          Enquiry[]
 
   @@index([createdById])
@@ -570,6 +580,8 @@ model MarketplaceProduct {
   @@index([saleStatus])
   @@index([offerPriceValue])
   @@index([latitude, longitude])
+  @@index([coverageFlag])
+  @@index([coverageStateId])
 }
 
 model MarketplaceParty {
@@ -607,6 +619,8 @@ model Category {
   /// Client business code (e.g. PHY, AMB). Unique when set.
   code             String?           @unique
   description      String?
+  /// Optional icon shown on the service-provider category card.
+  image            String?
   /// CARE = Home tab, SERVICE = Providers tab
   type             CategoryType      @default(SERVICE)
   isActive         Boolean           @default(true)

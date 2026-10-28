@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -24,6 +25,11 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  image?: string | null;
 
   @IsOptional()
   @IsBoolean()
@@ -54,6 +60,11 @@ export class UpdateCategoryDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  image?: string | null;
 
   @IsOptional()
   @IsBoolean()

@@ -22,6 +22,7 @@ import {
   syncUserDisabilities,
 } from '../common/utils/user-profile';
 import { invalidateAuthCache } from '../common/utils/ttl-cache';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 import {
@@ -66,6 +67,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private push: PushService,
+    private mail: MailService,
   ) {}
 
   private sanitize(user: UserWithRelations | UserListRow) {
@@ -466,6 +468,13 @@ export class UsersService {
         data: { revokedAt: new Date() },
       });
       void this.push.markConversationsPeerUnavailable(id);
+    }
+
+    if (dto.role && dto.role !== existing.role.name) {
+      void this.mail.sendRoleApproval(existing.email, {
+        name: user.name || existing.name,
+        role: dto.role,
+      });
     }
 
     return this.sanitize(user);

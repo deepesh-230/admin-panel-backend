@@ -109,6 +109,11 @@ export class CategoriesService {
         sortOrder: true,
         createdAt: true,
         updatedAt: true,
+        keywords: {
+          where: { isActive: true },
+          select: { term: true },
+          orderBy: { term: 'asc' },
+        },
       },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
@@ -176,6 +181,7 @@ export class CategoriesService {
           name: dto.name,
           code,
           description: dto.description,
+          image: dto.image?.trim() || null,
           isActive: dto.isActive ?? true,
           sortOrder: dto.sortOrder ?? 0,
           type: dto.type ?? CategoryType.SERVICE,
@@ -210,6 +216,7 @@ export class CategoriesService {
           ...(dto.description !== undefined && {
             description: dto.description,
           }),
+          ...(dto.image !== undefined && { image: dto.image?.trim() || null }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
           ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
           ...(dto.type !== undefined && { type: dto.type }),

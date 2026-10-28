@@ -94,3 +94,9 @@ export function eventCoverageVisibilityWhere(
 ): Prisma.EventWhereInput {
   return { OR: coverageVisibilityClauses(viewer) };
 }
+
+export function productCoverageVisibilityWhere(
+  viewer?: ViewerLocation | null,
+): Prisma.MarketplaceProductWhereInput {
+  return { OR: coverageVisibilityClauses(viewer) };
+}

@@ -2,6 +2,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -99,6 +100,29 @@ export class ResetPasswordDto {
   @IsString()
   @MinLength(8)
   newPassword!: string;
+}
+
+export class SendOtpDto {
+  @IsEmail()
+  email!: string;
+
+  /** sms is the mobile message. email sends the same kind of code to the inbox. */
+  @IsOptional()
+  @IsIn(['sms', 'email'])
+  channel?: 'sms' | 'email';
+}
+
+export class VerifyOtpDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(4)
+  otp!: string;
+
+  @IsOptional()
+  @IsIn(['login', 'reset'])
+  purpose?: 'login' | 'reset';
 }
 
 export class ResetPasswordByOtpDto {

@@ -33,6 +33,7 @@ const helpTicketMessagesAsc = {
 
 const helpTicketViewSelect = {
   id: true,
+  ticketNo: true,
   userId: true,
   name: true,
   email: true,
@@ -131,6 +132,9 @@ export class CmsService {
             { phone: { contains: q, mode: 'insensitive' } },
             { message: { contains: q, mode: 'insensitive' } },
             { reply: { contains: q, mode: 'insensitive' } },
+            ...(/^\d+$/.test(q.replace(/^DD-/i, ''))
+              ? [{ ticketNo: Number(q.replace(/^DD-/i, '')) }]
+              : []),
           ],
         },
       ];
@@ -280,7 +284,7 @@ export class CmsService {
       await this.push.notifyUserInbox(
         existing.userId,
         BroadcastContentType.HELP_TICKET,
-        'Support replied',
+        `Support replied · DD-${existing.ticketNo}`,
         nextReply.slice(0, 180),
         { ticketId: id },
         threadUrl,
@@ -289,8 +293,8 @@ export class CmsService {
       await this.push.notifyUserInbox(
         existing.userId,
         BroadcastContentType.HELP_TICKET,
-        'Help request closed',
-        'Your help request has been closed.',
+        `Help request closed · DD-${existing.ticketNo}`,
+        `Your help request DD-${existing.ticketNo} has been closed.`,
         { ticketId: id },
         threadUrl,
       );
@@ -325,6 +329,7 @@ export class CmsService {
 
   private toHelpTicketView(row: {
     id: string;
+    ticketNo: number;
     userId: string | null;
     name: string;
     email: string;
@@ -344,6 +349,7 @@ export class CmsService {
   }) {
     return {
       id: row.id,
+      ticketNo: row.ticketNo,
       userId: row.userId,
       name: row.name,
       email: row.email,

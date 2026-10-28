@@ -97,6 +97,7 @@ export class BulkImportService {
         result.errors.push({
           row: rowNum,
           message: err instanceof Error ? err.message : 'Import failed',
+          record: rows[i],
         });
       }
     }
@@ -539,10 +540,25 @@ export class BulkImportService {
       approvalStatus = ProviderApprovalStatus.REJECTED;
     }
 
-    if (dryRun) return 'created';
-
     const address = pick(row, 'address') || undefined;
     const city = pick(row, 'city') || undefined;
+
+    // Same facility uploaded again must not create another row. Phone is not
+    // part of the match: Excel often rewrites it as scientific notation.
+    const existing = await this.prisma.serviceProvider.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        categoryId,
+        stateId,
+        ...(city
+          ? { city: { equals: city, mode: 'insensitive' } }
+          : { OR: [{ city: null }, { city: '' }] }),
+      },
+      select: { id: true },
+    });
+    if (existing) return 'skipped';
+
+    if (dryRun) return 'created';
     let latitude = parseFloatSafe(pick(row, 'latitude', 'lat'));
     let longitude = parseFloatSafe(pick(row, 'longitude', 'lng', 'lon'));
 
@@ -621,14 +637,33 @@ export class BulkImportService {
     const name = pick(row, 'name', 'product');
     if (!name) throw new BadRequestException('name is required');
 
-    if (dryRun) return 'created';
-
     const intentRaw = pick(
       row,
       'listingintent',
       'listing_intent',
       'intent',
     ).toLowerCase();
+    const listingIntent = intentRaw === 'buy' ? 'buy' : 'sell';
+    const sellerName =
+      pick(row, 'sellername', 'seller_name', 'seller') || undefined;
+    const address = pick(row, 'address') || undefined;
+    const existing = await this.prisma.marketplaceProduct.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        listingIntent,
+        ...(sellerName
+          ? { sellerName: { equals: sellerName, mode: 'insensitive' } }
+          : {}),
+        ...(address
+          ? { address: { equals: address, mode: 'insensitive' } }
+          : {}),
+      },
+      select: { id: true },
+    });
+    if (existing) return 'skipped';
+
+    if (dryRun) return 'created';
+
     const conditionRaw = pick(row, 'condition').toUpperCase();
     const condition =
       conditionRaw === 'NEW' ||
@@ -644,12 +679,11 @@ export class BulkImportService {
         offerPrice:
           pick(row, 'offerprice', 'offer_price', 'price') || undefined,
         phone: pick(row, 'phone') || undefined,
-        listingIntent: intentRaw === 'buy' ? 'buy' : 'sell',
+        listingIntent,
         condition,
-        sellerName:
-          pick(row, 'sellername', 'seller_name', 'seller') || undefined,
+        sellerName,
         description: pick(row, 'description') || undefined,
-        address: pick(row, 'address') || undefined,
+        address,
         color: pick(row, 'color') || undefined,
         brand: pick(row, 'brand') || undefined,
         features: pick(row, 'features') || undefined,
@@ -667,14 +701,29 @@ export class BulkImportService {
     const name = pick(row, 'name');
     if (!name) throw new BadRequestException('name is required');
 
+    const email = pick(row, 'email') || undefined;
+    const location = pick(row, 'location') || undefined;
+    const existing = await this.prisma.volunteer.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        ...(email
+          ? { email: { equals: email, mode: 'insensitive' } }
+          : location
+            ? { location: { equals: location, mode: 'insensitive' } }
+            : {}),
+      },
+      select: { id: true },
+    });
+    if (existing) return 'skipped';
+
     if (dryRun) return 'created';
 
     await this.prisma.volunteer.create({
       data: {
         name,
-        email: pick(row, 'email') || undefined,
+        email,
         phone: pick(row, 'phone') || undefined,
-        location: pick(row, 'location') || undefined,
+        location,
         isActive: parseBool(pick(row, 'isactive', 'active'), true),
       },
     });
@@ -694,9 +743,11 @@ export class BulkImportService {
       }
     }
 
+    const data = build(row);
+    if (await this.cmsRowExists(model, data)) return 'skipped';
+
     if (dryRun) return 'created';
 
-    const data = build(row);
     switch (model) {
       case 'faq':
         await this.prisma.faq.create({ data: data as Prisma.FaqCreateInput });
@@ -716,6 +767,44 @@ export class BulkImportService {
         break;
     }
     return 'created';
+  }
+
+  private async cmsRowExists(
+    model: 'faq' | 'blog' | 'jobAlert' | 'usefulLink',
+    data: Record<string, unknown>,
+  ) {
+    const title = String(data.title || '').trim();
+    if (model === 'faq') {
+      const row = await this.prisma.faq.findFirst({
+        where: { title: { equals: title, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      return !!row;
+    }
+    if (model === 'blog') {
+      const row = await this.prisma.blog.findFirst({
+        where: { title: { equals: title, mode: 'insensitive' } },
+        select: { id: true },
+      });
+      return !!row;
+    }
+    if (model === 'jobAlert') {
+      const postDate = data.postDate ? String(data.postDate) : undefined;
+      const row = await this.prisma.jobAlert.findFirst({
+        where: {
+          title: { equals: title, mode: 'insensitive' },
+          ...(postDate ? { postDate } : {}),
+        },
+        select: { id: true },
+      });
+      return !!row;
+    }
+    const url = String(data.url || '').trim();
+    const row = await this.prisma.usefulLink.findFirst({
+      where: { url: { equals: url, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return !!row;
   }
 
   getTemplate(entity: BulkImportEntity): {
