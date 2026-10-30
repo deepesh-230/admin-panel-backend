@@ -91,7 +91,14 @@ export class ListSubcategoriesQueryDto {
   limit?: number;
 
   @IsOptional()
-  @IsIn(['sortOrder', 'name', 'code', 'category', 'isActive'])
+  @IsIn([
+    'sortOrder',
+    'name',
+    'code',
+    'category',
+    'isActive',
+    'createdAt',
+  ])
   sortBy?: string;
 
   @IsOptional()

@@ -47,7 +47,9 @@ export class SubcategoriesService {
             ? { code: sortOrder }
             : query.sortBy === 'isActive'
               ? { isActive: sortOrder }
-              : { sortOrder };
+              : query.sortBy === 'createdAt'
+                ? { createdAt: sortOrder }
+                : { sortOrder };
 
     const [total, items] = await Promise.all([
       this.prisma.subcategory.count({ where }),

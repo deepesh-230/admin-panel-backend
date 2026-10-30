@@ -106,6 +106,11 @@ export class CreateMyServiceProviderDto {
   @IsString()
   @MaxLength(500)
   locationLabel?: string;
+
+  /** True when the creator is associated with this business. */
+  @IsOptional()
+  @IsBoolean()
+  associated?: boolean;
 }
 
 export class UpdateMyServiceProviderDto {

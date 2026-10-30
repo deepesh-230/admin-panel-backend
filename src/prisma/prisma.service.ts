@@ -675,6 +675,21 @@ export class PrismaService
         CREATE INDEX IF NOT EXISTS "ServiceProvider_businessVerificationStatus_idx"
         ON "ServiceProvider"("businessVerificationStatus")
       `);
+      await this.$executeRawUnsafe(`
+        ALTER TABLE "ServiceProvider" ADD COLUMN IF NOT EXISTS "claimUserId" TEXT
+      `);
+      await this.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ServiceProvider_claimUserId_idx"
+        ON "ServiceProvider"("claimUserId")
+      `);
+      await this.$executeRawUnsafe(`
+        DO $$ BEGIN
+          ALTER TABLE "ServiceProvider"
+            ADD CONSTRAINT "ServiceProvider_claimUserId_fkey"
+            FOREIGN KEY ("claimUserId") REFERENCES "User"("id")
+            ON DELETE SET NULL ON UPDATE CASCADE;
+        EXCEPTION WHEN duplicate_object THEN null; END $$
+      `);
     } catch (error) {
       this.logger.warn(
         `Could not ensure business verification columns: ${error instanceof Error ? error.message : String(error)}`,

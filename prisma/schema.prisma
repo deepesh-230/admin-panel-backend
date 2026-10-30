@@ -89,6 +89,7 @@ model User {
   refreshTokens            RefreshToken[]
   approvedServiceProviders ServiceProvider[]      @relation("ProviderApprovedBy")
   createdServiceProviders  ServiceProvider[]      @relation("ProviderCreatedBy")
+  claimedServiceProviders  ServiceProvider[]      @relation("ProviderClaimedBy")
   serviceProviderAdmins    ServiceProviderAdmin[]
   sessions                 Session[]
   marketplaceProducts      MarketplaceProduct[]
@@ -227,12 +228,17 @@ model ServiceProvider {
   sponsorPlanId  String?
   sponsoredUntil DateTime?
   createdById    String?
+  /// False when the creator listed the business but is not associated with it.
+  creatorAssociated Boolean @default(true)
+  /// User who asked to take over an unassociated business. Set until an admin approves.
+  claimUserId    String?
   approvedById   String?
   approvedAt     DateTime?
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   approvedBy     User?                  @relation("ProviderApprovedBy", fields: [approvedById], references: [id])
   category       Category               @relation(fields: [categoryId], references: [id])
+  claimUser      User?                  @relation("ProviderClaimedBy", fields: [claimUserId], references: [id])
   createdBy      User?                  @relation("ProviderCreatedBy", fields: [createdById], references: [id])
   state          State                  @relation(fields: [stateId], references: [id])
   subcategory    Subcategory?           @relation(fields: [subcategoryId], references: [id])
@@ -254,6 +260,7 @@ model ServiceProvider {
   @@index([categoryId, subcategoryId])
   @@index([sponsoredUntil])
   @@index([sponsorPlanId])
+  @@index([claimUserId])
 }
 
 /// Many-to-many: one service provider can belong to multiple subcategories under its category

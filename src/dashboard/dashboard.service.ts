@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import {
   AdminLifecycleFlag,
+  BusinessVerificationStatus,
   MarketplaceApprovalStatus,
   Prisma,
   ProviderApprovalStatus,
@@ -113,10 +114,30 @@ type SubmitterCounts = {
 };
 
 @Injectable()
-export class DashboardService {
+export class DashboardService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DashboardService.name);
+  private purgeTimer?: ReturnType<typeof setInterval>;
 
   constructor(private prisma: PrismaService) {}
+
+  onModuleInit() {
+    void this.purgeDeleted(60).catch((err) =>
+      this.logger.warn(
+        `Scheduled purge failed: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+    this.purgeTimer = setInterval(() => {
+      void this.purgeDeleted(60).catch((err) =>
+        this.logger.warn(
+          `Scheduled purge failed: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
+    }, 24 * 60 * 60 * 1000);
+  }
+
+  onModuleDestroy() {
+    if (this.purgeTimer) clearInterval(this.purgeTimer);
+  }
 
   /** Soft-deleted records flagged DELETE older than 60 days are hard-removed. */
   async purgeDeleted(olderThanDays = 60) {
@@ -269,7 +290,12 @@ export class DashboardService {
           }),
         () =>
           this.prisma.serviceProvider.groupBy({
-            by: ['stateId', 'isActive', 'approvalStatus'],
+            by: [
+              'stateId',
+              'isActive',
+              'approvalStatus',
+              'businessVerificationStatus',
+            ],
             where: providerWhere,
             _count: { _all: true },
           }),
@@ -436,6 +462,7 @@ export class DashboardService {
           stateId: string;
           isActive: boolean;
           approvalStatus: ProviderApprovalStatus;
+          businessVerificationStatus: BusinessVerificationStatus;
         }>[],
         number,
         CountAll<{
@@ -566,6 +593,7 @@ export class DashboardService {
       let totalServiceProviders = 0;
       let activeServiceProviders = 0;
       let verifiedProviders = 0;
+      let pendingBusinessVerifications = 0;
       const providersByStateMap = new Map<
         string,
         {
@@ -582,6 +610,11 @@ export class DashboardService {
         if (row.isActive) activeServiceProviders += count;
         if (row.approvalStatus === ProviderApprovalStatus.APPROVED)
           verifiedProviders += count;
+        if (
+          row.businessVerificationStatus ===
+          BusinessVerificationStatus.IN_PROGRESS
+        )
+          pendingBusinessVerifications += count;
         if (!providersByStateMap.has(row.stateId)) {
           providersByStateMap.set(row.stateId, {
             stateId: row.stateId,
@@ -771,6 +804,7 @@ export class DashboardService {
         overview: {
           activeUsers,
           serviceProviders: totalServiceProviders,
+          pendingBusinessVerifications,
           enquiries: openEnquiries + closedEnquiries,
           openEnquiries,
           closedEnquiries,
@@ -914,6 +948,11 @@ export class DashboardService {
             WHERE sp."approvalStatus"::text = 'APPROVED'
               ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
           ) AS "verifiedProviders",
+          (
+            SELECT COUNT(*)::int FROM "ServiceProvider" sp
+            WHERE sp."businessVerificationStatus"::text = 'IN_PROGRESS'
+              ${sqlStateIn(Prisma.sql`sp."stateId"`, stateIds)}
+          ) AS "pendingBusinessVerifications",
           (
             SELECT COUNT(*)::int FROM "ServiceProvider" sp
             WHERE sp."isActive" = true
@@ -1188,6 +1227,9 @@ export class DashboardService {
     const totalServiceProviders = asNum(row.totalServiceProviders);
     const activeServiceProviders = asNum(row.activeServiceProviders);
     const verifiedProviders = asNum(row.verifiedProviders);
+    const pendingBusinessVerifications = asNum(
+      row.pendingBusinessVerifications,
+    );
     const openEnquiries = asNum(row.openEnquiries);
     const closedEnquiries = asNum(row.closedEnquiries);
     const newSaleListings7d = asNum(row.newSaleListings7d);
@@ -1337,6 +1379,7 @@ export class DashboardService {
       overview: {
         activeUsers,
         serviceProviders: totalServiceProviders,
+        pendingBusinessVerifications,
         enquiries: openEnquiries + closedEnquiries,
         openEnquiries,
         closedEnquiries,

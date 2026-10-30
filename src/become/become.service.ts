@@ -413,26 +413,33 @@ export class BecomeService {
             { action: 'BECOME_APPROVED', target: updated.target },
           );
         }
-        const email = updated.user?.email || existing.email;
-        const approvedRole =
-          promotedRole ||
-          (updated.target === BecomeTarget.PROVIDER_ADMIN
-            ? RoleName.SERVICE_PROVIDER_ADMIN
-            : updated.target === BecomeTarget.VOLUNTEER
-              ? RoleName.VOLUNTEER
-              : updated.target === BecomeTarget.STATE_ADMIN
-                ? RoleName.STATE_ADMIN
-                : null);
-        if (email && approvedRole) {
-          void this.mail.sendRoleApproval(email, {
-            name: updated.user?.name || updated.name,
-            role: approvedRole,
-          });
-        }
       }
     }
 
-    return updated;
+    let emailSent = false;
+    let emailTo: string | null = null;
+    if (becameApproved) {
+      const email = updated.user?.email || existing.email;
+      const approvedRole =
+        promotedRole ||
+        (updated.target === BecomeTarget.PROVIDER_ADMIN
+          ? RoleName.SERVICE_PROVIDER_ADMIN
+          : updated.target === BecomeTarget.VOLUNTEER
+            ? RoleName.VOLUNTEER
+            : updated.target === BecomeTarget.STATE_ADMIN
+              ? RoleName.STATE_ADMIN
+              : null);
+      emailTo = email?.trim() || null;
+      if (emailTo && approvedRole) {
+        const result = await this.mail.sendRoleApproval(emailTo, {
+          name: updated.user?.name || updated.name,
+          role: approvedRole,
+        });
+        emailSent = result.sent;
+      }
+    }
+
+    return { ...updated, emailSent, emailTo };
   }
 
   /**
@@ -541,15 +548,17 @@ export class BecomeService {
       `You have been promoted to state admin${stateName ? ` for ${stateName}` : ''}. Sign in to the admin dashboard with the same email and password. You have been signed out of the mobile app.`,
       { action: 'STATE_ADMIN_PROMOTED', forceLogout: '1' },
     );
-    const email = stateAdminApp.user?.email || existing.email;
-    if (email) {
-      void this.mail.sendRoleApproval(email, {
+    const emailTo = (stateAdminApp.user?.email || existing.email)?.trim() || null;
+    let emailSent = false;
+    if (emailTo) {
+      const result = await this.mail.sendRoleApproval(emailTo, {
         name: stateAdminApp.user?.name || existing.name,
         role: RoleName.STATE_ADMIN,
       });
+      emailSent = result.sent;
     }
 
-    return stateAdminApp;
+    return { ...stateAdminApp, emailSent, emailTo };
   }
 
   async listMine(params: { userId?: string; email?: string }) {

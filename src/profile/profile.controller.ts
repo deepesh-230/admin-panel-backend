@@ -240,6 +240,14 @@ export class ProfileController {
     return this.serviceProviders.findOneForUser(user.id, id);
   }
 
+  @Get('service-providers/:id/enquiries')
+  myServiceProviderEnquiries(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.serviceProviders.listEnquiriesForUser(user.id, id);
+  }
+
   @Post('service-providers')
   createMyServiceProvider(
     @CurrentUser() user: AuthUser,
@@ -263,6 +271,15 @@ export class ProfileController {
     @Param('id') id: string,
   ) {
     return this.serviceProviders.removeForUser(user.id, id);
+  }
+
+  @Post('service-providers/:id/claim')
+  claimServiceProvider(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SubmitBusinessVerificationDto,
+  ) {
+    return this.serviceProviders.claimForUser(user.id, id, dto);
   }
 
   @Post('service-providers/:id/business-verification')

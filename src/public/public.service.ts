@@ -6,6 +6,7 @@ import {
   CategoryType,
   EnquiryStatus,
   AdminLifecycleFlag,
+  CoverageFlag,
 } from '@prisma/client';
 import { BecomeService } from '../become/become.service';
 import { CreateBecomeApplicationDto } from '../become/dto/become.dto';
@@ -141,16 +142,26 @@ export class PublicService {
     return this.systemSettings.listPublicJobAlerts();
   }
 
-  /** Upcoming / ongoing active events visible for the viewer's coverage. */
-  listEvents(viewer?: { stateId?: string; city?: string }) {
+  /** Active events visible for the viewer's coverage, optionally inside a date range. */
+  listEvents(viewer?: {
+    stateId?: string;
+    city?: string;
+    from?: string;
+    to?: string;
+    coverageFlag?: string;
+  }) {
     const now = new Date();
+    const rangeStart = parseEventDay(viewer?.from, 'start') ?? now;
+    const rangeEnd = parseEventDay(viewer?.to, 'end');
+    const flag = parseEventCoverageFlag(viewer?.coverageFlag);
     return this.prisma.event.findMany({
       where: {
         isActive: true,
-        adminFlag: { not: AdminLifecycleFlag.DELETE },
-        deletedAt: null,
+        adminFlag: { not: AdminLifecycleFlag.READ },
+        ...(flag ? { coverageFlag: flag } : {}),
         AND: [
-          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: rangeStart } }] },
+          ...(rangeEnd ? [{ startsAt: { lte: rangeEnd } }] : []),
           eventCoverageVisibilityWhere(viewer),
         ],
       },
@@ -160,6 +171,21 @@ export class PublicService {
       orderBy: { startsAt: 'asc' },
       take: 100,
     });
+  }
+
+  async getEvent(id: string) {
+    const row = await this.prisma.event.findFirst({
+      where: {
+        id,
+        isActive: true,
+        adminFlag: { not: AdminLifecycleFlag.READ },
+      },
+      include: {
+        coverageState: { select: { id: true, name: true, code: true } },
+      },
+    });
+    if (!row) throw new NotFoundException('Event not found');
+    return row;
   }
 
   async listPaymentPlans() {
@@ -292,6 +318,7 @@ export class PublicService {
           name: true,
           stateId: true,
           businessVerificationStatus: true,
+          creatorAssociated: true,
           createdBy: {
             select: {
               id: true,
@@ -336,8 +363,11 @@ export class PublicService {
           : null,
       );
 
-      // Verified + chat-capable peer → SPA inbox. Otherwise → state/central admin.
-      const routeToProvider = verified && chat.chatEnabled;
+      // The person who added a listing they are not associated with must not
+      // receive its enquiries. Those go to the state/central admin inbox.
+      const unassociated = provider.creatorAssociated === false;
+      // Verified + chat-capable peer → provider inbox. Otherwise → admin.
+      const routeToProvider = !unassociated && verified && chat.chatEnabled;
       providerId = routeToProvider ? provider.id : null;
       stateId = provider.stateId;
       kind = routeToProvider ? 'PROVIDER' : 'STATE_ADMIN';
@@ -345,9 +375,11 @@ export class PublicService {
       category = dto.category || provider.category?.name || 'Provider';
       subCategory = dto.subCategory || 'Service';
       if (!routeToProvider) {
-        const reason = !verified
-          ? `business not verified: ${provider.name}`
-          : `no chat-capable provider admin: ${provider.name}`;
+        const reason = unassociated
+          ? `creator is not associated with this business: ${provider.name}`
+          : !verified
+            ? `business not verified: ${provider.name}`
+            : `no chat-capable provider admin: ${provider.name}`;
         const note = `[Routed to central/state admin — ${reason}]`;
         message = message?.trim() ? `${message.trim()}\n\n${note}` : note;
       }
@@ -389,4 +421,32 @@ export class PublicService {
   listMyBecomeApplications(params: { userId?: string; email?: string }) {
     return this.become.listMine(params);
   }
+}
+
+function parseEventCoverageFlag(value?: string) {
+  const flag = String(value || '')
+    .trim()
+    .toUpperCase();
+  if (
+    flag === CoverageFlag.NATIONAL ||
+    flag === CoverageFlag.STATE ||
+    flag === CoverageFlag.LOCAL
+  ) {
+    return flag;
+  }
+  return undefined;
+}
+
+/** Date-only values cover the whole UTC day. Invalid values are ignored. */
+function parseEventDay(value: string | undefined, edge: 'start' | 'end') {
+  const text = value?.trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const iso =
+      edge === 'start' ? `${text}T00:00:00.000Z` : `${text}T23:59:59.999Z`;
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
 }

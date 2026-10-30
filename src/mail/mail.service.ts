@@ -27,7 +27,6 @@ export class MailService {
   constructor(private config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST');
     if (host) {
-      console.log('SMTP_HOST', host);
       this.transporter = nodemailer.createTransport({
         host,
         port: Number(this.config.get<string>('SMTP_PORT') || 587),
@@ -36,6 +35,9 @@ export class MailService {
           user: this.config.get<string>('SMTP_USER') || undefined,
           pass: this.config.get<string>('SMTP_PASS') || undefined,
         },
+        connectionTimeout: 20_000,
+        greetingTimeout: 20_000,
+        socketTimeout: 20_000,
       });
     }
   }
@@ -134,9 +136,14 @@ export class MailService {
     url?: string;
     steps: string[];
   } | null {
-    const dashboard = (
-      this.config.get<string>('ADMIN_URL') || 'http://localhost:5173'
-    ).replace(/\/$/, '');
+    // Skip localhost so applicants are not sent a developer-only dashboard link.
+    const configured = (this.config.get<string>('ADMIN_URL') || '')
+      .trim()
+      .replace(/\/$/, '');
+    const dashboard =
+      configured && !/localhost|127\.0\.0\.1/i.test(configured)
+        ? configured
+        : undefined;
 
     if (role === RoleName.VOLUNTEER) {
       return {
@@ -150,12 +157,16 @@ export class MailService {
       };
     }
 
+    const openDashboard = dashboard
+      ? `Open the admin dashboard: ${dashboard}`
+      : 'Open the Divyaang Disha admin dashboard.';
+
     if (role === RoleName.SERVICE_PROVIDER_ADMIN) {
       return {
         label: 'Service provider admin',
         url: dashboard,
         steps: [
-          `Open the admin dashboard: ${dashboard}`,
+          openDashboard,
           'Sign in with this email and your current password.',
           'Open Service providers and select the listing linked to your account.',
           'Update the services and contact details so people can find you.',
@@ -168,7 +179,7 @@ export class MailService {
         label: 'State admin',
         url: dashboard,
         steps: [
-          `Open the admin dashboard: ${dashboard}`,
+          openDashboard,
           'Sign in with this email and your current password.',
           'You are signed out of the mobile app. State admin work is done on this dashboard.',
           'Review users, listings, and applications for your state.',
@@ -181,7 +192,7 @@ export class MailService {
         label: 'Admin',
         url: dashboard,
         steps: [
-          `Open the admin dashboard: ${dashboard}`,
+          openDashboard,
           'Sign in with this email and your current password.',
           'You are signed out of the mobile app. Admin work is done on this dashboard.',
           'Use the dashboard to manage users, listings, and applications.',
@@ -204,9 +215,16 @@ export class MailService {
       this.config.get<string>('MAIL_FROM') ||
       this.config.get<string>('SMTP_USER') ||
       'noreply@divyaangdisha.com';
-      console.log('from', from);
-    await this.transporter.sendMail({ from, ...message });
-    this.logger.log(`${message.subject} email sent to ${message.to}`);
-    return { sent: true as const };
+    try {
+      await this.transporter.sendMail({ from, ...message });
+      this.logger.log(`${message.subject} email sent to ${message.to}`);
+      return { sent: true as const };
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'Mail send failed';
+      this.logger.error(
+        `Failed to send "${message.subject}" to ${message.to}: ${reason}`,
+      );
+      return { sent: false as const };
+    }
   }
 }

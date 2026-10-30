@@ -17,7 +17,11 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CategoryType, ProviderApprovalStatus } from '@prisma/client';
+import {
+  BusinessVerificationStatus,
+  CategoryType,
+  ProviderApprovalStatus,
+} from '@prisma/client';
 
 export class CreateServiceProviderDto {
   @IsString()
@@ -343,6 +347,10 @@ export class ListServiceProvidersQueryDto {
   @IsOptional()
   @IsEnum(ProviderApprovalStatus)
   approvalStatus?: ProviderApprovalStatus;
+
+  @IsOptional()
+  @IsEnum(BusinessVerificationStatus)
+  businessVerificationStatus?: BusinessVerificationStatus;
 
   @IsOptional()
   @IsString()

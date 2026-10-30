@@ -206,7 +206,10 @@ export class DashboardController {
       case 'jobAlert':
         return this.prisma.jobAlert.update({ where: { id: dto.id }, data });
       case 'event':
-        return this.prisma.event.update({ where: { id: dto.id }, data });
+        return this.prisma.event.update({
+          where: { id: dto.id },
+          data: this.eventFlagData(dto.flag),
+        });
       case 'marketplaceProduct':
         return this.prisma.marketplaceProduct.update({
           where: { id: dto.id },
@@ -225,11 +228,12 @@ export class DashboardController {
     @Query('to') to?: string,
     @Query('coverageFlag') coverageFlag?: string,
   ) {
-    const now = new Date();
-    const windowStart = from ? new Date(from) : now;
-    const windowEnd = to
-      ? new Date(to)
-      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const windowStart = from ? new Date(from) : undefined;
+    const windowEnd = to ? new Date(to) : undefined;
+    const startBound =
+      windowStart && !Number.isNaN(windowStart.getTime()) ? windowStart : undefined;
+    const endBound =
+      windowEnd && !Number.isNaN(windowEnd.getTime()) ? windowEnd : undefined;
     const flag = String(coverageFlag || '')
       .trim()
       .toUpperCase();
@@ -241,10 +245,10 @@ export class DashboardController {
         : {};
     return this.prisma.event.findMany({
       where: {
-        adminFlag: { not: AdminLifecycleFlag.DELETE },
-        deletedAt: null,
-        startsAt: { lte: windowEnd },
-        OR: [{ endsAt: null }, { endsAt: { gte: windowStart } }],
+        ...(endBound ? { startsAt: { lte: endBound } } : {}),
+        ...(startBound
+          ? { OR: [{ endsAt: null }, { endsAt: { gte: startBound } }] }
+          : {}),
         ...coverageWhere,
       },
       include: this.eventInclude,
@@ -297,12 +301,6 @@ export class DashboardController {
           ? dto.coverageCity
           : existing.coverageCity,
     });
-    const deletedAt =
-      dto.adminFlag === AdminLifecycleFlag.DELETE
-        ? new Date()
-        : dto.adminFlag
-          ? null
-          : undefined;
     return this.prisma.event.update({
       where: { id },
       data: {
@@ -323,9 +321,9 @@ export class DashboardController {
         ...(dto.contactInfo !== undefined && {
           contactInfo: dto.contactInfo?.trim() || null,
         }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-        ...(dto.adminFlag !== undefined && { adminFlag: dto.adminFlag }),
-        ...(deletedAt !== undefined && { deletedAt }),
+        ...(dto.isActive !== undefined &&
+          dto.adminFlag === undefined && { isActive: dto.isActive }),
+        ...(dto.adminFlag !== undefined && this.eventFlagData(dto.adminFlag)),
         ...coverage,
       },
       include: this.eventInclude,
@@ -336,14 +334,29 @@ export class DashboardController {
   @Roles(RoleName.ADMIN, RoleName.STATE_ADMIN, RoleName.SERVICE_PROVIDER_ADMIN)
   @Permissions('events.write')
   async removeEvent(@Param('id') id: string) {
-    await this.prisma.event.update({
-      where: { id },
-      data: {
-        adminFlag: AdminLifecycleFlag.DELETE,
-        deletedAt: new Date(),
-        isActive: false,
-      },
-    });
+    await this.prisma.event.delete({ where: { id } });
     return { id, deleted: true };
+  }
+
+  /** Delete flag starts the 60-day purge clock. Inactive hides the event now. */
+  private eventFlagData(flag: AdminLifecycleFlag) {
+    if (flag === AdminLifecycleFlag.DELETE) {
+      return {
+        adminFlag: flag,
+        deletedAt: new Date(),
+      };
+    }
+    if (flag === AdminLifecycleFlag.READ) {
+      return {
+        adminFlag: flag,
+        deletedAt: null,
+        isActive: false,
+      };
+    }
+    return {
+      adminFlag: AdminLifecycleFlag.ACTIVE,
+      deletedAt: null,
+      isActive: true,
+    };
   }
 }

@@ -471,7 +471,7 @@ export class UsersService {
     }
 
     if (dto.role && dto.role !== existing.role.name) {
-      void this.mail.sendRoleApproval(existing.email, {
+      await this.mail.sendRoleApproval(existing.email, {
         name: user.name || existing.name,
         role: dto.role,
       });

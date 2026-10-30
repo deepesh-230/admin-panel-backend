@@ -82,9 +82,27 @@ export class PublicController {
   }
 
   @Get('events')
-  @Header('Cache-Control', 'public, max-age=60')
-  listEvents(@Query('stateId') stateId?: string, @Query('city') city?: string) {
-    return this.publicService.listEvents({ stateId, city });
+  @Header('Cache-Control', 'no-store')
+  listEvents(
+    @Query('stateId') stateId?: string,
+    @Query('city') city?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('coverageFlag') coverageFlag?: string,
+  ) {
+    return this.publicService.listEvents({
+      stateId,
+      city,
+      from,
+      to,
+      coverageFlag,
+    });
+  }
+
+  @Get('events/:id')
+  @Header('Cache-Control', 'no-store')
+  getEvent(@Param('id') id: string) {
+    return this.publicService.getEvent(id);
   }
 
   @Get('payment-plans')

@@ -58,6 +58,7 @@ const providerInclude = {
     },
   },
   approvedBy: { select: { id: true, name: true, email: true } },
+  claimUser: { select: { id: true, name: true, email: true } },
   admins: {
     include: {
       user: {
@@ -94,6 +95,7 @@ const providerListInclude = {
     },
   },
   approvedBy: { select: { id: true, name: true, email: true } },
+  claimUser: { select: { id: true, name: true, email: true } },
   _count: { select: { admins: true } },
 } as const;
 
@@ -195,6 +197,15 @@ export class ServiceProvidersService {
         provider.sponsorPlanId,
       ),
       createdById: provider.createdById,
+      creatorAssociated: provider.creatorAssociated,
+      claimUserId: provider.claimUserId,
+      claimUser: provider.claimUser
+        ? {
+            id: provider.claimUser.id,
+            name: provider.claimUser.name,
+            email: provider.claimUser.email,
+          }
+        : null,
       approvedById: provider.approvedById,
       approvedAt: provider.approvedAt,
       category: provider.category,
@@ -448,6 +459,19 @@ export class ServiceProvidersService {
 
     if (options?.providerAdminUserId) {
       where.admins = { some: { userId: options.providerAdminUserId } };
+    } else if (query.adminUserId) {
+      const and = Array.isArray(where.AND)
+        ? where.AND
+        : where.AND
+          ? [where.AND]
+          : [];
+      and.push({
+        OR: [
+          { createdById: query.adminUserId },
+          { admins: { some: { userId: query.adminUserId } } },
+        ],
+      });
+      where.AND = and;
     }
 
     if (options?.forceApprovedActive) {
@@ -455,6 +479,9 @@ export class ServiceProvidersService {
       where.isActive = true;
     } else {
       if (query.approvalStatus) where.approvalStatus = query.approvalStatus;
+      if (query.businessVerificationStatus) {
+        where.businessVerificationStatus = query.businessVerificationStatus;
+      }
       if (query.isActive === 'true') where.isActive = true;
       if (query.isActive === 'false') where.isActive = false;
     }
@@ -998,6 +1025,9 @@ export class ServiceProvidersService {
       existing.nmcId ||
       existing.panId,
     );
+    const claimAccepted = Boolean(
+      existing.claimUserId && existing.creatorAssociated === false,
+    );
     const provider = await this.prisma.serviceProvider.update({
       where: { id },
       data: {
@@ -1013,12 +1043,37 @@ export class ServiceProvidersService {
               verificationNote: null,
             }
           : {}),
+        // An approved claim makes that user the associated manager.
+        ...(claimAccepted
+          ? {
+              creatorAssociated: true,
+              createdById: existing.claimUserId,
+            }
+          : {}),
       },
       include: providerInclude,
     });
 
+    if (claimAccepted && existing.claimUserId) {
+      await this.prisma.serviceProviderAdmin.upsert({
+        where: {
+          serviceProviderId_userId: {
+            serviceProviderId: id,
+            userId: existing.claimUserId,
+          },
+        },
+        create: {
+          serviceProviderId: id,
+          userId: existing.claimUserId,
+          isPrimary: true,
+        },
+        update: { isPrimary: true },
+      });
+    }
+
     const recipientIds = [
       existing.createdById,
+      existing.claimUserId,
       ...existing.admins.map((admin) => admin.userId),
     ].filter((uid): uid is string => Boolean(uid));
     void this.push.notifyApproval(
@@ -1042,6 +1097,7 @@ export class ServiceProvidersService {
         isActive: false,
         businessVerificationStatus: BusinessVerificationStatus.REJECTED,
         verificationNote: reason.trim(),
+        claimUserId: null,
       },
       include: providerInclude,
     });
@@ -1165,6 +1221,35 @@ export class ServiceProvidersService {
     return this.sanitize(provider);
   }
 
+  async listEnquiriesForUser(userId: string, providerId: string) {
+    const provider = await this.assertUserOwnsProvider(userId, providerId);
+    if (provider.creatorAssociated === false) return [];
+    const rows = await this.prisma.enquiry.findMany({
+      where: { providerId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        message: true,
+        date: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      phone: row.phone,
+      message: row.message,
+      date: row.date,
+      status: row.status,
+      createdAt: row.createdAt,
+    }));
+  }
+
   private async resolveStateIdForUser(
     userId: string,
     stateId?: string,
@@ -1230,6 +1315,7 @@ export class ServiceProvidersService {
       coverPhotoUrl?: string;
       gallery?: string[];
       locationLabel?: string;
+      associated?: boolean;
     },
     creatorRole?: string | null,
   ) {
@@ -1269,6 +1355,7 @@ export class ServiceProvidersService {
         isActive: true,
         approvalStatus,
         createdById: userId,
+        creatorAssociated: data.associated !== false,
         approvedById: autoApprove ? userId : undefined,
         approvedAt: autoApprove ? new Date() : undefined,
       },
@@ -1499,6 +1586,83 @@ export class ServiceProvidersService {
       include: providerInclude,
     });
 
+    return this.sanitize(provider);
+  }
+
+  /** Ask to manage a business that is not associated with anyone. */
+  async claimForUser(
+    userId: string,
+    id: string,
+    data: {
+      mcaId?: string;
+      din?: string;
+      gstin?: string;
+      nmcId?: string;
+      panId?: string;
+    },
+  ) {
+    const existing = await this.prisma.serviceProvider.findUnique({
+      where: { id },
+    });
+    if (!existing) throw new NotFoundException('Service provider not found');
+    if (existing.creatorAssociated !== false) {
+      throw new BadRequestException(
+        'This business is already associated with someone',
+      );
+    }
+    if (
+      existing.businessVerificationStatus ===
+      BusinessVerificationStatus.VERIFIED
+    ) {
+      throw new BadRequestException('Business is already verified');
+    }
+    if (
+      existing.businessVerificationStatus ===
+        BusinessVerificationStatus.IN_PROGRESS &&
+      existing.claimUserId &&
+      existing.claimUserId !== userId
+    ) {
+      throw new ConflictException(
+        'Someone has already submitted a claim for this business',
+      );
+    }
+
+    const mcaId = data.mcaId?.trim().toUpperCase() || null;
+    const din = data.din?.trim().toUpperCase() || null;
+    const gstin = data.gstin?.trim().toUpperCase() || null;
+    const nmcId = data.nmcId?.trim().toUpperCase() || null;
+    const panId = data.panId?.trim().toUpperCase() || null;
+
+    if (!mcaId && !din && !gstin && !nmcId && !panId) {
+      throw new BadRequestException(
+        'Provide at least one of MCA ID, DIN, GSTIN, NMC ID, or PAN',
+      );
+    }
+    if (
+      gstin &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)
+    ) {
+      throw new BadRequestException('Invalid GSTIN format');
+    }
+    if (panId && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panId)) {
+      throw new BadRequestException('Invalid PAN format');
+    }
+
+    const provider = await this.prisma.serviceProvider.update({
+      where: { id },
+      data: {
+        mcaId,
+        din,
+        gstin,
+        nmcId,
+        panId,
+        claimUserId: userId,
+        businessVerificationStatus: BusinessVerificationStatus.IN_PROGRESS,
+        verificationSubmittedAt: new Date(),
+        verificationNote: null,
+      },
+      include: providerInclude,
+    });
     return this.sanitize(provider);
   }
 }
