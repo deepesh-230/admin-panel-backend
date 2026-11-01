@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -26,6 +27,7 @@ import {
   RegisterDto,
   ResetPasswordByOtpDto,
   ResetPasswordDto,
+  UpdateMeDto,
   VerifyOtpDto,
 } from './dto/auth.dto';
 
@@ -52,6 +54,31 @@ export class AuthService {
 
   private newOtp() {
     return String(randomInt(0, 10000)).padStart(4, '0');
+  }
+
+  /** Play review login only. Password reset still requires a real SMS code. */
+  private reviewLoginIdentity(): { email: string; otp: string } | null {
+    const email =
+      this.config.get<string>('REVIEW_LOGIN_EMAIL')?.trim().toLowerCase() ?? '';
+    const otp = (this.config.get<string>('REVIEW_LOGIN_OTP') ?? '').replace(
+      /\D/g,
+      '',
+    );
+    if (!email || !/^\d{4}$/.test(otp)) return null;
+    return { email, otp };
+  }
+
+  private isReviewAccount(email: string): boolean {
+    const review = this.reviewLoginIdentity();
+    return !!review && email.trim().toLowerCase() === review.email;
+  }
+
+  private matchesReviewOtp(email: string, otp: string): boolean {
+    const review = this.reviewLoginIdentity();
+    if (!review || email.trim().toLowerCase() !== review.email) return false;
+    const code = otp.replace(/\D/g, '');
+    if (code.length !== review.otp.length) return false;
+    return timingSafeEqual(Buffer.from(code), Buffer.from(review.otp));
   }
 
   private async storeOtp(userId: string, otp: string) {
@@ -316,7 +343,9 @@ export class AuthService {
         'A mobile number is required to receive the OTP',
       );
     }
-    await this.issueSmsOtp(user.id, user.phone);
+    if (!this.isReviewAccount(user.email)) {
+      await this.issueSmsOtp(user.id, user.phone);
+    }
 
     const tokens = await this.issueTokens(user.id, user.email, meta);
 
@@ -428,7 +457,9 @@ export class AuthService {
           'A mobile number is required to receive the OTP',
         );
       }
-      await this.issueSmsOtp(row.id, row.phone);
+      if (!this.isReviewAccount(email)) {
+        await this.issueSmsOtp(row.id, row.phone);
+      }
     }
 
     const tokenStarted = Date.now();
@@ -606,6 +637,71 @@ export class AuthService {
     };
   }
 
+  async updateMe(userId: string, dto: UpdateMeDto) {
+    const name = dto.name.trim();
+    if (!name) throw new BadRequestException('Name is required');
+    const phone = dto.phone?.trim() || null;
+    if (phone && !/^\d{10}$/.test(phone)) {
+      throw new BadRequestException('Enter a valid 10-digit mobile number');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, userStates: { select: { stateId: true } } },
+    });
+    if (!existing?.isActive) throw new UnauthorizedException('User not found');
+
+    let stateId = dto.stateId;
+    if (existing.role.name === RoleName.STATE_ADMIN) {
+      const allowed = new Set(
+        [existing.stateId, ...existing.userStates.map((row) => row.stateId)].filter(
+          (id): id is string => Boolean(id),
+        ),
+      );
+      if (stateId && !allowed.has(stateId)) {
+        throw new ForbiddenException(
+          'You can only keep a state already assigned to you',
+        );
+      }
+      if (!stateId) stateId = existing.stateId;
+    }
+
+    const place = await resolvePlaceProfileFields(this.prisma, {
+      location: dto.location,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      pincode: dto.pincode,
+      stateId,
+      stateName: dto.stateName,
+    });
+
+    const disabilityIds =
+      dto.disabilitySubcategoryIds !== undefined
+        ? await assertSubcategoryIds(this.prisma, dto.disabilitySubcategoryIds)
+        : undefined;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          name,
+          phone,
+          km: dto.km,
+          ageRange: dto.ageRange === undefined ? undefined : dto.ageRange,
+          ...(dto.image !== undefined ? { image: dto.image?.trim() || null } : {}),
+          ...place,
+        },
+      });
+
+      if (disabilityIds !== undefined) {
+        await syncUserDisabilities(tx, userId, disabilityIds);
+      }
+    });
+
+    return this.me(userId);
+  }
+
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
@@ -711,6 +807,19 @@ export class AuthService {
         'A mobile number is required to receive the OTP',
       );
     }
+    if (this.isReviewAccount(user.email)) {
+      return {
+        success: true,
+        message: 'OTP sent',
+        data:
+          channel === 'email'
+            ? { channel: 'email' as const }
+            : {
+                phoneMasked: this.msg91.mask(user.phone as string),
+                channel: 'sms' as const,
+              },
+      };
+    }
     const sent =
       channel === 'email'
         ? await this.issueEmailOtp(user.id, user.email)
@@ -728,6 +837,22 @@ export class AuthService {
     });
     if (!user?.phone) {
       throw new BadRequestException('Invalid OTP');
+    }
+
+    if (dto.purpose !== 'reset' && this.matchesReviewOtp(user.email, dto.otp)) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          otpCodeHash: null,
+          otpExpiresAt: null,
+          emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+        },
+      });
+      return {
+        success: true,
+        message: 'OTP verified',
+        data: { verified: true },
+      };
     }
 
     await this.assertSmsOtp(user, dto.otp);

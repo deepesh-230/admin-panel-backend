@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Req,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import {
   ResetPasswordByOtpDto,
   ResetPasswordDto,
   SendOtpDto,
+  UpdateMeDto,
   VerifyOtpDto,
 } from './dto/auth.dto';
 
@@ -111,5 +113,17 @@ export class AuthController {
   )
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
+  }
+
+  @Patch('me')
+  @Roles(
+    RoleName.ADMIN,
+    RoleName.STATE_ADMIN,
+    RoleName.END_USER,
+    RoleName.SERVICE_PROVIDER_ADMIN,
+    RoleName.VOLUNTEER,
+  )
+  updateMe(@CurrentUser() user: AuthUser, @Body() dto: UpdateMeDto) {
+    return this.authService.updateMe(user.id, dto);
   }
 }

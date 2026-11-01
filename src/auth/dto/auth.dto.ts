@@ -102,6 +102,63 @@ export class ResetPasswordDto {
   newPassword!: string;
 }
 
+export class UpdateMeDto {
+  @IsString()
+  @MinLength(1)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsUUID()
+  stateId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  stateName?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  km?: number;
+
+  @IsOptional()
+  @IsString()
+  image?: string | null;
+
+  @IsOptional()
+  @IsEnum(AgeRange)
+  ageRange?: AgeRange | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  disabilitySubcategoryIds?: string[];
+}
+
 export class SendOtpDto {
   @IsEmail()
   email!: string;
